@@ -29,7 +29,8 @@ openlisttostrm/
 - **Java版本**: 21
 - **数据库**: SQLite 3.47.1
 - **构建工具**: Gradle 8.14.3
-- **ORM**: jOOQ
+- **ORM**: MyBatis
+- **任务调度**: Quartz (内存存储)
 - **安全**: Spring Security + JWT
 
 ### 前端
@@ -144,10 +145,40 @@ npm run dev
 ### 添加新的后端API
 1. 在 `backend/src/main/java/` 下创建 Controller
 2. 使用 Spring Boot 注解定义API端点
+3. 使用 MyBatis Mapper 接口进行数据库操作
 
 ### 数据库迁移
 1. 在 `backend/src/main/resources/db/migration/` 下添加 SQL 文件
-2. Flyway 会自动执行迁移
+2. 使用 Flyway 版本命名规范：`V{版本号}__{描述}.sql`
+3. Flyway 会自动执行迁移到 SQLite 数据库
+4. 当前已包含的迁移：
+   - `V1_0_0__init_schema.sql` - 初始化用户权限表结构
+   - `V1_0_1__insert_urp_table.sql` - 插入初始用户和权限数据
+   - `V1_0_2__init_quartz_table.sql` - 初始化 Quartz 调度器表结构
+
+### 任务调度
+- 使用 Quartz 进行任务调度
+- 当前配置为内存存储模式（RAMJobStore）以兼容 SQLite
+- 包含两个调度器：
+  - `email-scheduler` - 邮件任务调度
+  - `data-backup-scheduler` - 数据备份任务调度
+
+## 故障排除
+
+### 常见问题
+
+1. **Quartz 与 SQLite 兼容性问题**
+   - 项目使用内存作业存储（RAMJobStore）而非数据库持久化
+   - 这是因为 SQLite JDBC 驱动不完全支持 Quartz 的 Blob 操作
+   - 重启应用后调度任务会重新初始化
+
+2. **循环依赖问题**
+   - 已通过独立的 `PasswordEncoderConfig` 配置类解决
+   - 避免在 `WebSecurityConfig` 中直接定义 `PasswordEncoder` Bean
+
+3. **MyBatis 配置**
+   - Mapper 接口返回类型使用具体类型而非 `Optional<T>`
+   - 配置文件位于 `application.yml` 中的 `mybatis` 部分
 
 ## 许可证
 
