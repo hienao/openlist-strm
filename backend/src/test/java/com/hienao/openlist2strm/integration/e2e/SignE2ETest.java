@@ -1,0 +1,123 @@
+package com.hienao.openlist2strm.integration.e2e;
+
+import com.hienao.openlist2strm.dto.sign.SignInDto;
+import com.hienao.openlist2strm.repository.UserRepository;
+import java.time.Duration;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@Disabled
+public class SignE2ETest {
+
+  @Value("${jwt.cookie-name}")
+  private String jwtCookieName;
+
+  @Value("${jwt.secret}")
+  private String secret;
+
+  @Value("${jwt.expiration-min}")
+  private int expirationMin;
+
+  @Autowired private WebTestClient webTestClient;
+
+  @Autowired private UserRepository userRepository;
+
+  @Autowired private PasswordEncoder passwordEncoder;
+
+  @Autowired private TestRestTemplate testRestTemplate;
+
+  @AfterEach
+  void cleanUp() {
+    userRepository
+        .findByUsername("test_5fab32c22a3e")
+        .ifPresent(
+            user -> {
+              userRepository.delete(user);
+            });
+  }
+
+  @Test
+  void signUp() {
+    webTestClient
+        .post()
+        .uri("/auth/sign-up")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+            """
+{
+  "username": "test_5fab32c22a3e",
+  "password": "test_eab28b939ba1"
+}
+""")
+        .exchange()
+        .expectStatus()
+        .isCreated();
+  }
+
+  @Test
+  void signIn() {
+    com.hienao.openlist2strm.entity.User stubUser = new com.hienao.openlist2strm.entity.User();
+    stubUser.setUsername("test_5fab32c22a3e");
+    stubUser.setPassword(passwordEncoder.encode("test_eab28b939ba1"));
+    stubUser.setEnable(true);
+    userRepository.save(stubUser);
+    webTestClient
+        .post()
+        .uri("/auth/sign-in")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+            """
+{
+  "username": "test_5fab32c22a3e",
+  "password": "test_eab28b939ba1"
+}
+""")
+        .exchange()
+        .expectCookie()
+        .exists(jwtCookieName)
+        .expectCookie()
+        .maxAge(jwtCookieName, Duration.ofSeconds(expirationMin * 60L))
+        .expectStatus()
+        .isOk();
+  }
+
+  @Test
+  void signOut() {
+    com.hienao.openlist2strm.entity.User stubUser = new com.hienao.openlist2strm.entity.User();
+    stubUser.setUsername("test_5fab32c22a3e");
+    stubUser.setPassword(passwordEncoder.encode("test_eab28b939ba1"));
+    stubUser.setEnable(true);
+    userRepository.save(stubUser);
+    SignInDto loginUser = new SignInDto();
+    loginUser.setUsername("test_5fab32c22a3e");
+    loginUser.setPassword("test_eab28b939ba1");
+    HttpHeaders headers =
+        testRestTemplate.postForEntity("/auth/sign-in", loginUser, String.class).getHeaders();
+    headers
+        .get("Set-Cookie")
+        .forEach(
+            cookie -> {
+              if (cookie.startsWith(jwtCookieName)) {
+                webTestClient
+                    .post()
+                    .uri("/auth/sign-out")
+                    .header("Cookie", cookie)
+                    .exchange()
+                    .expectCookie()
+                    .maxAge(jwtCookieName, Duration.ofSeconds(0L))
+                    .expectStatus()
+                    .isOk();
+              }
+            });
+  }
+}
