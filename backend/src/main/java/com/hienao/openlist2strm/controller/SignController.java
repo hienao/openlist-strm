@@ -74,6 +74,29 @@ public class SignController {
   }
 
   @ResponseStatus(HttpStatus.OK)
+  @GetMapping("/check-user")
+  @Operation(summary = "检查用户是否存在", description = "检查用户是否存在的接口")
+  @ApiResponses(value = {
+      @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "用户存在",
+          content = @Content(mediaType = "application/json",
+              examples = @ExampleObject(value = "{\"code\": 200, \"message\": \"用户存在\", \"data\": {\"exists\": true}}"))),
+      @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "用户不存在",
+          content = @Content(mediaType = "application/json",
+              examples = @ExampleObject(value = "{\"code\": 404, \"message\": \"用户不存在\", \"data\": {\"exists\": false}}")))  
+  })
+  ApiResponse<Map<String, Object>> checkUser() {
+    boolean exists = signService.checkUserExists();
+    Map<String, Object> data = new HashMap<>();
+    data.put("exists", exists);
+    if (exists) {
+      return ApiResponse.success(data, "用户存在");
+    } else {
+      // 创建一个包含data的ApiResponse对象
+      return new ApiResponse<>(404, "用户不存在", data);
+    }
+  }
+
+  @ResponseStatus(HttpStatus.OK)
   @PostMapping("/sign-out")
   @Operation(summary = "用户登出", description = "用户登出接口，需要JWT认证")
   @SecurityRequirement(name = "Bearer Authentication")

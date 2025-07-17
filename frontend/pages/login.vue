@@ -1,14 +1,16 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          登录到您的账户
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          OpenList2Strm 用户登录
-        </p>
-      </div>
+      <!-- 登录页面 -->
+      <div v-if="!showRegister">
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            登录到您的账户
+          </h2>
+          <p class="mt-2 text-center text-sm text-gray-600">
+            OpenList2Strm 用户登录
+          </p>
+        </div>
       
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
         <div class="rounded-md shadow-sm -space-y-px">
@@ -99,15 +101,134 @@
           </button>
         </div>
 
-        <div class="text-center">
-          <p class="text-sm text-gray-600">
-            还没有账户？
-            <NuxtLink to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-              立即注册
-            </NuxtLink>
+      </form>
+      </div>
+      
+      <!-- 注册页面 -->
+      <div v-else>
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            创建新账户
+          </h2>
+          <p class="mt-2 text-center text-sm text-gray-600">
+            用户不存在，请先注册
           </p>
         </div>
-      </form>
+        
+        <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
+          <div class="space-y-4">
+            <div>
+              <label for="reg-username" class="block text-sm font-medium text-gray-700">用户名</label>
+              <input
+                id="reg-username"
+                v-model="registerForm.username"
+                name="username"
+                type="text"
+                required
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="请输入用户名"
+                :disabled="registerLoading"
+              />
+            </div>
+            
+            <div>
+              <label for="reg-email" class="block text-sm font-medium text-gray-700">邮箱</label>
+              <input
+                id="reg-email"
+                v-model="registerForm.email"
+                name="email"
+                type="email"
+                required
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="请输入邮箱地址"
+                :disabled="registerLoading"
+              />
+            </div>
+            
+            <div>
+              <label for="reg-password" class="block text-sm font-medium text-gray-700">密码</label>
+              <input
+                id="reg-password"
+                v-model="registerForm.password"
+                name="password"
+                type="password"
+                required
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="请输入密码"
+                :disabled="registerLoading"
+              />
+            </div>
+            
+            <div>
+              <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700">确认密码</label>
+              <input
+                id="reg-confirm-password"
+                v-model="registerForm.confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="请再次输入密码"
+                :disabled="registerLoading"
+              />
+            </div>
+          </div>
+
+          <!-- 注册错误信息显示 -->
+          <div v-if="registerError" class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  注册失败
+                </h3>
+                <div class="mt-2 text-sm text-red-700">
+                  {{ registerError }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 注册成功信息显示 -->
+          <div v-if="registerSuccess" class="rounded-md bg-green-50 p-4">
+            <div class="flex">
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-green-800">
+                  注册成功
+                </h3>
+                <div class="mt-2 text-sm text-green-700">
+                  请使用新账户登录
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              :disabled="registerLoading"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="registerLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
+                <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </span>
+              {{ registerLoading ? '注册中...' : '注册' }}
+            </button>
+          </div>
+          
+          <div class="text-center">
+            <button 
+              type="button"
+              @click="showRegister = false; clearForms()"
+              class="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+            >
+              返回登录
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -125,11 +246,24 @@ definePageMeta({
 const loading = ref(false)
 const error = ref('')
 const success = ref(false)
+const showRegister = ref(false)
+
+// 注册相关状态
+const registerLoading = ref(false)
+const registerError = ref('')
+const registerSuccess = ref(false)
 
 const form = reactive({
   username: '',
   password: '',
   rememberMe: false
+})
+
+const registerForm = reactive({
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
 })
 
 // 登录处理函数
@@ -156,7 +290,7 @@ const handleLogin = async () => {
     if (response.code === 200 && response.data?.token) {
       console.log('登录成功，响应数据:', response.data)
       
-      // 登录成功，保存token
+      // 登录成功，保存token和用户信息
       const token = useCookie('token', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24, // 记住我：14天，否则1天
@@ -164,8 +298,16 @@ const handleLogin = async () => {
         sameSite: 'lax'
       })
       
+      const userInfo = useCookie('userInfo', {
+        default: () => null,
+        maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24,
+        secure: false,
+        sameSite: 'lax'
+      })
+      
       token.value = response.data.token
-      console.log('Token已保存:', token.value)
+      userInfo.value = response.data.user || { username: form.username }
+      console.log('Token和用户信息已保存:', token.value, userInfo.value)
       
       success.value = true
       
@@ -186,6 +328,11 @@ const handleLogin = async () => {
     
     if (err.status === 401) {
       error.value = '用户名或密码错误'
+    } else if (err.status === 404) {
+      // 用户不存在，显示注册页面
+      showRegister.value = true
+      registerForm.username = form.username
+      error.value = ''
     } else if (err.status === 500) {
       error.value = '服务器错误，请稍后重试'
     } else {
@@ -194,6 +341,97 @@ const handleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 注册表单验证
+const validateRegisterForm = () => {
+  if (!registerForm.username || !registerForm.email || !registerForm.password || !registerForm.confirmPassword) {
+    registerError.value = '请填写所有必填字段'
+    return false
+  }
+  
+  if (registerForm.username.length < 3) {
+    registerError.value = '用户名至少需要3个字符'
+    return false
+  }
+  
+  if (registerForm.password.length < 6) {
+    registerError.value = '密码至少需要6个字符'
+    return false
+  }
+  
+  if (registerForm.password !== registerForm.confirmPassword) {
+    registerError.value = '两次输入的密码不一致'
+    return false
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(registerForm.email)) {
+    registerError.value = '请输入有效的邮箱地址'
+    return false
+  }
+  
+  return true
+}
+
+// 注册处理函数
+const handleRegister = async () => {
+  if (!validateRegisterForm()) {
+    return
+  }
+
+  registerLoading.value = true
+  registerError.value = ''
+  registerSuccess.value = false
+
+  try {
+    // 调用注册API
+    const response = await $fetch('/api/auth/sign-up', {
+      method: 'POST',
+      body: {
+        username: registerForm.username,
+        email: registerForm.email,
+        password: registerForm.password
+      }
+    })
+
+    if (response.code === 200) {
+      registerSuccess.value = true
+      
+      // 注册成功后，切换回登录页面并预填用户名
+      setTimeout(() => {
+        showRegister.value = false
+        form.username = registerForm.username
+        clearForms()
+      }, 2000)
+    } else {
+      registerError.value = response.message || '注册失败，请重试'
+    }
+  } catch (err) {
+    console.error('注册错误:', err)
+    
+    if (err.status === 409) {
+      registerError.value = '用户名或邮箱已存在'
+    } else if (err.status === 400) {
+      registerError.value = err.data?.message || '请求参数错误'
+    } else {
+      registerError.value = err.data?.message || '注册失败，请重试'
+    }
+  } finally {
+    registerLoading.value = false
+  }
+}
+
+// 清空表单
+const clearForms = () => {
+  registerForm.username = ''
+  registerForm.email = ''
+  registerForm.password = ''
+  registerForm.confirmPassword = ''
+  registerError.value = ''
+  registerSuccess.value = false
+  error.value = ''
+  success.value = false
 }
 
 // 页面标题

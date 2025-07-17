@@ -10,6 +10,12 @@
           <div class="flex items-center space-x-4">
             <span class="text-gray-700">欢迎，{{ userInfo?.username || '用户' }}</span>
             <button 
+              @click="changePassword" 
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              修改密码
+            </button>
+            <button 
               @click="logout" 
               class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
@@ -34,33 +40,13 @@
               <div class="space-y-2 text-left">
                 <div class="flex justify-between">
                   <span class="text-gray-500">用户名:</span>
-                  <span class="text-gray-900">{{ userInfo?.username }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500">邮箱:</span>
-                  <span class="text-gray-900">{{ userInfo?.email }}</span>
+                  <span class="text-gray-900">{{ userInfo?.username || '未知用户' }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">登录时间:</span>
                   <span class="text-gray-900">{{ loginTime }}</span>
                 </div>
               </div>
-            </div>
-
-            <!-- 功能按钮 -->
-            <div class="mt-8 space-x-4">
-              <button 
-                @click="changePassword" 
-                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                修改密码
-              </button>
-              <button 
-                @click="refreshToken" 
-                class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                刷新Token
-              </button>
             </div>
           </div>
         </div>
@@ -84,12 +70,17 @@ const loginTime = ref('')
 // 获取用户信息
 const getUserInfo = () => {
   const token = useCookie('token')
+  const savedUserInfo = useCookie('userInfo')
+  
   if (token.value) {
-    // 这里可以调用API获取用户详细信息
-    // 暂时使用模拟数据
-    userInfo.value = {
-      username: 'demo_user',
-      email: 'demo@example.com'
+    // 从cookie中获取用户信息
+    if (savedUserInfo.value) {
+      userInfo.value = savedUserInfo.value
+    } else {
+      // 如果没有保存的用户信息，使用默认值
+      userInfo.value = {
+        username: '用户'
+      }
     }
     loginTime.value = new Date().toLocaleString('zh-CN')
   }
@@ -129,14 +120,8 @@ const logout = async () => {
 
 // 修改密码
 const changePassword = () => {
-  // 这里可以打开修改密码的模态框或跳转到修改密码页面
-  alert('修改密码功能待实现')
-}
-
-// 刷新Token
-const refreshToken = () => {
-  // Token会在中间件中自动刷新
-  alert('Token已自动刷新')
+  // 跳转到修改密码页面
+  navigateTo('/change-password')
 }
 
 // 组件挂载时获取用户信息

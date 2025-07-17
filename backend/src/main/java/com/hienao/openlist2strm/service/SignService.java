@@ -76,31 +76,36 @@ public class SignService {
    }
    
    public void changePassword(ChangePasswordDto changePasswordDto) {
-     File userFile = new File(USER_INFO_FILE);
-     
-     if (!userFile.exists()) {
-       throw new BusinessException("用户不存在");
-     }
-     
-     try {
-       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
-       String storedPassword = userInfo.get("pwd");
-       
-       // 验证旧密码
-       if (!md5Hash(changePasswordDto.getOldPassword()).equals(storedPassword)) {
-         throw new BusinessException("旧密码错误");
-       }
-       
-       // 更新密码
-       userInfo.put("pwd", md5Hash(changePasswordDto.getNewPassword()));
-       objectMapper.writeValue(userFile, userInfo);
-       
-       log.info("密码修改成功");
-     } catch (IOException e) {
-       log.error("修改密码失败", e);
-       throw new BusinessException("修改密码失败");
-     }
-   }
+    File userFile = new File(USER_INFO_FILE);
+    
+    if (!userFile.exists()) {
+      throw new BusinessException("用户不存在");
+    }
+    
+    try {
+      Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
+      String storedPassword = userInfo.get("pwd");
+      
+      // 验证旧密码
+      if (!md5Hash(changePasswordDto.getOldPassword()).equals(storedPassword)) {
+        throw new BusinessException("旧密码错误");
+      }
+      
+      // 更新密码
+      userInfo.put("pwd", md5Hash(changePasswordDto.getNewPassword()));
+      objectMapper.writeValue(userFile, userInfo);
+      
+      log.info("密码修改成功");
+    } catch (IOException e) {
+      log.error("修改密码失败", e);
+      throw new BusinessException("修改密码失败");
+    }
+  }
+  
+  public boolean checkUserExists() {
+    File userFile = new File(USER_INFO_FILE);
+    return userFile.exists();
+  }
    
    private String md5Hash(String input) {
      try {

@@ -1,18 +1,20 @@
 // 认证中间件 - 保护需要登录的页面
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
   // 获取token
   const token = useCookie('token')
   
-  // 如果没有token，跳转到登录页
+  // 如果没有token，检查用户是否存在后跳转
   if (!token.value) {
-    return navigateTo('/login')
+    const redirectPath = await checkUserAndRedirect()
+    return navigateTo(redirectPath)
   }
   
   // 验证token是否有效
   if (!isValidToken(token.value)) {
-    // token无效，清除并跳转到登录页
+    // token无效，清除并检查用户是否存在后跳转
     token.value = null
-    return navigateTo('/login')
+    const redirectPath = await checkUserAndRedirect()
+    return navigateTo(redirectPath)
   }
   
   // 检查token是否需要刷新（剩余有效期在7-14天之间）
@@ -72,6 +74,27 @@ function parseJwtPayload(token) {
   const payload = parts[1]
   const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
   return JSON.parse(decoded)
+}
+
+// 检查用户是否存在并决定跳转路径
+async function checkUserAndRedirect() {
+  try {
+    const response = await $fetch('/api/auth/check-user', {
+      method: 'GET'
+    })
+    
+    if (response.code === 200 && response.data?.exists) {
+      // 用户存在，跳转到登录页
+      return '/login'
+    } else {
+      // 用户不存在，跳转到注册页
+      return '/register'
+    }
+  } catch (error) {
+    console.error('检查用户失败:', error)
+    // 检查失败时默认跳转到登录页
+    return '/login'
+  }
 }
 
 // 后台刷新token
