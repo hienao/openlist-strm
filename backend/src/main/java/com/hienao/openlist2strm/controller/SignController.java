@@ -66,6 +66,27 @@ public class SignController {
   }
   
   @ResponseStatus(HttpStatus.OK)
+  @PostMapping("/refresh")
+  @Operation(summary = "刷新Token", description = "刷新JWT token接口，需要JWT认证")
+  @SecurityRequirement(name = "Bearer Authentication")
+  Map<String, Object> refresh(HttpServletRequest request, HttpServletResponse response) {
+    String oldToken = jwt.extract(request);
+    if (oldToken != null && jwt.verify(oldToken)) {
+      String username = jwt.getSubject(oldToken);
+      String newToken = jwt.makeToken(request, response, username);
+      Map<String, Object> result = new HashMap<>();
+      result.put("message", "Token刷新成功");
+      result.put("token", newToken);
+      result.put("expiresAt", jwt.getExpiresAt(newToken));
+      return result;
+    } else {
+      Map<String, Object> result = new HashMap<>();
+      result.put("message", "Token无效，无法刷新");
+      return result;
+    }
+  }
+  
+  @ResponseStatus(HttpStatus.OK)
   @PostMapping("/change-password")
   @Operation(summary = "修改密码", description = "修改用户密码接口，需要JWT认证")
   @SecurityRequirement(name = "Bearer Authentication")

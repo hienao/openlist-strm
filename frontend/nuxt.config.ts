@@ -9,7 +9,7 @@ export default defineNuxtConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        prependPath: true
+        prependPath: false
       }
     }
   },
@@ -21,11 +21,28 @@ export default defineNuxtConfig({
     }
   },
   
-  // CSS框架（可选）
-  css: [],
+  // CSS框架 - 添加Tailwind CSS
+  css: ['~/assets/css/main.css'],
+  
+  // 模块配置
+  modules: [
+    '@nuxtjs/tailwindcss'
+  ],
   
   // 构建配置
   build: {
     transpile: []
+  },
+  
+  // 应用配置
+  app: {
+    head: {
+      title: 'OpenList2Strm',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'OpenList2Strm - 用户管理系统' }
+      ]
+    }
   }
 })
