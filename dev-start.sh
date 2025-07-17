@@ -66,22 +66,49 @@ echo "📊 查看日志请运行: ./dev-logs.sh"
 echo ""
 echo "⏳ 等待服务启动..."
 
-# 等待服务启动
-sleep 5
+# 等待前端服务启动
+echo "🔍 检查前端服务状态..."
+FRONTEND_READY=false
+for i in {1..30}; do
+    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        echo "✅ 前端服务启动成功 (耗时: ${i}秒)"
+        FRONTEND_READY=true
+        break
+    fi
+    echo "⏳ 前端服务启动中... (${i}/30秒)"
+    sleep 1
+done
 
-# 检查服务状态
-echo "🔍 检查服务状态..."
-if curl -s http://localhost:3000 > /dev/null; then
-    echo "✅ 前端服务运行正常"
-else
-    echo "⚠️  前端服务可能还在启动中"
+if [ "$FRONTEND_READY" = false ]; then
+    echo "❌ 前端服务启动失败或超时"
+    echo "💡 请检查前端日志: tail -f logs/frontend.log"
 fi
 
-if curl -s http://localhost:8080/actuator/health > /dev/null; then
-    echo "✅ 后端服务运行正常"
-else
-    echo "⚠️  后端服务可能还在启动中"
+# 等待后端服务启动
+echo "🔍 检查后端服务状态..."
+BACKEND_READY=false
+for i in {1..60}; do
+    if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+        echo "✅ 后端服务启动成功 (耗时: ${i}秒)"
+        BACKEND_READY=true
+        break
+    fi
+    echo "⏳ 后端服务启动中... (${i}/60秒)"
+    sleep 1
+done
+
+if [ "$BACKEND_READY" = false ]; then
+    echo "❌ 后端服务启动失败或超时"
+    echo "💡 请检查后端日志: tail -f logs/backend.log"
 fi
 
 echo ""
-echo "🎉 开发环境已就绪! 开始愉快的开发吧!"
+if [ "$FRONTEND_READY" = true ] && [ "$BACKEND_READY" = true ]; then
+    echo "🎉 开发环境已完全就绪! 开始愉快的开发吧!"
+elif [ "$FRONTEND_READY" = true ]; then
+    echo "⚠️  前端已就绪，但后端启动失败"
+elif [ "$BACKEND_READY" = true ]; then
+    echo "⚠️  后端已就绪，但前端启动失败"
+else
+    echo "❌ 前后端服务都启动失败，请检查日志文件"
+fi
