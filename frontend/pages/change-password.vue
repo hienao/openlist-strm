@@ -229,14 +229,17 @@ const handleChangePassword = async () => {
   } catch (err) {
     console.error('修改密码错误:', err)
     
-    if (err.status === 401) {
+    // 优先显示接口返回的message信息
+    if (err.data?.message) {
+      error.value = err.data.message
+    } else if (err.status === 401) {
       error.value = '当前密码错误'
     } else if (err.status === 400) {
-      error.value = err.data?.message || '请求参数错误'
+      error.value = '请求参数错误'
     } else if (err.status === 500) {
       error.value = '服务器错误，请稍后重试'
     } else {
-      error.value = err.data?.message || '网络错误，请检查网络连接'
+      error.value = '网络错误，请检查网络连接'
     }
   } finally {
     loading.value = false
