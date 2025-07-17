@@ -101,12 +101,17 @@ const logout = async () => {
     const token = useCookie('token')
     
     // 调用后端登出接口
-    await $fetch('/api/auth/sign-out', {
+    const response = await $fetch('/api/auth/sign-out', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.value}`
       }
     })
+    
+    // 检查响应格式
+    if (response.code === 200) {
+      console.log('登出成功:', response.message)
+    }
     
     // 清除本地token
     token.value = null

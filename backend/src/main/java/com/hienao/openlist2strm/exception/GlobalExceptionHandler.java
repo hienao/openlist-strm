@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.exception;
 
+import com.hienao.openlist2strm.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
@@ -16,19 +17,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   @ExceptionHandler(value = {BusinessException.class})
-  public ResponseEntity<Object> handleBusinessException(BusinessException ex, WebRequest request) {
+  public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex, WebRequest request) {
     log.error("Business Error Handled  ===> ", ex);
-    ErrorResponseException errorResponseException =
-        new ErrorResponseException(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()),
-            ex.getCause());
-    return handleExceptionInternal(
-        errorResponseException,
-        errorResponseException.getBody(),
-        errorResponseException.getHeaders(),
-        errorResponseException.getStatusCode(),
-        request);
+    ApiResponse<Void> response = ApiResponse.error(500, ex.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
   }
 
   @SuppressWarnings("NullableProblems")
@@ -39,32 +31,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpStatusCode status,
       WebRequest request) {
     log.error("MethodArgumentNotValidException Handled  ===> ", ex);
-    ErrorResponseException errorResponseException =
-        new ErrorResponseException(
-            status, ProblemDetail.forStatusAndDetail(status, ex.getMessage()), ex.getCause());
-    return handleExceptionInternal(
-        errorResponseException,
-        errorResponseException.getBody(),
-        errorResponseException.getHeaders(),
-        errorResponseException.getStatusCode(),
-        request);
+    ApiResponse<Void> response = ApiResponse.error(status.value(), "参数验证失败: " + ex.getMessage());
+    return ResponseEntity.status(status).body(response);
   }
 
   @ExceptionHandler(value = {RequestRejectedException.class})
-  public ResponseEntity<Object> handleRequestRejectedException(
+  public ResponseEntity<ApiResponse<Void>> handleRequestRejectedException(
       RequestRejectedException ex, WebRequest request) {
     log.error("RequestRejectedException Handled  ===> ", ex);
-    ErrorResponseException errorResponseException =
-        new ErrorResponseException(
-            HttpStatus.BAD_REQUEST,
-            ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage()),
-            ex.getCause());
-    return handleExceptionInternal(
-        errorResponseException,
-        errorResponseException.getBody(),
-        errorResponseException.getHeaders(),
-        errorResponseException.getStatusCode(),
-        request);
+    ApiResponse<Void> response = ApiResponse.error(400, ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
 
   @ExceptionHandler(value = {AccessDeniedException.class})
@@ -73,18 +49,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   @ExceptionHandler(value = {Throwable.class})
-  public ResponseEntity<Object> handleException(Throwable ex, WebRequest request) {
+  public ResponseEntity<ApiResponse<Void>> handleException(Throwable ex, WebRequest request) {
     log.error("System Error Handled  ===> ", ex);
-    ErrorResponseException errorResponseException =
-        new ErrorResponseException(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "System Error"),
-            ex.getCause());
-    return handleExceptionInternal(
-        errorResponseException,
-        errorResponseException.getBody(),
-        errorResponseException.getHeaders(),
-        errorResponseException.getStatusCode(),
-        request);
+    ApiResponse<Void> response = ApiResponse.error(500, "系统错误");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
   }
 }
