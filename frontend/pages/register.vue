@@ -26,19 +26,7 @@
             />
           </div>
           
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">邮箱</label>
-            <input
-              id="email"
-              v-model="form.email"
-              name="email"
-              type="email"
-              required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="请输入邮箱地址"
-              :disabled="loading"
-            />
-          </div>
+
           
           <div>
             <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
@@ -91,7 +79,7 @@
                 注册成功
               </h3>
               <div class="mt-2 text-sm text-green-700">
-                正在跳转到登录页...
+                账户创建成功！正在跳转到登录页...
               </div>
             </div>
           </div>
@@ -113,14 +101,7 @@
           </button>
         </div>
 
-        <div class="text-center">
-          <p class="text-sm text-gray-600">
-            已有账户？
-            <NuxtLink to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-              立即登录
-            </NuxtLink>
-          </p>
-        </div>
+
       </form>
     </div>
   </div>
@@ -142,14 +123,13 @@ const success = ref(false)
 
 const form = reactive({
   username: '',
-  email: '',
   password: '',
   confirmPassword: ''
 })
 
 // 表单验证
 const validateForm = () => {
-  if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+  if (!form.username || !form.password || !form.confirmPassword) {
     error.value = '请填写所有必填字段'
     return false
   }
@@ -166,12 +146,6 @@ const validateForm = () => {
   
   if (form.password !== form.confirmPassword) {
     error.value = '两次输入的密码不一致'
-    return false
-  }
-  
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(form.email)) {
-    error.value = '请输入有效的邮箱地址'
     return false
   }
   
@@ -194,7 +168,6 @@ const handleRegister = async () => {
       method: 'POST',
       body: {
         username: form.username,
-        email: form.email,
         password: form.password
       }
     })
@@ -213,7 +186,7 @@ const handleRegister = async () => {
     console.error('注册错误:', err)
     
     if (err.status === 409) {
-      error.value = '用户名或邮箱已存在'
+      error.value = '用户已存在'
     } else if (err.status === 400) {
       error.value = err.data?.message || '请求参数错误'
     } else if (err.status === 500) {

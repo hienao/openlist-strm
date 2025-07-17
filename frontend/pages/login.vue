@@ -239,7 +239,7 @@ import { ref, reactive } from 'vue'
 // 页面元数据
 definePageMeta({
   layout: false, // 不使用默认布局
-  middleware: 'guest' // 只允许未登录用户访问
+  middleware: ['guest', 'auth'] // 只允许未登录用户访问，并检查用户是否存在
 })
 
 // 响应式数据

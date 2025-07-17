@@ -3,6 +3,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // 获取token
   const token = useCookie('token')
   
+  // 如果当前页面是登录或注册页面，只检查用户是否存在，不进行token验证
+  if (to.path === '/login' || to.path === '/register') {
+    return await handleAuthPages(to)
+  }
+  
   // 如果没有token，检查用户是否存在后跳转
   if (!token.value) {
     const redirectPath = await checkUserAndRedirect()
@@ -74,6 +79,37 @@ function parseJwtPayload(token) {
   const payload = parts[1]
   const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
   return JSON.parse(decoded)
+}
+
+// 处理登录和注册页面的逻辑
+async function handleAuthPages(to) {
+  try {
+    const response = await $fetch('/api/auth/check-user', {
+      method: 'GET'
+    })
+    
+    if (response.code === 200 && response.data?.exists) {
+      // 用户存在
+      if (to.path === '/register') {
+        // 如果访问注册页但用户已存在，跳转到登录页
+        return navigateTo('/login')
+      }
+      // 如果访问登录页且用户存在，允许访问
+      return
+    } else {
+      // 用户不存在
+      if (to.path === '/login') {
+        // 如果访问登录页但用户不存在，跳转到注册页
+        return navigateTo('/register')
+      }
+      // 如果访问注册页且用户不存在，允许访问
+      return
+    }
+  } catch (error) {
+    console.error('检查用户失败:', error)
+    // 检查失败时允许访问当前页面
+    return
+  }
 }
 
 // 检查用户是否存在并决定跳转路径
