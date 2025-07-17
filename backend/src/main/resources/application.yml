@@ -38,4 +38,4 @@ springdoc:
     path: /swagger-ui.html
 jwt:
   secret: ${JWT_SECRET:secret}
-  expiration-min: ${JWT_EXPIRATION_MIN:100}
+  expiration-min: ${JWT_EXPIRATION_MIN:20160}  # 14天 = 14 * 24 * 60 = 20160分钟

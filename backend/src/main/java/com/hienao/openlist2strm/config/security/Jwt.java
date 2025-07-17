@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
@@ -37,6 +38,34 @@ public class Jwt {
     return JWT.decode(token).getSubject();
   }
 
+  public Date getExpiresAt(String token) {
+    return JWT.decode(token).getExpiresAt();
+  }
+
+  public Date getIssuedAt(String token) {
+    return JWT.decode(token).getIssuedAt();
+  }
+
+  public boolean shouldRefresh(String token) {
+    try {
+      DecodedJWT decodedJWT = JWT.decode(token);
+      Date issuedAt = decodedJWT.getIssuedAt();
+      Date expiresAt = decodedJWT.getExpiresAt();
+      Date now = new Date();
+      
+      // 计算token已使用时间（分钟）
+      long usedMinutes = (now.getTime() - issuedAt.getTime()) / (1000 * 60);
+      // 计算token剩余时间（分钟）
+      long remainingMinutes = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
+      
+      // 如果已使用超过7天（10080分钟）且剩余时间少于7天，则需要刷新
+      return usedMinutes > 10080 && remainingMinutes < 10080;
+    } catch (Exception e) {
+      log.warn("检查token刷新状态失败", e);
+      return false;
+    }
+  }
+
   public Boolean verify(String token) {
     try {
       verifier.verify(token);
@@ -68,9 +97,21 @@ public class Jwt {
         .sign(Algorithm.HMAC256(secret));
   }
 
-  public void makeToken(
+  public String makeToken(
       HttpServletRequest request, HttpServletResponse response, String userIdentify) {
-    response.addHeader("Authorization", String.format("Bearer %s", create(userIdentify)));
+    String token = create(userIdentify);
+    response.addHeader("Authorization", String.format("Bearer %s", token));
+    return token;
+  }
+
+  public String refreshToken(String oldToken) {
+    try {
+      String subject = getSubject(oldToken);
+      return create(subject);
+    } catch (Exception e) {
+      log.error("刷新token失败", e);
+      return null;
+    }
   }
 
   public void removeToken(HttpServletRequest request, HttpServletResponse response) {
