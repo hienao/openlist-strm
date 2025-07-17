@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.controller;
 
 import com.hienao.openlist2strm.config.security.Jwt;
+import com.hienao.openlist2strm.dto.sign.ChangePasswordDto;
 import com.hienao.openlist2strm.dto.sign.SignInDto;
 import com.hienao.openlist2strm.dto.sign.SignUpDto;
 import com.hienao.openlist2strm.service.SignService;
@@ -26,8 +27,8 @@ public class SignController {
       HttpServletRequest request,
       HttpServletResponse response,
       @RequestBody @Valid SignInDto signInDto) {
-    Long userId = signService.signIn(signInDto);
-    jwt.makeToken(request, response, String.valueOf(userId));
+    String username = signService.signIn(signInDto);
+    jwt.makeToken(request, response, username);
   }
 
   @ResponseStatus(HttpStatus.CREATED)
@@ -40,5 +41,11 @@ public class SignController {
   @PostMapping("/sign-out")
   void signOut(HttpServletRequest request, HttpServletResponse response) {
     jwt.removeToken(request, response);
+  }
+  
+  @ResponseStatus(HttpStatus.OK)
+  @PostMapping("/change-password")
+  void changePassword(@RequestBody @Valid ChangePasswordDto changePasswordDto) {
+    signService.changePassword(changePasswordDto);
   }
 }
