@@ -23,9 +23,6 @@ export ALLOWED_EXPOSE_HEADERS="*"
 export JWT_SECRET="dev-secret-key"
 export JWT_EXPIRATION_MIN="1440"
 
-# 创建数据库目录
-mkdir -p data
-
 echo "📦 安装前端依赖..."
 cd frontend
 if [ ! -d "node_modules" ]; then
