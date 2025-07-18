@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hienao.openlist2strm.mapper.OpenlistConfigMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.hienao.openlist2strm.entity.OpenlistConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="base_url" property="baseUrl" jdbcType="VARCHAR"/>
+        <result column="token" property="token" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+        <result column="is_active" property="isActive" jdbcType="BOOLEAN"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, base_url, token, path, username, created_at, updated_at, is_active
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM openlist_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户名查询 -->
+    <select id="selectByUsername" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM openlist_config
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <!-- 查询所有启用的配置 -->
+    <select id="selectActiveConfigs" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM openlist_config
+        WHERE is_active = 1
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询所有配置 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM openlist_config
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 插入配置 -->
+    <insert id="insert" parameterType="com.hienao.openlist2strm.entity.OpenlistConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO openlist_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="baseUrl != null and baseUrl != ''">
+                base_url,
+            </if>
+            <if test="token != null and token != ''">
+                token,
+            </if>
+            <if test="path != null">
+                path,
+            </if>
+            <if test="username != null and username != ''">
+                username,
+            </if>
+            <if test="isActive != null">
+                is_active,
+            </if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="baseUrl != null and baseUrl != ''">
+                #{baseUrl},
+            </if>
+            <if test="token != null and token != ''">
+                #{token},
+            </if>
+            <if test="path != null">
+                #{path},
+            </if>
+            <if test="username != null and username != ''">
+                #{username},
+            </if>
+            <if test="isActive != null">
+                #{isActive},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 更新配置 -->
+    <update id="updateById" parameterType="com.hienao.openlist2strm.entity.OpenlistConfig">
+        UPDATE openlist_config
+        <set>
+            <if test="baseUrl != null and baseUrl != ''">
+                base_url = #{baseUrl},
+            </if>
+            <if test="token != null and token != ''">
+                token = #{token},
+            </if>
+            <if test="path != null">
+                path = #{path},
+            </if>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+            <if test="isActive != null">
+                is_active = #{isActive},
+            </if>
+            updated_at = CURRENT_TIMESTAMP,
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM openlist_config
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 更新启用状态 -->
+    <update id="updateActiveStatus">
+        UPDATE openlist_config
+        SET is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+</mapper>
