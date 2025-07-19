@@ -335,10 +335,76 @@ const editTask = (task) => {
   showEditTaskModal.value = true
 }
 
+// 验证任务路径是否存在
+const validateTaskPath = async (taskPath) => {
+  try {
+    if (!configInfo.value) {
+      throw new Error('配置信息未加载')
+    }
+    
+    // 拼接完整路径：basePath + taskPath
+    let fullPath = configInfo.value.basePath
+    
+    // 处理路径拼接规则：如果basePath结尾和taskPath开头都是/，则移除basePath结尾的/
+    if (fullPath.endsWith('/') && taskPath.startsWith('/')) {
+      fullPath = fullPath.slice(0, -1) + taskPath
+    } else if (!fullPath.endsWith('/') && !taskPath.startsWith('/')) {
+      fullPath = fullPath + '/' + taskPath
+    } else {
+      fullPath = fullPath + taskPath
+    }
+    
+    // 构建完整的API URL
+    const baseUrl = configInfo.value.baseUrl
+    const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/fs/get' : baseUrl + '/api/fs/get'
+    
+    const response = await $fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': configInfo.value.token,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        path: fullPath,
+        password: '',
+        page: 1,
+        per_page: 0,
+        refresh: false
+      }
+    })
+    
+    if (response.code === 200 && response.data) {
+      // 检查是否为目录
+      if (!response.data.is_dir) {
+        throw new Error('指定路径不是一个目录')
+      }
+      return true
+    } else {
+      throw new Error(response.message || '路径验证失败')
+    }
+  } catch (error) {
+    if (error.status === 401) {
+      throw new Error('Token无效或已过期')
+    } else if (error.status === 403) {
+      throw new Error('没有权限访问该路径')
+    } else if (error.status === 404) {
+      throw new Error('指定路径不存在')
+    } else {
+      throw new Error(error.message || '路径验证失败，请检查路径是否正确')
+    }
+  }
+}
+
 // 提交任务
 const submitTask = async () => {
   try {
     submitting.value = true
+    
+    // 先验证任务路径是否存在
+    if (taskForm.value.path) {
+      await validateTaskPath(taskForm.value.path)
+    }
+    
     const token = useCookie('token')
     
     const taskData = {
@@ -377,6 +443,7 @@ const submitTask = async () => {
     }
   } catch (error) {
     console.error('提交任务失败:', error)
+    alert(error.message || '操作失败')
   } finally {
     submitting.value = false
   }
