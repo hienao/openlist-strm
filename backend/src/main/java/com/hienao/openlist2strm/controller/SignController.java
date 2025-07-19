@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Tag(name = "认证管理", description = "用户认证相关接口")
 public class SignController {

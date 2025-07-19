@@ -39,9 +39,9 @@ public class WebSecurityConfig {
   @Bean
   public RequestMatcher publicEndPointMatcher() {
     return new OrRequestMatcher(
-        new AntPathRequestMatcher("/auth/sign-in", HttpMethod.POST.name()),
-        new AntPathRequestMatcher("/auth/sign-up", HttpMethod.POST.name()),
-        new AntPathRequestMatcher("/auth/check-user", HttpMethod.GET.name()),
+        new AntPathRequestMatcher("/api/auth/sign-in", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/api/auth/sign-up", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/api/auth/check-user", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/v3/api-docs/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui.html", HttpMethod.GET.name()),

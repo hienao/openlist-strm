@@ -130,9 +130,24 @@ public class OpenlistConfigController {
     @Operation(summary = "启用/禁用配置", description = "更新指定配置的启用状态")
     public ResponseEntity<ApiResponse<Void>> updateConfigStatus(
             @Parameter(description = "配置ID", required = true) @PathVariable Long id,
-            @Parameter(description = "是否启用", required = true) @RequestParam Boolean isActive) {
-        openlistConfigService.updateActiveStatus(id, isActive);
+            @Parameter(description = "状态更新请求", required = true) @RequestBody UpdateStatusRequest request) {
+        openlistConfigService.updateActiveStatus(id, request.getIsActive());
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * 状态更新请求DTO
+     */
+    public static class UpdateStatusRequest {
+        private Boolean isActive;
+
+        public Boolean getIsActive() {
+            return isActive;
+        }
+
+        public void setIsActive(Boolean isActive) {
+            this.isActive = isActive;
+        }
     }
 
     /**

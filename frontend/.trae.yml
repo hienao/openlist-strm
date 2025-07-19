@@ -96,6 +96,7 @@ guidelines:
   - "Use semantic HTML and accessibility best practices"
   - "Follow responsive design principles"
   - "Use proper SEO meta tags"
+  - "CRITICAL: Never modify project configuration files (nuxt.config.ts, package.json, tsconfig.json, etc.) without explicit user confirmation"
 
 # Dependencies
 dependencies:
