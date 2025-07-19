@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-  private static final String USER_INFO_FILE = "/Users/hienao/Code/Github/openlisttostrm/backend/data/userInfo.json";
+  private static final String USER_INFO_FILE = "./data/userInfo.json";
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
