@@ -44,55 +44,95 @@
         </div>
 
         <!-- 配置列表 -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <div v-if="loading" class="p-8 text-center">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <p class="mt-2 text-gray-600">加载中...</p>
-          </div>
-          
-          <div v-else-if="configs.length === 0" class="p-8 text-center">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">暂无配置</h3>
-            <p class="mt-1 text-sm text-gray-500">点击上方按钮添加您的第一个 OpenList 配置</p>
-          </div>
+        <div v-if="loading" class="flex justify-center items-center py-12">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <p class="ml-3 text-gray-600">加载中...</p>
+        </div>
+        
+        <div v-else-if="configs.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">暂无配置</h3>
+          <p class="mt-1 text-sm text-gray-500">点击上方按钮添加您的第一个 OpenList 配置</p>
+        </div>
 
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户名</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base URL</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Path</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="config in configs" :key="config.id" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ config.username }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ config.baseUrl }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ config.basePath }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span :class="config.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
-                          class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                      {{ config.isActive ? '启用' : '禁用' }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(config.createdAt) }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button @click="editConfig(config)" class="text-blue-600 hover:text-blue-900">编辑</button>
-                    <button @click="toggleConfigStatus(config)" 
-                            :class="config.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'">
-                      {{ config.isActive ? '禁用' : '启用' }}
-                    </button>
-                    <button @click="deleteConfig(config)" class="text-red-600 hover:text-red-900">删除</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- 配置卡片网格 -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="config in configs" :key="config.id" 
+               class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 cursor-pointer" 
+               @click="goToTaskManagement(config)">
+            <!-- 卡片头部 -->
+            <div class="p-6 border-b border-gray-100">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-medium text-gray-900">{{ config.username }}</h3>
+                    <p class="text-sm text-gray-500">{{ formatDate(config.createdAt) }}</p>
+                  </div>
+                </div>
+                <span :class="config.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
+                      class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+                  {{ config.isActive ? '启用' : '禁用' }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- 卡片内容 -->
+            <div class="p-6 space-y-4">
+              <div>
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base URL</label>
+                <p class="mt-1 text-sm text-gray-900 break-all">{{ config.baseUrl }}</p>
+              </div>
+              
+              <div>
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base Path</label>
+                <p class="mt-1 text-sm text-gray-900">{{ config.basePath || '/' }}</p>
+              </div>
+              
+              <div>
+                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</label>
+                <p class="mt-1 text-sm text-gray-900">{{ formatDate(config.createdAt) }}</p>
+              </div>
+            </div>
+            
+            <!-- 卡片操作按钮 -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
+              <button @click.stop="editConfig(config)" 
+                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                编辑
+              </button>
+              
+              <button @click.stop="toggleConfigStatus(config)" 
+                      :class="config.isActive ? 'text-red-700 bg-red-100 hover:bg-red-200 focus:ring-red-500' : 'text-green-700 bg-green-100 hover:bg-green-200 focus:ring-green-500'"
+                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors">
+                <svg v-if="config.isActive" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                </svg>
+                <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                {{ config.isActive ? '禁用' : '启用' }}
+              </button>
+              
+              <button @click.stop="deleteConfig(config)" 
+                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                删除
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -561,6 +601,11 @@ const closeEditModal = () => {
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleString('zh-CN')
+}
+
+// 跳转到任务管理页面
+const goToTaskManagement = (config) => {
+  navigateTo(`/task-management/${config.id}`)
 }
 
 // 组件挂载时获取用户信息和配置列表
