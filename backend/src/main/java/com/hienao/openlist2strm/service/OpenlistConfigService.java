@@ -85,8 +85,8 @@ public class OpenlistConfigService {
         }
         
         // 设置默认值
-        if (config.getPath() == null) {
-            config.setPath("/");
+        if (config.getBasePath() == null) {
+            config.setBasePath("/");
         }
         if (config.getIsActive() == null) {
             config.setIsActive(true);
