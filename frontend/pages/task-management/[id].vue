@@ -1,28 +1,14 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 导航栏 -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <button @click="goBack" class="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <h1 class="text-xl font-semibold text-gray-900">任务管理</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span class="text-sm text-gray-500">{{ configInfo?.username || '加载中...' }}</span>
-            <div class="flex items-center space-x-2">
-              <button @click="logout" class="text-sm text-gray-500 hover:text-gray-700">
-                退出登录
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <AppHeader 
+      title="任务管理"
+      :show-back-button="true"
+      :user-info="configInfo"
+      @logout="logout"
+      @change-password="changePassword"
+      @go-back="goBack"
+    />
 
     <!-- 主要内容区域 -->
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -106,16 +92,16 @@ const loading = ref(true)
 const getConfigInfo = async () => {
   try {
     loading.value = true
-    const token = localStorage.getItem('token')
+    const token = useCookie('token')
     
-    const response = await $fetch(`/api/openlist-configs/${configId}`, {
+    const response = await $fetch(`/api/openlist-config/${configId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token.value}`
       }
     })
     
-    if (response.success) {
+    if (response.code === 200) {
       configInfo.value = response.data
     } else {
       console.error('获取配置信息失败:', response.message)
@@ -135,10 +121,36 @@ const goBack = () => {
   navigateTo('/')
 }
 
+// 修改密码
+const changePassword = () => {
+  navigateTo('/change-password')
+}
+
 // 退出登录
-const logout = () => {
-  localStorage.removeItem('token')
-  navigateTo('/login')
+const logout = async () => {
+  try {
+    const token = useCookie('token')
+    
+    // 调用后端登出接口
+    await $fetch('/api/auth/sign-out', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      }
+    })
+    
+    // 清除本地token
+    token.value = null
+    
+    // 跳转到登录页
+    await navigateTo('/login')
+  } catch (error) {
+    console.error('登出失败:', error)
+    // 即使登出失败也清除本地token
+    const token = useCookie('token')
+    token.value = null
+    await navigateTo('/login')
+  }
 }
 
 // 格式化日期

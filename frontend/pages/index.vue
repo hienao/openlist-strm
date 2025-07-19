@@ -1,30 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 导航栏 -->
-    <nav class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <h1 class="text-xl font-semibold text-gray-900">OpenList2Strm</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span class="text-gray-700">欢迎，{{ userInfo?.username || '用户' }}</span>
-            <button 
-              @click="changePassword" 
-              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              修改密码
-            </button>
-            <button 
-              @click="logout" 
-              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              退出登录
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <AppHeader 
+      title="OpenList2Strm"
+      :user-info="userInfo"
+      @logout="logout"
+      @change-password="changePassword"
+    />
 
     <!-- 主要内容 -->
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
