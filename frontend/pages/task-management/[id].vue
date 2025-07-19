@@ -107,13 +107,14 @@
                     需要刮削
                   </label>
                   <label class="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" :checked="task.needRename" disabled class="mr-1">
-                    需要重命名
-                  </label>
-                  <label class="flex items-center text-sm text-gray-600">
                     <input type="checkbox" :checked="task.isIncrement" disabled class="mr-1">
                     增量更新
                   </label>
+                </div>
+                
+                <div class="mt-3" v-if="task.renameRegex">
+                  <dt class="text-sm font-medium text-gray-500">重命名正则表达式</dt>
+                  <dd class="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded break-all">{{ task.renameRegex }}</dd>
                 </div>
                 
                 <div class="mt-3 text-xs text-gray-500">
@@ -185,15 +186,17 @@
                 <p class="mt-1 text-xs text-gray-500">Cron表达式格式，留空表示不启用定时任务</p>
               </div>
               
+              <div>
+                <label class="block text-sm font-medium text-gray-700">重命名正则表达式</label>
+                <input v-model="taskForm.renameRegex" type="text" placeholder="留空表示不需要重命名" 
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-xs text-gray-500">用于文件重命名的正则表达式，留空表示不需要重命名</p>
+              </div>
+              
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <label class="flex items-center">
                   <input v-model="taskForm.needScrap" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                   <span class="ml-2 text-sm text-gray-700">需要刮削</span>
-                </label>
-                
-                <label class="flex items-center">
-                  <input v-model="taskForm.needRename" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                  <span class="ml-2 text-sm text-gray-700">需要重命名</span>
                 </label>
                 
                 <label class="flex items-center">
@@ -250,7 +253,7 @@ const taskForm = ref({
   strmPath: '/strm/',
   cron: '',
   needScrap: false,
-  needRename: false,
+  renameRegex: '',
   isIncrement: true,
   isActive: true
 })
@@ -310,7 +313,7 @@ const resetTaskForm = () => {
     strmPath: '/strm/',
     cron: '',
     needScrap: false,
-    needRename: false,
+    renameRegex: '',
     isIncrement: true,
     isActive: true
   }
@@ -325,7 +328,7 @@ const editTask = (task) => {
     strmPath: task.strmPath,
     cron: task.cron || '',
     needScrap: task.needScrap,
-    needRename: task.needRename,
+    renameRegex: task.renameRegex || '',
     isIncrement: task.isIncrement,
     isActive: task.isActive
   }

@@ -43,9 +43,9 @@ public class TaskConfig {
     private Boolean needScrap;
 
     /**
-     * 是否需要重命名：true-是，false-否
+     * 重命名正则表达式，为空时表示不需要重命名
      */
-    private Boolean needRename;
+    private String renameRegex;
 
     /**
      * 定时任务表达式

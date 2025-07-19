@@ -48,9 +48,10 @@ public class TaskConfigDto {
     private Boolean needScrap;
 
     /**
-     * 是否需要重命名：true-需要，false-不需要
+     * 重命名正则表达式，为空时表示不需要重命名
      */
-    private Boolean needRename;
+    @Size(max = 500, message = "重命名正则表达式长度不能超过500个字符")
+    private String renameRegex;
 
     /**
      * 定时任务表达式

@@ -317,8 +317,8 @@ public class TaskConfigService {
         if (taskConfig.getNeedScrap() == null) {
             taskConfig.setNeedScrap(false);
         }
-        if (taskConfig.getNeedRename() == null) {
-            taskConfig.setNeedRename(false);
+        if (taskConfig.getRenameRegex() == null) {
+            taskConfig.setRenameRegex("");
         }
         if (taskConfig.getCron() == null) {
             taskConfig.setCron("");
