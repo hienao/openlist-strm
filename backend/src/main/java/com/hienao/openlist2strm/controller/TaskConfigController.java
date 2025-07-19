@@ -4,6 +4,7 @@ import com.hienao.openlist2strm.dto.ApiResponse;
 import com.hienao.openlist2strm.dto.task.TaskConfigDto;
 import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.service.TaskConfigService;
+import com.hienao.openlist2strm.service.TaskExecutionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 public class TaskConfigController {
 
     private final TaskConfigService taskConfigService;
+    private final TaskExecutionService taskExecutionService;
 
     /**
      * 查询所有配置
@@ -176,6 +178,19 @@ public class TaskConfigController {
     }
 
     /**
+     * 提交任务执行
+     */
+    @PostMapping("/{id}/submit")
+    @Operation(summary = "提交任务执行", description = "将指定ID的任务提交到线程池中执行")
+    public ResponseEntity<ApiResponse<String>> submitTask(
+            @Parameter(description = "任务配置ID", required = true) @PathVariable Long id,
+            @RequestBody(required = false) TaskSubmitRequest request) {
+        Boolean isIncremental = request != null ? request.getIsIncremental() : null;
+        taskExecutionService.submitTask(id, isIncremental);
+        return ResponseEntity.ok(ApiResponse.success("任务已提交执行"));
+    }
+
+    /**
      * 更新状态请求体
      */
     public static class UpdateStatusRequest {
@@ -202,6 +217,21 @@ public class TaskConfigController {
 
         public void setLastExecTime(LocalDateTime lastExecTime) {
             this.lastExecTime = lastExecTime;
+        }
+    }
+
+    /**
+     * 任务提交请求体
+     */
+    public static class TaskSubmitRequest {
+        private Boolean isIncremental;
+
+        public Boolean getIsIncremental() {
+            return isIncremental;
+        }
+
+        public void setIsIncremental(Boolean isIncremental) {
+            this.isIncremental = isIncremental;
         }
     }
 
