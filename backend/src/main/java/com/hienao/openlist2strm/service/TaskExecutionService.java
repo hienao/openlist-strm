@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.service;
 
+import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * 任务执行服务类
@@ -22,6 +25,10 @@ import java.util.concurrent.CompletableFuture;
 public class TaskExecutionService {
 
     private final TaskConfigService taskConfigService;
+    private final OpenlistConfigService openlistConfigService;
+    private final OpenlistApiService openlistApiService;
+    private final StrmFileService strmFileService;
+    private final Executor taskSubmitExecutor;
 
     /**
      * 提交任务到线程池执行
@@ -89,33 +96,82 @@ public class TaskExecutionService {
     
     /**
      * 执行具体的任务逻辑
-     * TODO: 根据实际业务需求实现具体的任务执行逻辑
+     * 1. 根据任务配置获取OpenList配置
+     * 2. 通过OpenList API递归获取所有文件
+     * 3. 对视频文件生成STRM文件
+     * 4. 保持目录结构一致
      *
      * @param taskConfig 任务配置
      * @param isIncrement 是否增量执行
      */
     private void executeTaskLogic(TaskConfig taskConfig, boolean isIncrement) {
-        log.info("执行任务逻辑 - 任务名称: {}, 路径: {}, 增量模式: {}, STRM路径: {}", 
-                taskConfig.getTaskName(), taskConfig.getPath(), isIncrement, taskConfig.getStrmPath());
+        log.info("开始执行任务逻辑: {}, 增量模式: {}", taskConfig.getTaskName(), isIncrement);
         
         try {
-            // 模拟任务执行时间
-            Thread.sleep(1000);
+            // 1. 获取OpenList配置
+            OpenlistConfig openlistConfig = getOpenlistConfig(taskConfig);
             
-            // TODO: 在这里实现具体的任务逻辑
-            // 1. 根据taskConfig.getPath()扫描文件
-            // 2. 根据isIncrement决定是全量还是增量处理
-            // 3. 根据taskConfig.getNeedScrap()决定是否需要刮削
-            // 4. 根据taskConfig.getRenameRegex()进行文件重命名
-            // 5. 生成STRM文件到taskConfig.getStrmPath()
+            // 2. 递归获取任务目录下的所有文件
+            List<OpenlistApiService.OpenlistFile> allFiles = openlistApiService.getAllFilesRecursively(
+                openlistConfig, taskConfig.getPath());
             
-            log.info("任务逻辑执行完成 - 任务名称: {}", taskConfig.getTaskName());
+            log.info("获取到 {} 个文件/目录", allFiles.size());
             
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new BusinessException("任务执行被中断", e);
+            // 3. 过滤并处理视频文件
+            int processedCount = 0;
+            for (OpenlistApiService.OpenlistFile file : allFiles) {
+                if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
+                    try {
+                        // 计算相对路径
+                        String relativePath = strmFileService.calculateRelativePath(
+                            taskConfig.getPath(), file.getPath());
+                        
+                        // 生成STRM文件
+                        strmFileService.generateStrmFile(
+                            taskConfig.getStrmPath(),
+                            relativePath,
+                            file.getName(),
+                            file.getUrl(),
+                            taskConfig.getRenameRegex()
+                        );
+                        
+                        processedCount++;
+                        
+                    } catch (Exception e) {
+                        log.error("处理文件失败: {}, 错误: {}", file.getName(), e.getMessage(), e);
+                        // 继续处理其他文件，不中断整个任务
+                    }
+                }
+            }
+            
+            log.info("任务执行完成: {}, 处理了 {} 个视频文件", taskConfig.getTaskName(), processedCount);
+            
         } catch (Exception e) {
-            throw new BusinessException("任务逻辑执行失败: " + e.getMessage(), e);
+            log.error("任务执行失败: {}, 错误: {}", taskConfig.getTaskName(), e.getMessage(), e);
+            throw new BusinessException("任务执行失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 获取OpenList配置
+     *
+     * @param taskConfig 任务配置
+     * @return OpenList配置
+     */
+    private OpenlistConfig getOpenlistConfig(TaskConfig taskConfig) {
+        if (taskConfig.getOpenlistConfigId() == null) {
+            throw new BusinessException("任务配置中未指定OpenList配置ID");
+        }
+        
+        OpenlistConfig openlistConfig = openlistConfigService.getById(taskConfig.getOpenlistConfigId());
+        if (openlistConfig == null) {
+            throw new BusinessException("OpenList配置不存在，ID: " + taskConfig.getOpenlistConfigId());
+        }
+        
+        if (!Boolean.TRUE.equals(openlistConfig.getIsActive())) {
+            throw new BusinessException("OpenList配置已禁用，ID: " + taskConfig.getOpenlistConfigId());
+        }
+        
+        return openlistConfig;
     }
 }
