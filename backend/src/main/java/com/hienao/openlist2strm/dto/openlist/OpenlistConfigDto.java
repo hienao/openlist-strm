@@ -42,7 +42,7 @@ public class OpenlistConfigDto {
      * 初始路径
      */
     @Size(max = 500, message = "初始路径长度不能超过500个字符")
-    private String path;
+    private String basePath;
 
     /**
      * 用户名

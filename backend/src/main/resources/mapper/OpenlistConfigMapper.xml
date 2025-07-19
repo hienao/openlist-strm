@@ -7,7 +7,7 @@
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="base_url" property="baseUrl" jdbcType="VARCHAR"/>
         <result column="token" property="token" jdbcType="VARCHAR"/>
-        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="base_path" property="basePath" jdbcType="VARCHAR"/>
         <result column="username" property="username" jdbcType="VARCHAR"/>
         <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
         <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
@@ -16,7 +16,7 @@
 
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
-        id, base_url, token, path, username, created_at, updated_at, is_active
+        id, base_url, token, base_path, username, created_at, updated_at, is_active
     </sql>
 
     <!-- 根据ID查询 -->
@@ -63,8 +63,8 @@
             <if test="token != null and token != ''">
                 token,
             </if>
-            <if test="path != null">
-                path,
+            <if test="basePath != null">
+                base_path,
             </if>
             <if test="username != null and username != ''">
                 username,
@@ -80,8 +80,8 @@
             <if test="token != null and token != ''">
                 #{token},
             </if>
-            <if test="path != null">
-                #{path},
+            <if test="basePath != null">
+                #{basePath},
             </if>
             <if test="username != null and username != ''">
                 #{username},
@@ -102,8 +102,8 @@
             <if test="token != null and token != ''">
                 token = #{token},
             </if>
-            <if test="path != null">
-                path = #{path},
+            <if test="basePath != null">
+                base_path = #{basePath},
             </if>
             <if test="username != null and username != ''">
                 username = #{username},

@@ -35,7 +35,7 @@ public class OpenlistConfig {
     /**
      * 初始路径
      */
-    private String path;
+    private String basePath;
 
     /**
      * 用户名
