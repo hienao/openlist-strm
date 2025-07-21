@@ -6,11 +6,13 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 import org.springframework.scheduling.quartz.JobDetailFactoryBean;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
 @Configuration
 public class QuartzConfig {
@@ -18,14 +20,23 @@ public class QuartzConfig {
   @Value("${spring.flyway.default-schema}")
   private String defaultSchema;
 
+  @Bean
+  public SpringBeanJobFactory springBeanJobFactory(ApplicationContext applicationContext) {
+    SpringBeanJobFactory jobFactory = new SpringBeanJobFactory();
+    jobFactory.setApplicationContext(applicationContext);
+    return jobFactory;
+  }
+
   @Bean("emailJobSchedulerFactory")
-  public SchedulerFactoryBean emailJobSchedulerFactory(DataSource dataSource) {
+  public SchedulerFactoryBean emailJobSchedulerFactory(
+      DataSource dataSource, SpringBeanJobFactory springBeanJobFactory) {
     SchedulerFactoryBean schedulerFactory = new SchedulerFactoryBean();
     schedulerFactory.setSchedulerName("email-scheduler");
     Properties props = getCommonProps();
     props.setProperty("org.quartz.threadPool.threadCount", "10");
     schedulerFactory.setDataSource(dataSource);
     schedulerFactory.setQuartzProperties(props);
+    schedulerFactory.setJobFactory(springBeanJobFactory);
     return schedulerFactory;
   }
 
@@ -50,7 +61,10 @@ public class QuartzConfig {
 
   @Bean("dataBackupSchedulerFactory")
   public SchedulerFactoryBean dataBackupSchedulerFactory(
-      Trigger dataBackupTrigger, JobDetail dataBackupJobDetail, DataSource dataSource) {
+      Trigger dataBackupTrigger,
+      JobDetail dataBackupJobDetail,
+      DataSource dataSource,
+      SpringBeanJobFactory springBeanJobFactory) {
     SchedulerFactoryBean schedulerFactory = new SchedulerFactoryBean();
     schedulerFactory.setSchedulerName("data-backup-scheduler");
     Properties props = getCommonProps();
@@ -59,6 +73,7 @@ public class QuartzConfig {
     schedulerFactory.setJobDetails(dataBackupJobDetail);
     schedulerFactory.setTriggers(dataBackupTrigger);
     schedulerFactory.setDataSource(dataSource);
+    schedulerFactory.setJobFactory(springBeanJobFactory);
     return schedulerFactory;
   }
 

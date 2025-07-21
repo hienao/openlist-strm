@@ -3,7 +3,6 @@ package com.hienao.openlist2strm.config.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hienao.openlist2strm.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -25,9 +24,10 @@ public class HttpFireWallConfig {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setCharacterEncoding("UTF-8");
-      
-      ApiResponse<Void> result = ApiResponse.error(400, "请求被拒绝: " + requestRejectedException.getMessage());
-      
+
+      ApiResponse<Void> result =
+          ApiResponse.error(400, "请求被拒绝: " + requestRejectedException.getMessage());
+
       ObjectMapper mapper = new ObjectMapper();
       mapper.writeValue(response.getOutputStream(), result);
     };

@@ -52,12 +52,12 @@ public class Jwt {
       Date issuedAt = decodedJWT.getIssuedAt();
       Date expiresAt = decodedJWT.getExpiresAt();
       Date now = new Date();
-      
+
       // 计算token已使用时间（分钟）
       long usedMinutes = (now.getTime() - issuedAt.getTime()) / (1000 * 60);
       // 计算token剩余时间（分钟）
       long remainingMinutes = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
-      
+
       // 如果已使用超过7天（10080分钟）且剩余时间少于7天，则需要刷新
       return usedMinutes > 10080 && remainingMinutes < 10080;
     } catch (Exception e) {

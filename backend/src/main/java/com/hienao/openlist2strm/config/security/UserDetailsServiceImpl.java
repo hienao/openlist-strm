@@ -22,20 +22,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     File userFile = new File(USER_INFO_FILE);
-    
+
     if (!userFile.exists()) {
       throw new UsernameNotFoundException(String.format("用户 %s 不存在", username));
     }
-    
+
     try {
       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
       String storedUsername = userInfo.get("username");
       String storedPassword = userInfo.get("pwd");
-      
+
       if (!username.equals(storedUsername)) {
         throw new UsernameNotFoundException(String.format("用户 %s 不存在", username));
       }
-      
+
       return new User(
           storedUsername,
           storedPassword,
@@ -44,7 +44,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
           true, // credentialsNonExpired
           true, // accountNonLocked
           Collections.emptyList() // authorities - 单用户系统无需权限
-      );
+          );
     } catch (IOException e) {
       log.error("读取用户信息失败", e);
       throw new UsernameNotFoundException(String.format("用户 %s 验证失败", username));

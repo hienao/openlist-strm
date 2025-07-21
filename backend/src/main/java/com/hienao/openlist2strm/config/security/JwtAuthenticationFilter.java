@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (StringUtils.isNotEmpty(token) && jwt.verify(token)) {
       try {
         UserDetails userDetails = userDetailsService.loadUserByUsername(jwt.getSubject(token));
-        
+
         // 检查是否需要刷新token
         if (jwt.shouldRefresh(token)) {
           String newToken = jwt.refreshToken(token);
@@ -40,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.info("Token已自动刷新");
           }
         }
-        
+
         JwtAuthenticationToken authenticated =
             JwtAuthenticationToken.authenticated(userDetails, token, userDetails.getAuthorities());
         authenticated.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -6,7 +6,6 @@ import java.util.regex.Pattern;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 
-
 @Data
 @NoArgsConstructor
 public class PageRequestDto {
