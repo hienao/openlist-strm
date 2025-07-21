@@ -6,6 +6,7 @@
       :user-info="userInfo"
       @logout="logout"
       @change-password="changePassword"
+      @open-settings="openSettings"
     />
 
     <!-- 主要内容 -->
@@ -342,6 +343,12 @@ const logout = async () => {
 const changePassword = () => {
   // 跳转到修改密码页面
   navigateTo('/change-password')
+}
+
+// 打开设置页面
+const openSettings = () => {
+  // 跳转到设置页面
+  navigateTo('/settings')
 }
 
 // 获取配置列表

@@ -16,7 +16,13 @@
           <h1 class="text-xl font-semibold text-gray-900">{{ title }}</h1>
         </div>
         <div class="flex items-center space-x-4">
-          <span class="text-gray-700">欢迎，{{ userInfo?.username || '用户' }}</span>
+          <span class="text-gray-700">欢迎，{{ displayUserInfo?.username || '用户' }}</span>
+          <button 
+            @click="openSettings" 
+            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            设置
+          </button>
           <button 
             @click="changePassword" 
             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -36,7 +42,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 定义 props
@@ -55,14 +61,54 @@ const props = defineProps({
   }
 })
 
+// 内部用户信息状态
+const internalUserInfo = ref({})
+
+// 计算显示的用户信息
+const displayUserInfo = computed(() => {
+  // 如果传入了 userInfo prop，使用它；否则使用内部状态
+  if (props.userInfo && Object.keys(props.userInfo).length > 0) {
+    return props.userInfo
+  }
+  return internalUserInfo.value
+})
+
+// 页面加载时获取用户信息（如果没有传入 userInfo prop）
+onMounted(() => {
+  if (!props.userInfo || Object.keys(props.userInfo).length === 0) {
+    loadUserInfo()
+  }
+})
+
+// 从 cookie 获取用户信息
+const loadUserInfo = () => {
+  try {
+    const userInfoCookie = useCookie('userInfo')
+    if (userInfoCookie.value) {
+      internalUserInfo.value = userInfoCookie.value
+    } else {
+      // 如果没有用户信息，设置默认值
+      internalUserInfo.value = { username: '用户' }
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    internalUserInfo.value = { username: '用户' }
+  }
+}
+
 // 定义 emits
-const emit = defineEmits(['logout', 'changePassword', 'goBack'])
+const emit = defineEmits(['logout', 'changePassword', 'goBack', 'openSettings'])
 
 const router = useRouter()
 
 // 返回上一页
 const goBack = () => {
   emit('goBack')
+}
+
+// 打开设置
+const openSettings = () => {
+  emit('openSettings')
 }
 
 // 修改密码

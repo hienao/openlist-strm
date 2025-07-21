@@ -201,4 +201,54 @@ public class StrmFileService {
         
         return false;
     }
+
+    /**
+     * 清空STRM目录下的所有文件和文件夹
+     * 用于全量执行时清理旧的STRM文件
+     *
+     * @param strmBasePath STRM基础路径
+     */
+    public void clearStrmDirectory(String strmBasePath) {
+        if (!StringUtils.hasText(strmBasePath)) {
+            log.warn("STRM基础路径为空，跳过清理操作");
+            return;
+        }
+        
+        try {
+            Path strmPath = Paths.get(strmBasePath);
+            
+            // 检查目录是否存在
+            if (!Files.exists(strmPath)) {
+                log.info("STRM目录不存在，无需清理: {}", strmPath);
+                return;
+            }
+            
+            // 检查是否为目录
+            if (!Files.isDirectory(strmPath)) {
+                log.warn("STRM路径不是目录，跳过清理: {}", strmPath);
+                return;
+            }
+            
+            log.info("开始清理STRM目录: {}", strmPath);
+            
+            // 递归删除目录下的所有文件和子目录
+            Files.walk(strmPath)
+                .sorted((path1, path2) -> path2.compareTo(path1)) // 先删除子文件/目录，再删除父目录
+                .filter(path -> !path.equals(strmPath)) // 保留根目录本身
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                        log.debug("删除: {}", path);
+                    } catch (IOException e) {
+                        log.warn("删除文件/目录失败: {}, 错误: {}", path, e.getMessage());
+                    }
+                });
+            
+            log.info("STRM目录清理完成: {}", strmPath);
+            
+        } catch (Exception e) {
+            log.error("清理STRM目录失败: {}, 错误: {}", strmBasePath, e.getMessage(), e);
+            throw new BusinessException("清理STRM目录失败: " + strmBasePath + ", 错误: " + e.getMessage());
+        }
+    }
 }

@@ -156,9 +156,10 @@ public class TaskExecutionService {
     /**
      * 执行具体的任务逻辑
      * 1. 根据任务配置获取OpenList配置
-     * 2. 通过OpenList API递归获取所有文件
-     * 3. 对视频文件生成STRM文件
-     * 4. 保持目录结构一致
+     * 2. 如果是全量执行，先清空STRM目录
+     * 3. 通过OpenList API递归获取所有文件
+     * 4. 对视频文件生成STRM文件
+     * 5. 保持目录结构一致
      *
      * @param taskConfig 任务配置
      * @param isIncrement 是否增量执行
@@ -170,13 +171,19 @@ public class TaskExecutionService {
             // 1. 获取OpenList配置
             OpenlistConfig openlistConfig = getOpenlistConfig(taskConfig);
             
-            // 2. 递归获取任务目录下的所有文件
+            // 2. 如果是全量执行，先清空STRM目录
+            if (!isIncrement) {
+                log.info("全量执行模式，开始清理STRM目录: {}", taskConfig.getStrmPath());
+                strmFileService.clearStrmDirectory(taskConfig.getStrmPath());
+            }
+            
+            // 3. 递归获取任务目录下的所有文件
             List<OpenlistApiService.OpenlistFile> allFiles = openlistApiService.getAllFilesRecursively(
                 openlistConfig, taskConfig.getPath());
             
             log.info("获取到 {} 个文件/目录", allFiles.size());
             
-            // 3. 过滤并处理视频文件
+            // 4. 过滤并处理视频文件
             int processedCount = 0;
             for (OpenlistApiService.OpenlistFile file : allFiles) {
                 if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
