@@ -48,6 +48,12 @@ public class StrmFileService {
       // 构建STRM文件路径
       Path strmFilePath = buildStrmFilePath(strmBasePath, relativePath, finalFileName);
 
+      // 检查文件是否已存在（增量任务场景）
+      if (Files.exists(strmFilePath)) {
+        log.info("STRM文件已存在，跳过生成: {}", strmFilePath);
+        return;
+      }
+
       // 确保目录存在
       createDirectoriesIfNotExists(strmFilePath.getParent());
 

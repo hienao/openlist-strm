@@ -184,7 +184,7 @@
               
               <div>
                 <label class="block text-sm font-medium text-gray-700">定时任务表达式</label>
-                <input v-model="taskForm.cron" type="text" placeholder="例如: 0 0 2 * * ?" 
+                <input v-model="taskForm.cron" type="text" placeholder="例如: 0 15 10 ? * *" 
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <p class="mt-1 text-xs text-gray-500">Cron表达式格式，留空表示不启用定时任务</p>
               </div>
