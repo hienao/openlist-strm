@@ -78,6 +78,9 @@ public class OpenlistApiService {
         
         @JsonProperty("modified")
         private String modified;
+        
+        @JsonProperty("sign")
+        private String sign;
     }
 
     /**
@@ -277,6 +280,7 @@ public class OpenlistApiService {
                 file.setSize(alistFile.getSize());
                 file.setType(alistFile.getIsDir() ? "folder" : "file");
                 file.setModified(alistFile.getModified());
+                file.setSign(alistFile.getSign());
                 
                 // 构建文件路径
                 String filePath = path;

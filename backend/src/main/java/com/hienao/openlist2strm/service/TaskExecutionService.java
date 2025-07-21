@@ -192,12 +192,15 @@ public class TaskExecutionService {
                         String relativePath = strmFileService.calculateRelativePath(
                             taskConfig.getPath(), file.getPath());
                         
+                        // 构建包含sign参数的文件URL
+                        String fileUrlWithSign = buildFileUrlWithSign(file.getUrl(), file.getSign());
+                        
                         // 生成STRM文件
                         strmFileService.generateStrmFile(
                             taskConfig.getStrmPath(),
                             relativePath,
                             file.getName(),
-                            file.getUrl(),
+                            fileUrlWithSign,
                             taskConfig.getRenameRegex()
                         );
                         
@@ -239,5 +242,29 @@ public class TaskExecutionService {
         }
         
         return openlistConfig;
+    }
+    
+    /**
+     * 构建包含sign参数的文件URL
+     *
+     * @param originalUrl 原始文件URL
+     * @param sign 签名参数
+     * @return 包含sign参数的完整URL
+     */
+    private String buildFileUrlWithSign(String originalUrl, String sign) {
+        if (originalUrl == null) {
+            return null;
+        }
+        
+        // 如果sign为空，直接返回原始URL
+        if (sign == null || sign.trim().isEmpty()) {
+            return originalUrl;
+        }
+        
+        // 检查URL是否已经包含查询参数
+        String separator = originalUrl.contains("?") ? "&" : "?";
+        
+        // 拼接sign参数
+        return originalUrl + separator + "sign=" + sign;
     }
 }
