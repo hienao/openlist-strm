@@ -81,6 +81,81 @@ public class OpenlistApiService {
     }
 
     /**
+     * Alist API响应数据结构
+     */
+    @Data
+    public static class AlistApiResponse {
+        @JsonProperty("code")
+        private Integer code;
+        
+        @JsonProperty("message")
+        private String message;
+        
+        @JsonProperty("data")
+        private AlistData data;
+    }
+
+    /**
+     * Alist数据结构
+     */
+    @Data
+    public static class AlistData {
+        @JsonProperty("content")
+        private List<AlistFile> content;
+        
+        @JsonProperty("total")
+        private Integer total;
+        
+        @JsonProperty("readme")
+        private String readme;
+        
+        @JsonProperty("header")
+        private String header;
+        
+        @JsonProperty("write")
+        private Boolean write;
+        
+        @JsonProperty("provider")
+        private String provider;
+    }
+
+    /**
+     * Alist文件信息
+     */
+    @Data
+    public static class AlistFile {
+        @JsonProperty("name")
+        private String name;
+        
+        @JsonProperty("size")
+        private Long size;
+        
+        @JsonProperty("is_dir")
+        private Boolean isDir;
+        
+        @JsonProperty("modified")
+        private String modified;
+        
+        @JsonProperty("created")
+        private String created;
+        
+        @JsonProperty("sign")
+        private String sign;
+        
+        @JsonProperty("thumb")
+        private String thumb;
+        
+        @JsonProperty("type")
+        private Integer type;
+        
+        @JsonProperty("hashinfo")
+        private String hashinfo;
+        
+        @JsonProperty("hash_info")
+        private Object hashInfo;
+    }
+
+    /**
      * 递归获取目录下的所有文件和目录
      *
      * @param config OpenList配置
@@ -136,11 +211,14 @@ public class OpenlistApiService {
      */
     public List<OpenlistFile> getDirectoryContents(OpenlistConfig config, String path) {
         try {
-            // 构建请求URL
-            String apiUrl = "https://openlist.apifox.cn/api-128101246";
+            // 构建请求URL - 使用OpenList配置中的baseUrl作为API服务器地址
+            String apiUrl = config.getBaseUrl();
+            if (!apiUrl.endsWith("/")) {
+                apiUrl += "/";
+            }
+            apiUrl += "api/fs/list";
+            
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(apiUrl)
-                    .queryParam("url", config.getBaseUrl())
-                    .queryParam("token", config.getToken())
                     .queryParam("path", path);
             
             String requestUrl = builder.toUriString();
@@ -150,13 +228,20 @@ public class OpenlistApiService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("User-Agent", "OpenList-STRM/1.0");
+            headers.set("Authorization", config.getToken());
             
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            // 构建请求体
+            String requestBody = String.format(
+                "{\"path\":\"%s\",\"password\":\"\",\"page\":1,\"per_page\":0,\"refresh\":false}",
+                path
+            );
             
-            // 发送请求
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            
+            // 发送请求 - 使用POST方法
             ResponseEntity<String> response = restTemplate.exchange(
                     requestUrl,
-                    HttpMethod.GET,
+                    HttpMethod.POST,
                     entity,
                     String.class
             );
@@ -173,18 +258,45 @@ public class OpenlistApiService {
             log.debug("API响应: {}", responseBody);
             
             // 解析响应
-            OpenlistApiResponse apiResponse = objectMapper.readValue(responseBody, OpenlistApiResponse.class);
+            AlistApiResponse apiResponse = objectMapper.readValue(responseBody, AlistApiResponse.class);
             
             if (apiResponse.getCode() == null || !apiResponse.getCode().equals(200)) {
                 throw new BusinessException("OpenList API返回错误: " + apiResponse.getMessage());
             }
             
-            if (apiResponse.getData() == null || apiResponse.getData().getFiles() == null) {
+            if (apiResponse.getData() == null || apiResponse.getData().getContent() == null) {
                 log.warn("目录为空或无文件: {}", path);
                 return new ArrayList<>();
             }
             
-            List<OpenlistFile> files = apiResponse.getData().getFiles();
+            // 转换Alist格式到OpenlistFile格式
+            List<OpenlistFile> files = new ArrayList<>();
+            for (AlistFile alistFile : apiResponse.getData().getContent()) {
+                OpenlistFile file = new OpenlistFile();
+                file.setName(alistFile.getName());
+                file.setSize(alistFile.getSize());
+                file.setType(alistFile.getIsDir() ? "folder" : "file");
+                file.setModified(alistFile.getModified());
+                
+                // 构建文件路径
+                String filePath = path;
+                if (!filePath.endsWith("/")) {
+                    filePath += "/";
+                }
+                filePath += alistFile.getName();
+                file.setPath(filePath);
+                
+                // 构建文件URL
+                String fileUrl = config.getBaseUrl();
+                if (!fileUrl.endsWith("/")) {
+                    fileUrl += "/";
+                }
+                fileUrl += "d" + filePath;
+                file.setUrl(fileUrl);
+                
+                files.add(file);
+            }
+            
             log.info("获取到 {} 个文件/目录: {}", files.size(), path);
             
             return files;

@@ -76,6 +76,9 @@
                     <button class="text-blue-600 hover:text-blue-800 text-sm" @click="editTask(task)">
                       编辑
                     </button>
+                    <button class="text-green-600 hover:text-green-800 text-sm" @click="generateStrm(task.id)" :disabled="generatingStrm[task.id]">
+                      {{ generatingStrm[task.id] ? '生成中...' : '全量生成strm' }}
+                    </button>
                     <button class="text-red-600 hover:text-red-800 text-sm" @click="deleteTask(task.id)">
                       删除
                     </button>
@@ -247,6 +250,7 @@ const showCreateTaskModal = ref(false)
 const showEditTaskModal = ref(false)
 const submitting = ref(false)
 const editingTaskId = ref(null)
+const generatingStrm = ref({})
 const taskForm = ref({
   taskName: '',
   path: '',
@@ -521,6 +525,36 @@ const logout = async () => {
     
     // 跳转到登录页
     await navigateTo('/login')
+  }
+}
+
+// 全量生成STRM文件
+const generateStrm = async (taskId) => {
+  try {
+    generatingStrm.value[taskId] = true
+    
+    const token = useCookie('token')
+    const response = await $fetch(`/api/task-config/${taskId}/submit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        isIncremental: false // 全量生成，不是增量
+      }
+    })
+    
+    if (response.code === 200) {
+      alert('任务已提交，正在后台执行全量生成STRM文件...')
+    } else {
+      throw new Error(response.message || '提交任务失败')
+    }
+  } catch (error) {
+    console.error('提交任务失败:', error)
+    alert(error.message || '提交任务失败，请稍后重试')
+  } finally {
+    generatingStrm.value[taskId] = false
   }
 }
 
