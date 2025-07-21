@@ -2,7 +2,7 @@ server:
   port: 8080
 logging:
   file:
-    path: /var/log
+    path: ./data/log
   level:
     org:
       springframework:
@@ -15,7 +15,7 @@ cors:
   allowedExposeHeaders: ${ALLOWED_EXPOSE_HEADERS:*}
 spring:
   datasource:
-    url: jdbc:sqlite:${DATABASE_PATH:./data/openlist2strm.db}
+    url: jdbc:sqlite:${DATABASE_PATH:./data/config/db/openlist2strm.db}
     driver-class-name: org.sqlite.JDBC
   # MyBatis configuration
   flyway:

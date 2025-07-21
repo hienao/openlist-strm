@@ -15,7 +15,7 @@ command -v java >/dev/null 2>&1 || { echo "❌ 错误: 需要安装 Java 21"; ex
 mkdir -p logs
 
 # 设置环境变量
-export DATABASE_PATH="./data/openlist2strm.db"
+export DATABASE_PATH="./data/config/db/openlist2strm.db"
 export ALLOWED_ORIGINS="http://localhost:3000,http://localhost:8080"
 export ALLOWED_METHODS="*"
 export ALLOWED_HEADERS="*"

@@ -17,18 +17,31 @@ public class DataDirectoryConfig {
 
   @PostConstruct
   public void initializeDataDirectory() {
-    String dataPath = "./data";
-    File dataDir = new File(dataPath);
-    if (!dataDir.exists()) {
-      boolean created = dataDir.mkdirs();
+    // 创建主数据目录
+    createDirectoryIfNotExists("./data");
+    
+    // 创建日志目录
+    createDirectoryIfNotExists("./data/log");
+    
+    // 创建配置目录
+    createDirectoryIfNotExists("./data/config");
+    
+    // 创建数据库目录
+    createDirectoryIfNotExists("./data/config/db");
+  }
+  
+  private void createDirectoryIfNotExists(String path) {
+    File dir = new File(path);
+    if (!dir.exists()) {
+      boolean created = dir.mkdirs();
       if (created) {
-        log.info("✅ 数据目录创建成功: {}", dataDir.getAbsolutePath());
+        log.info("✅ 目录创建成功: {}", dir.getAbsolutePath());
       } else {
-        log.error("❌ 数据目录创建失败: {}", dataDir.getAbsolutePath());
-        throw new RuntimeException("无法创建数据目录: " + dataDir.getAbsolutePath());
+        log.error("❌ 目录创建失败: {}", dir.getAbsolutePath());
+        throw new RuntimeException("无法创建目录: " + dir.getAbsolutePath());
       }
     } else {
-      log.info("📁 数据目录已存在: {}", dataDir.getAbsolutePath());
+      log.info("📁 目录已存在: {}", dir.getAbsolutePath());
     }
   }
 }
