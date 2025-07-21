@@ -111,7 +111,7 @@ npm run dev
 |--------|------|--------|
 | WEB_EXPOSE_PORT | 前端应用端口 | 80 |
 | API_EXPOSE_PORT | 后端API端口 | 8080 |
-| DATABASE_PATH | SQLite数据库文件路径 | /app/data/openlist2strm.db |
+| DATABASE_PATH | SQLite数据库文件路径 | /app/data/config/db/openlist2strm.db |
 | DATABASE_STORE | 数据库存储目录 | ~/docker/store/openlist2strm/db |
 
 ## API 路由

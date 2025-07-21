@@ -14,17 +14,19 @@ public class OpenApiConfig {
   @Bean
   public OpenAPI customOpenAPI() {
     return new OpenAPI()
-        .info(new Info()
-            .title("OpenList2Strm API")
-            .version("1.0")
-            .description("OpenList2Strm 单用户系统 API 文档"))
+        .info(
+            new Info()
+                .title("OpenList2Strm API")
+                .version("1.0")
+                .description("OpenList2Strm 单用户系统 API 文档"))
         .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
-        .components(new Components()
-            .addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()));
+        .components(
+            new Components().addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()));
   }
 
   private SecurityScheme createAPIKeyScheme() {
-    return new SecurityScheme().type(SecurityScheme.Type.HTTP)
+    return new SecurityScheme()
+        .type(SecurityScheme.Type.HTTP)
         .bearerFormat("JWT")
         .scheme("bearer")
         .description("请在此处输入JWT token，格式：Bearer {token}");

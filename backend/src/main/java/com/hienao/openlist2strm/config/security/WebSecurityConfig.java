@@ -11,8 +11,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.*;
@@ -39,9 +37,9 @@ public class WebSecurityConfig {
   @Bean
   public RequestMatcher publicEndPointMatcher() {
     return new OrRequestMatcher(
-        new AntPathRequestMatcher("/auth/sign-in", HttpMethod.POST.name()),
-        new AntPathRequestMatcher("/auth/sign-up", HttpMethod.POST.name()),
-        new AntPathRequestMatcher("/auth/check-user", HttpMethod.GET.name()),
+        new AntPathRequestMatcher("/api/auth/sign-in", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/api/auth/sign-up", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/api/auth/check-user", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/v3/api-docs/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui.html", HttpMethod.GET.name()),

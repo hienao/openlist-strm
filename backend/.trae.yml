@@ -120,7 +120,8 @@ patterns:
     description: "REST API controllers"
     rules:
       - "Use @RestController annotation"
-      - "Use @RequestMapping for base path"
+      - "Use @RequestMapping for base path with '/api' prefix (e.g., @RequestMapping('/api/users'))"
+      - "All API endpoints MUST start with '/api' prefix"
       - "Use proper HTTP method annotations (@GetMapping, @PostMapping, etc.)"
       - "Include proper validation annotations"
       - "Return ResponseEntity for consistent responses"
@@ -196,6 +197,9 @@ guidelines:
   - "Follow RESTful API design principles"
   - "Use proper database transaction management"
   - "Implement proper validation"
+  - "All API endpoints MUST start with '/api' prefix for consistency"
+  - "Use @RequestMapping('/api/resource-name') at controller class level"
+  - "CRITICAL: Never modify project configuration files (build.gradle.kts, application.yml, application.properties, etc.) without explicit user confirmation"
 
 # Dependencies
 dependencies:

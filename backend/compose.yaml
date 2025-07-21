@@ -24,7 +24,7 @@ services:
       - host.docker.internal:host-gateway
     volumes:
       - ${LOG_PATH}:/var/log
-      - ${DATABASE_PATH}:/app/data/openlist2strm.db
+      - ${DATABASE_PATH}:/app/data/config/db/openlist2strm.db
     restart: always
   rabbitmq:
     image: rabbitmq:4.1.2-management-alpine
