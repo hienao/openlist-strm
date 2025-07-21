@@ -42,23 +42,42 @@ public class SystemConfigService {
             createConfigDirectoryIfNotExists();
             
             File configFile = new File(CONFIG_PATH);
+            Map<String, Object> result;
+            boolean needSave = false;
+            
             if (!configFile.exists()) {
-                // 如果配置文件不存在，返回默认配置
-                return getDefaultConfig();
+                // 如果配置文件不存在，创建默认配置
+                log.info("系统配置文件不存在，创建默认配置: {}", CONFIG_PATH);
+                result = getDefaultConfig();
+                needSave = true;
+            } else {
+                // 读取配置文件
+                String content = Files.readString(Paths.get(CONFIG_PATH));
+                if (content.trim().isEmpty()) {
+                    result = getDefaultConfig();
+                    needSave = true;
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> config = objectMapper.readValue(content, Map.class);
+                    
+                    // 获取默认配置
+                    result = getDefaultConfig();
+                    
+                    // 合并现有配置
+                    result.putAll(config);
+                    
+                    // 检查是否缺少mediaExtensions字段
+                    if (!config.containsKey("mediaExtensions")) {
+                        log.info("系统配置中缺少mediaExtensions字段，添加默认配置");
+                        needSave = true;
+                    }
+                }
             }
             
-            // 读取配置文件
-            String content = Files.readString(Paths.get(CONFIG_PATH));
-            if (content.trim().isEmpty()) {
-                return getDefaultConfig();
+            // 如果需要保存配置文件
+            if (needSave) {
+                saveSystemConfigInternal(result);
             }
-            
-            @SuppressWarnings("unchecked")
-            Map<String, Object> config = objectMapper.readValue(content, Map.class);
-            
-            // 确保包含默认配置项
-            Map<String, Object> result = getDefaultConfig();
-            result.putAll(config);
             
             return result;
         } catch (Exception e) {
@@ -72,23 +91,38 @@ public class SystemConfigService {
      *
      * @param config 配置Map
      */
-    public void saveSystemConfig(Map<String, Object> config) throws IOException {
-        // 确保配置目录存在
-        createConfigDirectoryIfNotExists();
-        
-        // 读取现有配置
-        Map<String, Object> existingConfig = getSystemConfig();
-        
-        // 合并配置
-        existingConfig.putAll(config);
-        
-        // 写入配置文件
+    public void saveSystemConfig(Map<String, Object> config) {
+        try {
+            // 确保配置目录存在
+            createConfigDirectoryIfNotExists();
+            
+            // 读取现有配置
+            Map<String, Object> existingConfig = getSystemConfig();
+            
+            // 更新配置
+            existingConfig.putAll(config);
+            
+            // 写入配置文件
+            saveSystemConfigInternal(existingConfig);
+            
+            log.info("系统配置已保存到: {}", CONFIG_PATH);
+        } catch (Exception e) {
+            log.error("保存系统配置失败", e);
+            throw new RuntimeException("保存系统配置失败", e);
+        }
+    }
+
+    /**
+     * 内部保存系统配置方法
+     *
+     * @param config 配置Map
+     * @throws Exception 保存异常
+     */
+    private void saveSystemConfigInternal(Map<String, Object> config) throws Exception {
         String jsonContent = objectMapper.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(existingConfig);
+                .writeValueAsString(config);
         
         Files.writeString(Paths.get(CONFIG_PATH), jsonContent);
-        
-        log.info("系统配置已保存到: {}", CONFIG_PATH);
     }
 
     /**
@@ -99,8 +133,12 @@ public class SystemConfigService {
     private Map<String, Object> getDefaultConfig() {
         Map<String, Object> defaultConfig = new HashMap<>();
         
-        // 默认媒体文件后缀
-        defaultConfig.put("mediaExtensions", List.of(".mp4", ".avi", ".rmvb", ".mkv"));
+        // 默认媒体文件后缀（包含所有支持的格式）
+        defaultConfig.put("mediaExtensions", List.of(
+            ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v",
+            ".3gp", ".3g2", ".asf", ".divx", ".f4v", ".m2ts", ".m2v", ".mts",
+            ".ogv", ".rm", ".rmvb", ".ts", ".vob", ".xvid"
+        ));
         
         return defaultConfig;
     }

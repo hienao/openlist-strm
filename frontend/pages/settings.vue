@@ -81,7 +81,7 @@ import AppHeader from '~/components/AppHeader.vue'
 const router = useRouter()
 
 // 响应式数据
-const availableExtensions = ref(['.mp4', '.avi', '.rmvb', '.mkv'])
+const availableExtensions = ref([])
 const selectedExtensions = ref([])
 const saving = ref(false)
 const showSuccess = ref(false)
@@ -94,6 +94,9 @@ onMounted(async () => {
 
 // 加载当前设置
 const loadCurrentSettings = async () => {
+  // 设置所有可选的后缀列表（包含所有支持的格式）
+  availableExtensions.value = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.3g2', '.asf', '.divx', '.f4v', '.m2ts', '.m2v', '.mts', '.ogv', '.rm', '.rmvb', '.ts', '.vob', '.xvid']
+  
   try {
     const tokenCookie = useCookie('token')
     const token = tokenCookie.value
@@ -106,11 +109,20 @@ const loadCurrentSettings = async () => {
     if (response.ok) {
       const config = await response.json()
       if (config.mediaExtensions && Array.isArray(config.mediaExtensions)) {
-        selectedExtensions.value = config.mediaExtensions
+        // 设置当前已选择的后缀（从后端获取的当前配置）
+        selectedExtensions.value = [...config.mediaExtensions]
+      } else {
+        // 如果没有配置，使用默认选择
+        selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
       }
+    } else {
+      // 如果获取失败，使用默认选择
+      selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
     }
   } catch (error) {
     console.error('加载设置失败:', error)
+    // 出错时使用默认选择
+    selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
   }
 }
 

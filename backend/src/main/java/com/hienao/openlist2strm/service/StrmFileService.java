@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.service;
 
 import com.hienao.openlist2strm.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -10,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -20,7 +23,10 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class StrmFileService {
+
+    private final SystemConfigService systemConfigService;
 
     /**
      * 生成STRM文件
@@ -177,6 +183,7 @@ public class StrmFileService {
 
     /**
      * 检查文件是否为视频文件
+     * 根据系统配置中的媒体文件后缀进行判断
      *
      * @param fileName 文件名
      * @return 是否为视频文件
@@ -186,14 +193,46 @@ public class StrmFileService {
             return false;
         }
         
+        try {
+            // 从系统配置获取媒体文件后缀
+            Map<String, Object> systemConfig = systemConfigService.getSystemConfig();
+            @SuppressWarnings("unchecked")
+            List<String> mediaExtensions = (List<String>) systemConfig.get("mediaExtensions");
+            
+            if (mediaExtensions == null || mediaExtensions.isEmpty()) {
+                log.warn("系统配置中未找到媒体文件后缀配置，使用默认配置");
+                return isVideoFileWithDefaultExtensions(fileName);
+            }
+            
+            String lowerCaseFileName = fileName.toLowerCase();
+            
+            for (String extension : mediaExtensions) {
+                if (extension != null && lowerCaseFileName.endsWith(extension.toLowerCase())) {
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            log.error("检查文件后缀时发生错误，使用默认配置: {}", e.getMessage());
+            return isVideoFileWithDefaultExtensions(fileName);
+        }
+    }
+    
+    /**
+     * 使用默认扩展名检查文件是否为视频文件（备用方法）
+     *
+     * @param fileName 文件名
+     * @return 是否为视频文件
+     */
+    private boolean isVideoFileWithDefaultExtensions(String fileName) {
         String lowerCaseFileName = fileName.toLowerCase();
-        String[] videoExtensions = {
-            ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v",
-            ".3gp", ".3g2", ".asf", ".divx", ".f4v", ".m2ts", ".m2v", ".mts",
-            ".ogv", ".rm", ".rmvb", ".ts", ".vob", ".xvid"
+        String[] defaultVideoExtensions = {
+            ".mp4", ".avi", ".mkv", ".rmvb"
         };
         
-        for (String extension : videoExtensions) {
+        for (String extension : defaultVideoExtensions) {
             if (lowerCaseFileName.endsWith(extension)) {
                 return true;
             }
