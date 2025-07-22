@@ -66,6 +66,8 @@ jobs:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
           type=ref,event=tag
+        flavor: |
+          latest=false
           
     - name: Build and push Docker image (release)
       id: build-and-push-release
