@@ -58,7 +58,9 @@ jobs:
       env:
         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       run: |
-        echo "IMAGE_FULL_NAME=docker.io/$DOCKERHUB_USERNAME/openlist-strm" >> $GITHUB_OUTPUT
+        IMAGE_NAME="docker.io/$DOCKERHUB_USERNAME/openlist-strm"
+        echo "Setting image name to: $IMAGE_NAME"
+        echo "IMAGE_FULL_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
         
     - name: Extract metadata
       id: meta
