@@ -182,4 +182,19 @@ npm run dev
 
 ## 许可证
 
-MIT License - 详见 [LICENSE.txt](backend/LICENSE.txt)
+本项目采用 GNU General Public License v3.0 (GPL-3.0) 许可证。
+
+详见 [LICENSE](LICENSE) 文件。
+
+### 许可证摘要
+
+- ✅ 商业使用
+- ✅ 修改
+- ✅ 分发
+- ✅ 专利使用
+- ✅ 私人使用
+- ❌ 责任
+- ❌ 保证
+- ⚠️ 相同许可证（衍生作品必须使用相同许可证）
+- ⚠️ 包含许可证和版权声明
+- ⚠️ 说明更改内容
