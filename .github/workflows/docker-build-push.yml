@@ -28,18 +28,18 @@ jobs:
       
     - name: Check Docker Hub credentials
       env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
         DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       run: |
         if [ -z "$DOCKERHUB_USERNAME" ]; then
-          echo "❌ Error: DOCKERHUB_USERNAME secret is not configured"
-          echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets in repository settings"
+          echo "❌ Error: DOCKERHUB_USERNAME variable is not configured"
+          echo "Please add DOCKERHUB_USERNAME variable and DOCKERHUB_TOKEN secret in repository settings"
           echo "See .github/DOCKER_SETUP.md for detailed instructions"
           exit 1
         fi
         if [ -z "$DOCKERHUB_TOKEN" ]; then
           echo "❌ Error: DOCKERHUB_TOKEN secret is not configured"
-          echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets in repository settings"
+          echo "Please add DOCKERHUB_USERNAME variable and DOCKERHUB_TOKEN secret in repository settings"
           echo "See .github/DOCKER_SETUP.md for detailed instructions"
           exit 1
         fi
@@ -50,23 +50,14 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
-    - name: Set image name
-      id: image
-      env:
-        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      run: |
-        IMAGE_NAME="docker.io/$DOCKERHUB_USERNAME/openlist-strm"
-        echo "Setting image name to: $IMAGE_NAME"
-        echo "IMAGE_FULL_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
         
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ steps.image.outputs.IMAGE_FULL_NAME }}
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
           type=ref,event=branch
           type=ref,event=pr

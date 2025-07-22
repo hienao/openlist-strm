@@ -16,15 +16,22 @@
 6. 选择权限：`Read, Write, Delete`
 7. 点击 "Generate" 并**立即复制令牌**（只显示一次）
 
-### 2. 在 GitHub 仓库中配置 Secrets
+### 2. 在 GitHub 仓库中配置 Variables 和 Secrets
 
 1. 进入 GitHub 仓库页面
 2. 点击 Settings 标签页
 3. 在左侧菜单中选择 "Secrets and variables" → "Actions"
-4. 点击 "New repository secret" 添加以下两个密钥：
+
+#### 配置 Variables：
+4. 点击 "Variables" 标签
+5. 点击 "New repository variable" 添加以下变量：
 
    - **Name**: `DOCKERHUB_USERNAME`
      **Value**: 你的 Docker Hub 用户名
+
+#### 配置 Secrets：
+6. 点击 "Secrets" 标签
+7. 点击 "New repository secret" 添加以下密钥：
    
    - **Name**: `DOCKERHUB_TOKEN`
      **Value**: 刚才创建的访问令牌
@@ -64,8 +71,8 @@ docker run -d -p 80:80 -p 8080:8080 <your-dockerhub-username>/openlist-strm:late
 2. **推送失败**：验证 Docker Hub 凭据是否正确配置
 3. **权限错误**：确保访问令牌具有足够的权限
 4. **标签格式错误** (`invalid tag "docker.io/***/openlist-strm:main"`)：
-   - 原因：`DOCKERHUB_USERNAME` secret 未配置
-   - 解决：按照上述步骤 2 配置 GitHub Secrets
+   - 原因：`DOCKERHUB_USERNAME` variable 未配置
+   - 解决：按照上述步骤 2 配置 GitHub Variables 和 Secrets
 
 ## 工作流文件位置
 
