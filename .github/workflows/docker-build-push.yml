@@ -52,7 +52,7 @@ jobs:
         
     - name: Extract metadata for release tags (v*.*.*)
       id: meta-release
-      if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'beta')
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-')
       uses: docker/metadata-action@v5
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
