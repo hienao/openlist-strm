@@ -53,13 +53,18 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         
-    - name: Extract metadata
-      id: meta
+    - name: Set image name
+      id: image
       env:
         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      run: |
+        echo "IMAGE_FULL_NAME=${{ env.REGISTRY }}/$DOCKERHUB_USERNAME/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+        
+    - name: Extract metadata
+      id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+        images: ${{ steps.image.outputs.IMAGE_FULL_NAME }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
