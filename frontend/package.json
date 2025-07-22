@@ -12,9 +12,7 @@
   "dependencies": {
     "nuxt": "^3.17.7",
     "vue": "^3.5.17",
-    "vue-router": "^4.5.1"
-  },
-  "devDependencies": {
+    "vue-router": "^4.5.1",
     "@nuxtjs/tailwindcss": "^6.12.1",
     "@tailwindcss/forms": "^0.5.9",
     "tailwindcss": "^3.4.15"
