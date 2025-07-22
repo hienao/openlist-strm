@@ -40,6 +40,8 @@ openlisttostrm/
 
 ## 快速开始
 
+> 📋 **Docker 部署指南**: 查看详细的 [Docker 部署文档](DOCKER_DEPLOYMENT.md) 了解完整的部署选项和配置说明。
+
 ### 使用 Docker Compose（推荐）
 
 1. 克隆项目
@@ -121,6 +123,8 @@ npm run dev
 - Swagger文档: `/api/swagger-ui.html`
 
 ## 部署说明
+
+> 🐳 **完整 Docker 部署指南**: 查看 [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) 获取详细的 Docker 部署方式，包括 `docker run` 和 `docker-compose` 两种方案。
 
 ### 多阶段构建
 
