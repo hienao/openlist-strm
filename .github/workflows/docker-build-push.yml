@@ -2,13 +2,11 @@ name: Build and Push Docker Image
 
 on:
   push:
+    tags:
+      - 'v*.*.*'
+      - 'beta-*.*.*'
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
 
 env:
   REGISTRY: docker.io
@@ -17,7 +15,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    if: github.ref_type == 'tag' && github.ref_name != '' && github.event.base_ref == 'refs/heads/main'
     
     steps:
     - name: Checkout code
@@ -46,36 +44,43 @@ jobs:
         echo "✅ Docker Hub credentials are configured"
       
     - name: Log in to Docker Hub
-      if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         
-    - name: Extract metadata
-      id: meta
+    - name: Extract metadata for release tags (v*.*.*)
+      id: meta-release
+      if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'beta')
       uses: docker/metadata-action@v5
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+          type=ref,event=tag
+          type=raw,value=latest
+          
+    - name: Extract metadata for beta tags (beta-*.*.*)
+      id: meta-beta
+      if: startsWith(github.ref_name, 'beta-')
+      uses: docker/metadata-action@v5
+      with:
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
+        tags: |
+          type=ref,event=tag
           
     - name: Build and push Docker image
+      id: build-and-push
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
-        push: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        tags: ${{ steps.meta-release.outputs.tags || steps.meta-beta.outputs.tags }}
+        labels: ${{ steps.meta-release.outputs.labels || steps.meta-beta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
     - name: Image digest
-      if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
       run: echo ${{ steps.build-and-push.outputs.digest }}
