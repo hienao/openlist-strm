@@ -63,6 +63,9 @@ docker run -d -p 80:80 -p 8080:8080 <your-dockerhub-username>/openlist-strm:late
 1. **构建失败**：检查 Dockerfile 语法和依赖项
 2. **推送失败**：验证 Docker Hub 凭据是否正确配置
 3. **权限错误**：确保访问令牌具有足够的权限
+4. **标签格式错误** (`invalid tag "docker.io/***/openlist-strm:main"`)：
+   - 原因：`DOCKERHUB_USERNAME` secret 未配置
+   - 解决：按照上述步骤 2 配置 GitHub Secrets
 
 ## 工作流文件位置
 
