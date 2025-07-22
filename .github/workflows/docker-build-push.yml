@@ -67,18 +67,39 @@ jobs:
         tags: |
           type=ref,event=tag
           
-    - name: Build and push Docker image
-      id: build-and-push
+    - name: Build and push Docker image (release)
+      id: build-and-push-release
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-')
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta-release.outputs.tags || steps.meta-beta.outputs.tags }}
-        labels: ${{ steps.meta-release.outputs.labels || steps.meta-beta.outputs.labels }}
+        tags: ${{ steps.meta-release.outputs.tags }}
+        labels: ${{ steps.meta-release.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Build and push Docker image (beta)
+      id: build-and-push-beta
+      if: startsWith(github.ref_name, 'beta-')
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta-beta.outputs.tags }}
+        labels: ${{ steps.meta-beta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
     - name: Image digest
-      run: echo ${{ steps.build-and-push.outputs.digest }}
+      run: |
+        if [ "${{ steps.build-and-push-release.outputs.digest }}" != "" ]; then
+          echo "Release digest: ${{ steps.build-and-push-release.outputs.digest }}"
+        fi
+        if [ "${{ steps.build-and-push-beta.outputs.digest }}" != "" ]; then
+          echo "Beta digest: ${{ steps.build-and-push-beta.outputs.digest }}"
+        fi
