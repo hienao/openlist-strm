@@ -27,9 +27,18 @@ jobs:
       uses: docker/setup-buildx-action@v3
       
     - name: Check Docker Hub credentials
+      env:
+        DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       run: |
-        if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+        if [ -z "$DOCKERHUB_USERNAME" ]; then
           echo "❌ Error: DOCKERHUB_USERNAME secret is not configured"
+          echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets in repository settings"
+          echo "See .github/DOCKER_SETUP.md for detailed instructions"
+          exit 1
+        fi
+        if [ -z "$DOCKERHUB_TOKEN" ]; then
+          echo "❌ Error: DOCKERHUB_TOKEN secret is not configured"
           echo "Please add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets in repository settings"
           echo "See .github/DOCKER_SETUP.md for detailed instructions"
           exit 1
