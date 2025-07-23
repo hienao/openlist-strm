@@ -21,8 +21,14 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
   
-  // API代理配置（开发环境）
+  // SSG模式配置
+  ssr: false,
+  
+  // Nitro配置（API代理和静态生成）
   nitro: {
+    prerender: {
+      routes: ['/login', '/register', '/settings', '/change-password', '/task-management']
+    },
     devProxy: {
       '/api': {
         target: 'http://localhost:8080/api',

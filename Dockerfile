@@ -6,7 +6,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
-RUN npm run build
+RUN npm run generate
 
 # Stage 2: Build Backend (Spring Boot)
 FROM gradle:8.14.3-jdk21 AS backend-builder
