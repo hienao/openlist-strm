@@ -178,8 +178,14 @@
               
               <div>
                 <label class="block text-sm font-medium text-gray-700">STRM路径</label>
-                <input v-model="taskForm.strmPath" type="text" 
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <div class="mt-1 flex">
+                  <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                    /app/backend/strm/
+                  </span>
+                  <input v-model="strmSubPath" type="text" placeholder="子路径（可选）"
+                         class="flex-1 block w-full rounded-none rounded-r-md border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <p class="mt-1 text-xs text-gray-500">前缀 /app/backend/strm/ 固定不可修改</p>
               </div>
               
               <div>
@@ -254,13 +260,14 @@ const generatingStrm = ref({})
 const taskForm = ref({
   taskName: '',
   path: '',
-  strmPath: '/strm/',
+  strmPath: '/app/backend/strm',
   cron: '',
   needScrap: false,
   renameRegex: '',
   isIncrement: true,
   isActive: true
 })
+const strmSubPath = ref('')
 
 // 获取配置信息
 const getConfigInfo = async () => {
@@ -314,13 +321,14 @@ const resetTaskForm = () => {
   taskForm.value = {
     taskName: '',
     path: '',
-    strmPath: '/strm/',
+    strmPath: '/app/backend/strm',
     cron: '',
     needScrap: false,
     renameRegex: '',
     isIncrement: true,
     isActive: true
   }
+  strmSubPath.value = ''
 }
 
 // 编辑任务
@@ -335,6 +343,13 @@ const editTask = (task) => {
     renameRegex: task.renameRegex || '',
     isIncrement: task.isIncrement,
     isActive: task.isActive
+  }
+  // 解析STRM路径，提取子路径
+  const prefix = '/app/backend/strm/'
+  if (task.strmPath && task.strmPath.startsWith(prefix)) {
+    strmSubPath.value = task.strmPath.substring(prefix.length)
+  } else {
+    strmSubPath.value = ''
   }
   showEditTaskModal.value = true
 }
@@ -411,8 +426,12 @@ const submitTask = async () => {
     
     const token = useCookie('token')
     
+    // 合并STRM路径
+    const fullStrmPath = '/app/backend/strm/' + (strmSubPath.value || '')
+    
     const taskData = {
       ...taskForm.value,
+      strmPath: fullStrmPath,
       openlistConfigId: parseInt(configId)
     }
     
