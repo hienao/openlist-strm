@@ -45,8 +45,8 @@
 ### 4. 镜像标签策略
 
 - `latest`：main 分支的最新版本
-- `main-<commit-sha>`：基于提交 SHA 的标签
-- `<branch-name>`：分支名称标签
+- `main-{commit-sha}`：基于提交 SHA 的标签
+- `{branch-name}`：分支名称标签
 
 ### 5. 支持的架构
 
@@ -59,10 +59,10 @@
 
 ```bash
 # 拉取最新镜像
-docker pull <your-dockerhub-username>/openlist-strm:latest
+docker pull hienao6/openlist-strm:latest
 
 # 运行容器
-docker run -d -p 80:80 -p 8080:8080 <your-dockerhub-username>/openlist-strm:latest
+docker run -d -p 80:80 -p 8080:8080 hienao6/openlist-strm:latest
 ```
 
 ## 故障排除

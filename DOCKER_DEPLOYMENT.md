@@ -484,4 +484,4 @@ docker start openlist-strm
 
 ---
 
-如有问题，请查看项目的 [GitHub Issues](https://github.com/your-repo/openlisttostrm/issues) 或提交新的问题报告。
+如有问题，请查看项目的 [GitHub Issues](https://github.com/hienao/openlisttostrm/issues) 或提交新的问题报告。

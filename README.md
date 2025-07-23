@@ -9,7 +9,7 @@ openlisttostrm/
 ├── backend/          # Spring Boot 后端应用
 │   ├── src/
 │   ├── build.gradle.kts
-│   ├── Dockerfile    # 原始后端 Dockerfile（已废弃）
+│   ├── Dockerfile    # 后端独立构建 Dockerfile
 │   └── ...
 ├── frontend/         # Nuxt.js 前端应用
 │   ├── pages/
@@ -46,7 +46,7 @@ openlisttostrm/
 
 1. 克隆项目
 ```bash
-git clone <repository-url>
+git clone https://github.com/hienao/openlisttostrm.git
 cd openlisttostrm
 ```
 
@@ -100,12 +100,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-#### 前端开发
-```bash
-cd frontend
-npm install
-npm run dev
-```
+
 
 ## 环境变量说明
 
