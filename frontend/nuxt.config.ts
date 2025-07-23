@@ -31,8 +31,9 @@ export default defineNuxtConfig({
     },
     devProxy: {
       '/api': {
-        target: 'http://localhost:8080/api',
-        changeOrigin: true
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        prependPath: true
       }
     }
   },
