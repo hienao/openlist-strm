@@ -331,7 +331,10 @@ docker run -p 8000:80 hienao6/openlist-strm:latest
    # 2. 清理数据库文件（注意：这会删除所有数据）
    rm -rf ~/docker/store/openlist2strm/config/db/
 
-   # 3. 重新启动容器
+   # 3. 重新构建镜像（必须执行，因为修改了目录初始化逻辑）
+   docker build -t hienao6/openlist-strm:latest . --no-cache
+
+   # 4. 重新启动容器
    docker run -d --name openlist-strm \
      -p 80:80 \
      -v ~/docker/store/openlist2strm/config:/app/data/config \
@@ -344,9 +347,10 @@ docker run -p 8000:80 hienao6/openlist-strm:latest
    如果遇到类似 `path to '/app/data/config/db/openlist2strm.db': '/app/data/config/db' does not exist` 的错误：
 
    **原因分析：**
-   - 容器内工作目录与数据库路径不匹配
-   - 目录创建逻辑在应用启动前未正确执行
-   - 卷挂载路径配置不正确
+    - 容器内工作目录与数据库路径不匹配
+    - 目录创建逻辑在 Flyway 数据库初始化之前未正确执行
+    - Spring Boot 的 @PostConstruct 执行时机晚于 Flyway 初始化
+    - 卷挂载路径配置不正确
 
    **解决方案：**
    ```bash

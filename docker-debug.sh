@@ -75,7 +75,8 @@ echo "✅ 目录权限设置完成"
 
 # 构建镜像
 echo "🔨 构建 Docker 镜像..."
-docker build -t openlist2strm:latest .
+echo "   注意：这可能需要几分钟时间，请耐心等待..."
+docker build -t openlist2strm:latest . --no-cache
 
 if [ $? -eq 0 ]; then
     echo "✅ 镜像构建成功"

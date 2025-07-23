@@ -1,19 +1,22 @@
 package com.hienao.openlist2strm.config;
 
-import jakarta.annotation.PostConstruct;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
 
-/** 数据目录初始化配置 在数据源初始化之前创建必要的数据目录 */
+/** 数据目录初始化配置 在应用环境准备完成后立即创建必要的数据目录 */
 @Slf4j
-@Configuration
-@Order(Integer.MIN_VALUE) // 确保最早执行
-public class DataDirectoryConfig {
+@Component
+public class DataDirectoryConfig implements ApplicationListener<ApplicationEnvironmentPreparedEvent> {
 
-  @PostConstruct
-  public void initializeDataDirectory() {
+  @Override
+  public void onApplicationEvent(ApplicationEnvironmentPreparedEvent event) {
+    log.info("🚀 开始初始化数据目录...");
+    
     // 创建主数据目录
     createDirectoryIfNotExists("./data");
 
@@ -25,6 +28,8 @@ public class DataDirectoryConfig {
 
     // 创建数据库目录
     createDirectoryIfNotExists("./data/config/db");
+    
+    log.info("✅ 数据目录初始化完成");
   }
 
   private void createDirectoryIfNotExists(String path) {
