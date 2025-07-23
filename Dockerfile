@@ -51,7 +51,7 @@ RUN echo 'error_log /app/data/log/nginx_error.log;' > /etc/nginx/nginx.conf && \
     echo '        root /var/www/html;' >> /etc/nginx/nginx.conf && \
     echo '        index index.html;' >> /etc/nginx/nginx.conf && \
     echo '        location /api/ {' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_pass http://localhost:8080/;' >> /etc/nginx/nginx.conf && \
+    echo '            proxy_pass http://localhost:8080;' >> /etc/nginx/nginx.conf && \
     echo '            proxy_set_header Host $host;' >> /etc/nginx/nginx.conf && \
     echo '            proxy_set_header X-Real-IP $remote_addr;' >> /etc/nginx/nginx.conf && \
     echo '            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' >> /etc/nginx/nginx.conf && \
