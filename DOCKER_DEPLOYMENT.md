@@ -23,7 +23,6 @@ docker pull hienao6/openlist-strm:latest
 docker run -d \
   --name openlist-strm \
   -p 80:80 \
-  -p 8080:8080 \
   hienao6/openlist-strm:latest
 ```
 
@@ -39,7 +38,6 @@ mkdir -p ~/docker/store/openlist2strm/strm
 docker run -d \
   --name openlist-strm \
   -p 80:80 \
-  -p 8080:8080 \
   -e DATABASE_PATH="/app/data/config/db/openlist2strm.db" \
   -e LOG_PATH="/app/data/log" \
   -e ALLOWED_ORIGINS="*" \
@@ -60,14 +58,12 @@ docker run -d \
 docker run -d \
   --name openlist-strm \
   -p 80:80 \
-  -p 8080:8080 \
   hienao6/openlist-strm:v1.0.0
 
 # 使用 beta 版本
 docker run -d \
   --name openlist-strm \
   -p 80:80 \
-  -p 8080:8080 \
   hienao6/openlist-strm:beta-1.0.0
 ```
 
@@ -90,7 +86,6 @@ services:
       ALLOWED_EXPOSE_HEADERS: "*"
     ports:
       - "80:80"
-      - "8080:8080"
     volumes:
       - ./config:/app/data/config
       - ./logs:/app/data/log
@@ -105,7 +100,6 @@ services:
 ```env
 # 端口配置
 WEB_EXPOSE_PORT=80
-API_EXPOSE_PORT=8080
 
 # 数据库配置
 DATABASE_PATH=/app/data/config/db/openlist2strm.db
@@ -142,7 +136,6 @@ services:
       ALLOWED_EXPOSE_HEADERS: ${ALLOWED_EXPOSE_HEADERS}
     ports:
       - "${WEB_EXPOSE_PORT}:80"
-      - "${API_EXPOSE_PORT}:8080"
     volumes:
       - ${CONFIG_STORE}:/app/data/config
       - ${LOG_STORE}:/app/data/log
@@ -171,7 +164,6 @@ docker-compose down -v
 | 变量名 | 说明 | 默认值 | 必需 |
 |--------|------|--------|------|
 | `WEB_EXPOSE_PORT` | 前端应用端口 | 80 | 否 |
-| `API_EXPOSE_PORT` | 后端API端口 | 8080 | 否 |
 | `DATABASE_PATH` | SQLite数据库文件路径 | `/app/data/config/db/openlist2strm.db` | 否 |
 | `LOG_PATH` | 日志文件路径 | `/app/data/log` | 否 |
 | `ALLOWED_ORIGINS` | CORS允许的源 | `*` | 否 |
@@ -189,16 +181,25 @@ docker-compose down -v
 
 ## 端口说明
 
-- **80**: 前端应用端口（Nginx 服务）
-- **8080**: 后端 API 端口（Spring Boot 服务）
+- **80**: 应用访问端口（Nginx 反向代理）
+  - 前端静态文件服务
+  - 后端API代理（通过 `/api/` 路径）
+  - Swagger文档代理（通过 `/swagger-ui/` 路径）
+
+> **🔒 安全优化**: 为了提高安全性，此配置不再直接暴露后端8080端口。所有API请求都通过Nginx反向代理统一处理，这样可以：
+> - 减少攻击面，提高安全性
+> - 统一访问入口，便于管理和监控
+> - 支持未来的负载均衡和SSL终止
+> 
+> 如果在开发环境中需要直接访问后端端口进行调试，可以临时添加 `-p 8080:8080` 参数。
 
 ## 访问应用
 
 部署成功后，可以通过以下地址访问：
 
-- **前端应用**: http://localhost:80
-- **后端 API**: http://localhost:8080
-- **API 文档**: http://localhost:8080/api/swagger-ui.html
+- **前端应用**: http://localhost
+- **后端 API**: http://localhost/api/
+- **API 文档**: http://localhost/swagger-ui/
 
 ## 健康检查
 
@@ -213,8 +214,8 @@ docker logs openlist-strm
 docker exec -it openlist-strm /bin/sh
 
 # 检查服务是否正常
-curl http://localhost:80
-curl http://localhost:8080/api/health
+curl http://localhost
+curl http://localhost/api/health
 ```
 
 ## 更新应用
@@ -233,7 +234,6 @@ docker pull hienao6/openlist-strm:latest
 docker run -d \
   --name openlist-strm \
   -p 80:80 \
-  -p 8080:8080 \
   -v ~/docker/store/openlist2strm/config:/app/data/config \
   -v ~/docker/store/openlist2strm/logs:/app/data/log \
   -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
@@ -255,11 +255,10 @@ docker-compose up -d
 1. **端口冲突**
    ```bash
    # 检查端口占用
-   lsof -i :80
-   lsof -i :8080
-   
-   # 使用不同端口
-   docker run -p 8000:80 -p 8081:8080 hienao6/openlist-strm:latest
+lsof -i :80
+
+# 使用不同端口
+docker run -p 8000:80 hienao6/openlist-strm:latest
    ```
 
 2. **数据库权限问题**
@@ -275,6 +274,39 @@ docker-compose up -d
    
    # 检查镜像是否正确
    docker images | grep openlist-strm
+   ```
+
+   **常见启动失败原因：**
+
+   #### 3.1 数据库迁移文件缺失
+   如果看到 `UnsatisfiedDependencyException` 或 `sqlSessionTemplate` 相关错误：
+
+   **问题原因：** 缺少 Flyway 数据库迁移文件 `V1_0_0__init_schema.sql` 和 `V1_0_1__insert_urp_table.sql`
+
+   **解决方案：** 这些文件已经在最新版本中添加，如果仍然遇到问题：
+   ```bash
+   # 1. 停止容器
+   docker stop openlist-strm
+   docker rm openlist-strm
+
+   # 2. 清理数据库文件（注意：这会删除所有数据）
+   rm -rf ~/docker/store/openlist2strm/config/db/
+
+   # 3. 重新启动容器
+   docker run -d --name openlist-strm \
+     -p 80:80 \
+     -v ~/docker/store/openlist2strm/config:/app/data/config \
+     -v ~/docker/store/openlist2strm/logs:/app/data/log \
+     -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
+     hienao6/openlist-strm:latest
+   ```
+
+   #### 3.2 目录权限问题
+   如果容器无法创建目录或文件：
+   ```bash
+   # 确保挂载目录存在且有正确权限
+   mkdir -p ~/docker/store/openlist2strm/config ~/docker/store/openlist2strm/logs ~/docker/store/openlist2strm/strm
+   chmod -R 755 ~/docker/store/openlist2strm/
    ```
 
 4. **网络连接问题**
@@ -310,6 +342,25 @@ docker-compose up -d
              memory: 256M
              cpus: '0.5'
    ```
+
+## 重要说明
+
+### Swagger 文档访问
+
+当前镜像版本可能还未包含 Swagger 的 Nginx 代理配置。如果无法通过 `http://localhost/swagger-ui/` 访问 Swagger 文档，请使用以下临时方案：
+
+```bash
+# 临时暴露8080端口以访问Swagger（仅用于开发/测试）
+docker run -d \
+  --name openlist-strm \
+  -p 80:80 \
+  -p 8080:8080 \
+  hienao6/openlist-strm:latest
+
+# 然后访问: http://localhost:8080/swagger-ui.html
+```
+
+> **注意**: 生产环境建议等待包含完整 Nginx 配置的新版本镜像，或者自行构建包含 Swagger 代理配置的镜像。
 
 ## 安全建议
 
