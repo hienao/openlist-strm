@@ -126,6 +126,17 @@ npm run dev
 
 > 🐳 **完整 Docker 部署指南**: 查看 [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) 获取详细的 Docker 部署方式，包括 `docker run` 和 `docker-compose` 两种方案。
 
+### 快速启动
+
+如果遇到部署问题，可以使用我们提供的调试脚本：
+
+```bash
+# 运行自动化调试脚本
+./docker-debug.sh
+```
+
+该脚本会自动检查环境、创建必要目录、构建镜像并启动容器。
+
 ### 多阶段构建
 
 项目使用多阶段 Dockerfile 构建：

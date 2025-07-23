@@ -119,6 +119,21 @@ ALLOWED_HEADERS=*
 ALLOWED_EXPOSE_HEADERS=*
 ```
 
+**重要配置说明：**
+
+- `WEB_EXPOSE_PORT`: Web 服务端口，默认 80
+- `DATABASE_PATH`: 容器内数据库文件路径，必须是绝对路径 `/app/data/config/db/openlist2strm.db`
+- `CONFIG_STORE`: 主机上的配置目录，会挂载到容器的 `/app/data/config`
+- `LOG_PATH`: 容器内日志路径
+- `LOG_STORE`: 主机上的日志目录
+- `STRM_STORE`: 主机上的 STRM 文件目录
+- `ALLOWED_ORIGINS`: CORS 允许的源，生产环境建议设置具体域名而不是 `*`
+
+**安全建议：**
+- 生产环境中不要使用 `ALLOWED_ORIGINS=*`，应设置为具体的域名
+- 确保挂载的目录有正确的权限设置
+- 定期备份数据库文件
+
 更新 `docker-compose.yml`：
 
 ```yaml
@@ -250,6 +265,30 @@ docker-compose up -d
 
 ## 故障排除
 
+### 快速诊断脚本
+
+我们提供了一个自动化调试脚本来快速诊断和解决常见问题：
+
+```bash
+# 运行调试脚本
+./docker-debug.sh
+```
+
+**脚本功能：**
+- 检查 Docker 运行状态
+- 验证 .env 文件配置
+- 创建必要的数据目录
+- 检查 Flyway 迁移文件完整性
+- 清理旧容器和数据（可选）
+- 重新构建和启动容器
+- 提供访问链接和日志查看命令
+
+**使用场景：**
+- 首次部署时遇到问题
+- 容器启动失败
+- 数据库连接错误
+- 目录权限问题
+
 ### 常见问题
 
 1. **端口冲突**
@@ -301,7 +340,43 @@ docker run -p 8000:80 hienao6/openlist-strm:latest
      hienao6/openlist-strm:latest
    ```
 
-   #### 3.2 目录权限问题
+   #### 3.2 目录路径不存在错误
+   如果遇到类似 `path to '/app/data/config/db/openlist2strm.db': '/app/data/config/db' does not exist` 的错误：
+
+   **原因分析：**
+   - 容器内工作目录与数据库路径不匹配
+   - 目录创建逻辑在应用启动前未正确执行
+   - 卷挂载路径配置不正确
+
+   **解决方案：**
+   ```bash
+   # 1. 停止并删除现有容器
+   docker stop openlist-strm
+   docker rm openlist-strm
+
+   # 2. 确保本地目录结构正确
+   mkdir -p ~/docker/store/openlist2strm/config/db
+   mkdir -p ~/docker/store/openlist2strm/logs
+   mkdir -p ~/docker/store/openlist2strm/strm
+
+   # 3. 设置正确的目录权限
+   sudo chown -R $(id -u):$(id -g) ~/docker/store/openlist2strm/
+   sudo chmod -R 755 ~/docker/store/openlist2strm/
+
+   # 4. 重新启动容器
+   docker run -d \
+     --name openlist-strm \
+     -p 80:80 \
+     -v ~/docker/store/openlist2strm/config:/app/data/config \
+     -v ~/docker/store/openlist2strm/logs:/app/data/log \
+     -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
+     hienao6/openlist-strm:latest
+
+   # 5. 检查容器日志
+   docker logs -f openlist-strm
+   ```
+
+   #### 3.3 目录权限问题
    如果容器无法创建目录或文件：
    ```bash
    # 确保挂载目录存在且有正确权限

@@ -20,14 +20,14 @@ RUN --mount=type=cache,target=$GRADLE_USER_HOME \
 
 # Stage 3: Runtime
 FROM bellsoft/liberica-openjdk-alpine:21 AS runner
-ENV WORKDIR=/usr/src/app
+ENV WORKDIR=/app
 WORKDIR $WORKDIR
 
 # Install nginx for serving frontend
 RUN apk add --no-cache nginx tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    mkdir -p /var/log /run/nginx /var/www/html /app/data
+    mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log
 
 # Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
