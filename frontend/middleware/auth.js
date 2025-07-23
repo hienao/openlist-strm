@@ -1,4 +1,6 @@
 // 认证中间件 - 保护需要登录的页面
+import { apiCall } from '~/utils/api.js'
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // 获取token
   const token = useCookie('token')
@@ -84,7 +86,7 @@ function parseJwtPayload(token) {
 // 处理登录和注册页面的逻辑
 async function handleAuthPages(to) {
   try {
-    const response = await $fetch('/api/auth/check-user', {
+    const response = await apiCall('/auth/check-user', {
       method: 'GET'
     })
     
@@ -115,7 +117,7 @@ async function handleAuthPages(to) {
 // 检查用户是否存在并决定跳转路径
 async function checkUserAndRedirect() {
   try {
-    const response = await $fetch('/api/auth/check-user', {
+    const response = await apiCall('/auth/check-user', {
       method: 'GET'
     })
     
@@ -136,12 +138,9 @@ async function checkUserAndRedirect() {
 // 后台刷新token
 async function refreshTokenInBackground(tokenCookie) {
   try {
-    const response = await $fetch('/api/auth/refresh', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tokenCookie.value}`
-      }
-    })
+    const response = await authenticatedApiCall('/auth/refresh', {
+          method: 'POST'
+        })
     
     if (response.code === 200 && response.data?.token) {
       // 更新token

@@ -41,7 +41,7 @@ export default defineNuxtConfig({
   // 运行时配置
   runtimeConfig: {
     public: {
-      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080'
+      apiBase: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8080'
     }
   },
   

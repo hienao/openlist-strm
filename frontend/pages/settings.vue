@@ -77,6 +77,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '~/components/AppHeader.vue'
+import { authenticatedApiCall } from '~/utils/api.js'
 
 const router = useRouter()
 
@@ -98,26 +99,23 @@ const loadCurrentSettings = async () => {
   availableExtensions.value = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.3g2', '.asf', '.divx', '.f4v', '.m2ts', '.m2v', '.mts', '.ogv', '.rm', '.rmvb', '.ts', '.vob', '.xvid']
   
   try {
-    const tokenCookie = useCookie('token')
-    const token = tokenCookie.value
-    const response = await fetch('/api/system/config', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
+    const response = await authenticatedApiCall('/system/config')
     
-    if (response.ok) {
-      const config = await response.json()
+    if (response && response.code === 200 && response.data) {
+      const config = response.data
       if (config.mediaExtensions && Array.isArray(config.mediaExtensions)) {
         // 设置当前已选择的后缀（从后端获取的当前配置）
         selectedExtensions.value = [...config.mediaExtensions]
+        console.log('已加载配置的媒体扩展名:', config.mediaExtensions)
       } else {
         // 如果没有配置，使用默认选择
         selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
+        console.log('使用默认媒体扩展名配置')
       }
     } else {
       // 如果获取失败，使用默认选择
       selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
+      console.log('获取配置失败，使用默认配置')
     }
   } catch (error) {
     console.error('加载设置失败:', error)
@@ -140,34 +138,27 @@ const saveSettings = async () => {
   errorMessage.value = ''
   
   try {
-    const tokenCookie = useCookie('token')
-    const token = tokenCookie.value
-    const response = await fetch('/api/system/config', {
+    const response = await authenticatedApiCall('/system/config', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
+      body: {
         mediaExtensions: selectedExtensions.value
-      })
+      }
     })
     
-    if (response.ok) {
+    if (response && response.code === 200) {
       showSuccess.value = true
       setTimeout(() => {
         showSuccess.value = false
       }, 3000)
     } else {
-      const error = await response.text()
-      errorMessage.value = error || '保存设置失败'
+      errorMessage.value = response?.message || '保存设置失败'
       setTimeout(() => {
         errorMessage.value = ''
       }, 3000)
     }
   } catch (error) {
     console.error('保存设置失败:', error)
-    errorMessage.value = '保存设置失败'
+    errorMessage.value = error.data?.message || '保存设置失败'
     setTimeout(() => {
       errorMessage.value = ''
     }, 3000)

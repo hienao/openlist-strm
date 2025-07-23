@@ -144,6 +144,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { authenticatedApiCall } from '~/utils/api.js'
 
 // 页面元数据
 definePageMeta({
@@ -198,14 +199,9 @@ const handleChangePassword = async () => {
   success.value = false
 
   try {
-    const token = useCookie('token')
-    
     // 调用修改密码API
-    const response = await $fetch('/api/auth/change-password', {
+    const response = await authenticatedApiCall('/auth/change-password', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      },
       body: {
         oldPassword: form.currentPassword,
         newPassword: form.newPassword
@@ -258,11 +254,8 @@ const logout = async () => {
     const userInfoCookie = useCookie('userInfo')
     
     // 调用后端登出接口
-    const response = await $fetch('/api/auth/sign-out', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall('/auth/sign-out', {
+      method: 'POST'
     })
     
     // 检查响应格式

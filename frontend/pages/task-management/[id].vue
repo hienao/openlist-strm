@@ -242,6 +242,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 
 // 路由相关
 const route = useRoute()
@@ -273,13 +274,9 @@ const strmSubPath = ref('')
 const getConfigInfo = async () => {
   try {
     loading.value = true
-    const token = useCookie('token')
     
-    const response = await $fetch(`/api/openlist-config/${configId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall(`/openlist-config/${configId}`, {
+      method: 'GET'
     })
     
     if (response.code === 200) {
@@ -299,12 +296,8 @@ const getConfigInfo = async () => {
 // 获取任务列表
 const fetchTasks = async () => {
   try {
-    const token = useCookie('token')
-    const response = await $fetch('/api/task-config', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall('/task-config', {
+      method: 'GET'
     })
     
     if (response.code === 200) {
@@ -377,7 +370,7 @@ const validateTaskPath = async (taskPath) => {
     const baseUrl = configInfo.value.baseUrl
     const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/fs/get' : baseUrl + '/api/fs/get'
     
-    const response = await $fetch(apiUrl, {
+    const response = await apiCall(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': configInfo.value.token,
@@ -438,22 +431,14 @@ const submitTask = async () => {
     let response
     if (showCreateTaskModal.value) {
       // 创建任务
-      response = await $fetch('/api/task-config', {
+      response = await authenticatedApiCall('/task-config', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        },
         body: taskData
       })
     } else {
       // 更新任务
-      response = await $fetch(`/api/task-config/${editingTaskId.value}`, {
+      response = await authenticatedApiCall(`/task-config/${editingTaskId.value}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        },
         body: taskData
       })
     }
@@ -479,12 +464,8 @@ const deleteTask = async (taskId) => {
   }
   
   try {
-    const token = useCookie('token')
-    const response = await $fetch(`/api/task-config/${taskId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall(`/task-config/${taskId}`, {
+      method: 'DELETE'
     })
     
     if (response.code === 200) {
@@ -529,11 +510,8 @@ const logout = async () => {
     const token = useCookie('token')
     
     // 调用后端登出接口
-    await $fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    await authenticatedApiCall('/auth/logout', {
+      method: 'POST'
     })
   } catch (error) {
     console.error('登出失败:', error)
@@ -552,13 +530,8 @@ const generateStrm = async (taskId) => {
   try {
     generatingStrm.value[taskId] = true
     
-    const token = useCookie('token')
-    const response = await $fetch(`/api/task-config/${taskId}/submit`, {
+    const response = await authenticatedApiCall(`/task-config/${taskId}/submit`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
-      },
       body: {
         isIncremental: false // 全量生成，不是增量
       }

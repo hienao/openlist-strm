@@ -253,6 +253,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { apiCall } from '~/utils/api.js'
 
 // 页面元数据
 definePageMeta({
@@ -297,7 +298,7 @@ const handleLogin = async () => {
 
   try {
     // 调用登录API
-    const response = await $fetch('/api/auth/sign-in', {
+    const response = await apiCall('/auth/sign-in', {
       method: 'POST',
       body: {
         username: form.username,
@@ -404,7 +405,7 @@ const handleRegister = async () => {
 
   try {
     // 调用注册API
-    const response = await $fetch('/api/auth/sign-up', {
+    const response = await apiCall('/auth/sign-up', {
       method: 'POST',
       body: {
         username: registerForm.username,

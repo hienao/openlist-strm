@@ -285,6 +285,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import AppHeader from '~/components/AppHeader.vue'
+import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 
 // 页面元数据
 definePageMeta({
@@ -331,11 +333,8 @@ const logout = async () => {
     const token = useCookie('token')
     
     // 调用后端登出接口
-    const response = await $fetch('/api/auth/sign-out', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall('/auth/sign-out', {
+      method: 'POST'
     })
     
     // 检查响应格式
@@ -373,11 +372,8 @@ const openSettings = () => {
 const getConfigs = async () => {
   loading.value = true
   try {
-    const token = useCookie('token')
-    const response = await $fetch('/api/openlist-config', {
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall('/openlist-config', {
+      method: 'GET'
     })
     
     if (response.code === 200) {
@@ -398,7 +394,7 @@ const validateOpenListConfig = async (baseUrl, token) => {
     // 构建完整的API URL
     const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/me' : baseUrl + '/api/me'
     
-    const response = await $fetch(apiUrl, {
+    const response = await apiCall(apiUrl, {
       headers: {
         'Authorization': token
       }
@@ -442,13 +438,8 @@ const addConfig = async () => {
     const validationResult = await validateOpenListConfig(configForm.value.baseUrl, configForm.value.token)
     
     // 调用后端API保存配置
-    const token = useCookie('token')
-    const response = await $fetch('/api/openlist-config', {
+    const response = await authenticatedApiCall('/openlist-config', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
-      },
       body: {
         baseUrl: configForm.value.baseUrl,
         token: configForm.value.token,
@@ -492,13 +483,8 @@ const updateConfig = async () => {
     const validationResult = await validateOpenListConfig(configForm.value.baseUrl, configForm.value.token)
     
     // 调用后端API更新配置
-    const token = useCookie('token')
-    const response = await $fetch(`/api/openlist-config/${currentConfig.value.id}`, {
+    const response = await authenticatedApiCall(`/openlist-config/${currentConfig.value.id}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
-      },
       body: {
         baseUrl: configForm.value.baseUrl,
         token: configForm.value.token,
@@ -529,12 +515,8 @@ const deleteConfig = async (config) => {
   }
   
   try {
-    const token = useCookie('token')
-    const response = await $fetch(`/api/openlist-config/${config.id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+    const response = await authenticatedApiCall(`/openlist-config/${config.id}`, {
+      method: 'DELETE'
     })
     
     if (response.code === 200) {
@@ -557,13 +539,8 @@ const toggleConfigStatus = async (config) => {
   }
   
   try {
-    const token = useCookie('token')
-    const response = await $fetch(`/api/openlist-config/${config.id}/status`, {
+    const response = await authenticatedApiCall(`/openlist-config/${config.id}/status`, {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
-      },
       body: {
         isActive: !config.isActive
       }
