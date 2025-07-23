@@ -156,8 +156,8 @@ npm run dev
 2. 使用 Flyway 版本命名规范：`V{版本号}__{描述}.sql`
 3. Flyway 会自动执行迁移到 SQLite 数据库
 4. 当前已包含的迁移：
-   - `V1_0_0__init_schema.sql` - 初始化用户权限表结构
-   - `V1_0_1__insert_urp_table.sql` - 插入初始用户和权限数据
+   - `V1_0_0__init_schema.sql` - 初始化数据库架构和系统信息表
+   - `V1_0_1__insert_urp_table.sql` - 初始化系统配置表（注：用户认证使用文件系统）
    - `V1_0_2__init_quartz_table.sql` - 初始化 Quartz 调度器表结构
 
 ### 任务调度

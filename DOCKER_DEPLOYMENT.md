@@ -276,6 +276,39 @@ docker run -p 8000:80 hienao6/openlist-strm:latest
    docker images | grep openlist-strm
    ```
 
+   **常见启动失败原因：**
+
+   #### 3.1 数据库迁移文件缺失
+   如果看到 `UnsatisfiedDependencyException` 或 `sqlSessionTemplate` 相关错误：
+
+   **问题原因：** 缺少 Flyway 数据库迁移文件 `V1_0_0__init_schema.sql` 和 `V1_0_1__insert_urp_table.sql`
+
+   **解决方案：** 这些文件已经在最新版本中添加，如果仍然遇到问题：
+   ```bash
+   # 1. 停止容器
+   docker stop openlist-strm
+   docker rm openlist-strm
+
+   # 2. 清理数据库文件（注意：这会删除所有数据）
+   rm -rf ~/docker/store/openlist2strm/config/db/
+
+   # 3. 重新启动容器
+   docker run -d --name openlist-strm \
+     -p 80:80 \
+     -v ~/docker/store/openlist2strm/config:/app/data/config \
+     -v ~/docker/store/openlist2strm/logs:/app/data/log \
+     -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
+     hienao6/openlist-strm:latest
+   ```
+
+   #### 3.2 目录权限问题
+   如果容器无法创建目录或文件：
+   ```bash
+   # 确保挂载目录存在且有正确权限
+   mkdir -p ~/docker/store/openlist2strm/config ~/docker/store/openlist2strm/logs ~/docker/store/openlist2strm/strm
+   chmod -R 755 ~/docker/store/openlist2strm/
+   ```
+
 4. **网络连接问题**
    ```bash
    # 检查容器网络
