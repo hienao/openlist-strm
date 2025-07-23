@@ -8,6 +8,7 @@
       @logout="logout"
       @change-password="changePassword"
       @go-back="goBack"
+      @open-settings="openSettings"
     />
 
     <!-- 主要内容区域 -->
@@ -523,6 +524,12 @@ const logout = async () => {
     // 跳转到登录页
     await navigateTo('/login')
   }
+}
+
+// 打开设置页面
+const openSettings = () => {
+  // 跳转到设置页面
+  navigateTo('/settings')
 }
 
 // 全量生成STRM文件
