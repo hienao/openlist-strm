@@ -31,8 +31,9 @@ docker run -d \
 
 ```bash
 # 创建数据目录
-mkdir -p ~/docker/store/openlist2strm/db
+mkdir -p ~/docker/store/openlist2strm/config
 mkdir -p ~/docker/store/openlist2strm/logs
+mkdir -p ~/docker/store/openlist2strm/strm
 
 # 运行容器（包含数据持久化和环境变量）
 docker run -d \
@@ -40,13 +41,14 @@ docker run -d \
   -p 80:80 \
   -p 8080:8080 \
   -e DATABASE_PATH="/app/data/config/db/openlist2strm.db" \
-  -e LOG_PATH="/var/log" \
+  -e LOG_PATH="/app/data/log" \
   -e ALLOWED_ORIGINS="*" \
   -e ALLOWED_METHODS="GET,POST,PUT,DELETE,OPTIONS" \
   -e ALLOWED_HEADERS="*" \
   -e ALLOWED_EXPOSE_HEADERS="*" \
-  -v ~/docker/store/openlist2strm/db:/app/data \
-  -v ~/docker/store/openlist2strm/logs:/var/log \
+  -v ~/docker/store/openlist2strm/config:/app/data/config \
+  -v ~/docker/store/openlist2strm/logs:/app/data/log \
+  -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
   --restart unless-stopped \
   hienao6/openlist-strm:latest
 ```
@@ -80,7 +82,7 @@ services:
     container_name: openlist-strm
     hostname: openlist-strm
     environment:
-      LOG_PATH: /var/log
+      LOG_PATH: /app/data/log
       DATABASE_PATH: /app/data/config/db/openlist2strm.db
       ALLOWED_ORIGINS: "*"
       ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
@@ -90,8 +92,9 @@ services:
       - "80:80"
       - "8080:8080"
     volumes:
-      - ./data/logs:/var/log
-      - ./data/db:/app/data
+      - ./config:/app/data/config
+      - ./logs:/app/data/log
+      - ./strm:/app/backend/strm
     restart: unless-stopped
 ```
 
@@ -106,11 +109,14 @@ API_EXPOSE_PORT=8080
 
 # 数据库配置
 DATABASE_PATH=/app/data/config/db/openlist2strm.db
-DATABASE_STORE=./data/db
+CONFIG_STORE=./config
 
 # 日志配置
-LOG_PATH=/var/log
-LOG_STORE=./data/logs
+LOG_PATH=/app/data/log
+LOG_STORE=./logs
+
+# STRM文件配置
+STRM_STORE=./strm
 
 # CORS 配置
 ALLOWED_ORIGINS=*
@@ -138,8 +144,9 @@ services:
       - "${WEB_EXPOSE_PORT}:80"
       - "${API_EXPOSE_PORT}:8080"
     volumes:
-      - ${LOG_STORE}:/var/log
-      - ${DATABASE_STORE}:/app/data
+      - ${CONFIG_STORE}:/app/data/config
+      - ${LOG_STORE}:/app/data/log
+      - ${STRM_STORE}:/app/backend/strm
     restart: unless-stopped
 ```
 
@@ -166,7 +173,7 @@ docker-compose down -v
 | `WEB_EXPOSE_PORT` | 前端应用端口 | 80 | 否 |
 | `API_EXPOSE_PORT` | 后端API端口 | 8080 | 否 |
 | `DATABASE_PATH` | SQLite数据库文件路径 | `/app/data/config/db/openlist2strm.db` | 否 |
-| `LOG_PATH` | 日志文件路径 | `/var/log` | 否 |
+| `LOG_PATH` | 日志文件路径 | `/app/data/log` | 否 |
 | `ALLOWED_ORIGINS` | CORS允许的源 | `*` | 否 |
 | `ALLOWED_METHODS` | CORS允许的方法 | `GET,POST,PUT,DELETE,OPTIONS` | 否 |
 | `ALLOWED_HEADERS` | CORS允许的头部 | `*` | 否 |
@@ -176,8 +183,9 @@ docker-compose down -v
 
 为了保证数据不丢失，建议挂载以下目录：
 
-- **数据库目录**: `/app/data` - 存储 SQLite 数据库文件
-- **日志目录**: `/var/log` - 存储应用日志文件
+- **配置目录**: `/app/data/config` - 存储 SQLite 数据库文件和配置文件
+- **日志目录**: `/app/data/log` - 存储应用日志文件
+- **STRM目录**: `/app/backend/strm` - 存储生成的STRM文件
 
 ## 端口说明
 
@@ -226,8 +234,9 @@ docker run -d \
   --name openlist-strm \
   -p 80:80 \
   -p 8080:8080 \
-  -v ~/docker/store/openlist2strm/db:/app/data \
-  -v ~/docker/store/openlist2strm/logs:/var/log \
+  -v ~/docker/store/openlist2strm/config:/app/data/config \
+  -v ~/docker/store/openlist2strm/logs:/app/data/log \
+  -v ~/docker/store/openlist2strm/strm:/app/backend/strm \
   hienao6/openlist-strm:latest
 ```
 
@@ -316,7 +325,7 @@ docker-compose up -d
 
 ```bash
 # 备份数据库
-cp ~/docker/store/openlist2strm/db/config/db/openlist2strm.db ~/backup/
+cp ~/docker/store/openlist2strm/config/db/openlist2strm.db ~/backup/
 
 # 或使用 docker cp
 docker cp openlist-strm:/app/data/config/db/openlist2strm.db ~/backup/
@@ -329,7 +338,7 @@ docker cp openlist-strm:/app/data/config/db/openlist2strm.db ~/backup/
 docker stop openlist-strm
 
 # 恢复数据库文件
-cp ~/backup/openlist2strm.db ~/docker/store/openlist2strm/db/config/db/
+cp ~/backup/openlist2strm.db ~/docker/store/openlist2strm/config/db/
 
 # 重启容器
 docker start openlist-strm
