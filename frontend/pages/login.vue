@@ -252,13 +252,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
 
 // 页面元数据
 definePageMeta({
   layout: false, // 不使用默认布局
-  middleware: ['guest', 'auth'] // 只允许未登录用户访问，并检查用户是否存在
+  middleware: ['guest'] // 只允许未登录用户访问
 })
 
 // 响应式数据
@@ -313,15 +313,17 @@ const handleLogin = async () => {
       const token = useCookie('token', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24, // 记住我：14天，否则1天
-        secure: false, // 开发环境设为false
-        sameSite: 'lax'
+        secure: process.env.NODE_ENV === 'production' && window.location.protocol === 'https:', // 生产环境且HTTPS时启用
+        sameSite: 'strict', // 更严格的同站策略
+        httpOnly: false // 客户端需要访问
       })
       
       const userInfo = useCookie('userInfo', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24,
-        secure: false,
-        sameSite: 'lax'
+        secure: process.env.NODE_ENV === 'production' && window.location.protocol === 'https:',
+        sameSite: 'strict',
+        httpOnly: false
       })
       
       token.value = response.data.token
@@ -330,14 +332,33 @@ const handleLogin = async () => {
       
       success.value = true
       
-      // 立即跳转，不延迟
+      // 等待Cookie设置完成后再跳转
+      await nextTick()
+      
+      // 使用多种跳转方式确保成功
       try {
-        await navigateTo('/', { replace: true })
-        console.log('跳转成功')
+        console.log('开始跳转到首页...')
+        
+        // 方式1：使用navigateTo
+        await navigateTo('/', { replace: true, external: false })
+        console.log('navigateTo跳转成功')
       } catch (navError) {
-        console.error('跳转失败:', navError)
-        // 如果跳转失败，尝试使用window.location
-        window.location.href = '/'
+        console.error('navigateTo跳转失败:', navError)
+        
+        try {
+          // 方式2：使用router.push
+          const router = useRouter()
+          await router.push('/')
+          console.log('router.push跳转成功')
+        } catch (routerError) {
+          console.error('router.push跳转失败:', routerError)
+          
+          // 方式3：使用window.location（最后手段）
+          console.log('使用window.location跳转')
+          if (process.client) {
+            window.location.href = '/'
+          }
+        }
       }
     } else {
       error.value = response.message || '登录失败，请检查用户名和密码'

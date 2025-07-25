@@ -17,10 +17,11 @@ export function getApiBaseUrl() {
   
   // 生产环境动态构建 API URL
   if (process.client) {
-    // 客户端：使用当前页面的 protocol 和 host
+    // 客户端：使用当前页面的 protocol 和 hostname（不包含端口）
     const protocol = window.location.protocol
-    const host = window.location.host
-    return `${protocol}//${host}/api`
+    const hostname = window.location.hostname
+    // 在Docker环境中，前端通过Nginx代理，不需要端口号
+    return `${protocol}//${hostname}/api`
   } else {
     // 服务端：使用相对路径
     return '/api'
