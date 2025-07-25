@@ -8,6 +8,7 @@ services:
     container_name: app
     hostname: app
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       LOG_PATH: ${LOG_PATH}
       DATABASE_PATH: ${DATABASE_PATH}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}

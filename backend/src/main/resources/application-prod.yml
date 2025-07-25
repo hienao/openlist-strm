@@ -2,20 +2,20 @@ server:
   port: 8080
 logging:
   file:
-    path: ${LOG_PATH:./data/log}
+    path: /app/data/log
   level:
     org:
       springframework:
         security: debug
       flywaydb: debug
 cors:
-  allowedOrigins: ${ALLOWED_ORIGINS:http://localhost,https://localhost,http://localhost:8080,http://localhost:5173}
-  allowedMethods: ${ALLOWED_METHODS:*}
-  allowedHeaders: ${ALLOWED_HEADERS:*}
-  allowedExposeHeaders: ${ALLOWED_EXPOSE_HEADERS:*}
+  allowedOrigins: "*"
+  allowedMethods: "*"
+  allowedHeaders: "*"
+  allowedExposeHeaders: "*"
 spring:
   datasource:
-    url: jdbc:sqlite:${DATABASE_PATH:./data/config/db/openlist2strm.db}
+    url: jdbc:sqlite:/app/data/config/db/openlist2strm.db
     driver-class-name: org.sqlite.JDBC
   # MyBatis configuration
   flyway:
