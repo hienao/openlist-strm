@@ -255,6 +255,9 @@
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
 
+// 获取router实例
+const { $router } = useNuxtApp()
+
 // 页面元数据
 definePageMeta({
   layout: false, // 不使用默认布局
@@ -313,16 +316,16 @@ const handleLogin = async () => {
       const token = useCookie('token', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24, // 记住我：14天，否则1天
-        secure: process.env.NODE_ENV === 'production' && window.location.protocol === 'https:', // 生产环境且HTTPS时启用
-        sameSite: 'strict', // 更严格的同站策略
+        secure: false, // Docker环境中使用HTTP，设为false
+        sameSite: 'lax', // 使用lax策略，兼容性更好
         httpOnly: false // 客户端需要访问
       })
       
       const userInfo = useCookie('userInfo', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24,
-        secure: process.env.NODE_ENV === 'production' && window.location.protocol === 'https:',
-        sameSite: 'strict',
+        secure: false, // Docker环境中使用HTTP，设为false
+        sameSite: 'lax', // 使用lax策略，兼容性更好
         httpOnly: false
       })
       
@@ -330,31 +333,42 @@ const handleLogin = async () => {
       userInfo.value = response.data.user || { username: form.username }
       console.log('Token和用户信息已保存:', token.value, userInfo.value)
       
+      // 验证Cookie是否正确设置
+      console.log('验证Cookie设置:')
+      console.log('- token cookie:', document.cookie.includes('token'))
+      console.log('- userInfo cookie:', document.cookie.includes('userInfo'))
+      console.log('- 所有cookies:', document.cookie)
+      
       success.value = true
       
       // 等待Cookie设置完成后再跳转
       await nextTick()
+      console.log('nextTick完成，准备跳转...')
       
-      // 使用多种跳转方式确保成功
+      // 等待一段时间确保Cookie完全设置
+      console.log('等待Cookie设置完成...')
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // 再次验证Cookie
+      console.log('延迟后验证Cookie:')
+      console.log('- token cookie存在:', document.cookie.includes('token'))
+      console.log('- token值:', token.value)
+      
+      // 使用Nuxt导航进行跳转
+      console.log('准备跳转到首页')
       try {
-        console.log('开始跳转到首页...')
-        
-        // 方式1：使用navigateTo
-        await navigateTo('/', { replace: true, external: false })
+        await navigateTo('/', { replace: true })
         console.log('navigateTo跳转成功')
       } catch (navError) {
         console.error('navigateTo跳转失败:', navError)
-        
+        // 如果navigateTo失败，尝试使用router.push
         try {
-          // 方式2：使用router.push
-          const router = useRouter()
-          await router.push('/')
+          await $router.push('/')
           console.log('router.push跳转成功')
         } catch (routerError) {
           console.error('router.push跳转失败:', routerError)
-          
-          // 方式3：使用window.location（最后手段）
-          console.log('使用window.location跳转')
+          // 最后使用window.location作为备选
+          console.log('使用window.location.href作为最后备选')
           if (process.client) {
             window.location.href = '/'
           }
