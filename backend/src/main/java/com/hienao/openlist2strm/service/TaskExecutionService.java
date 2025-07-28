@@ -179,7 +179,7 @@ public class TaskExecutionService {
 
   /**
    * 执行具体的任务逻辑 1. 根据任务配置获取OpenList配置 2. 如果是全量执行，先清空STRM目录 3. 通过OpenList API递归获取所有文件 4. 对视频文件生成STRM文件
-   * 5. 保持目录结构一致
+   * 5. 保持目录结构一致 6. 如果是增量执行，清理孤立的STRM文件
    *
    * @param taskConfig 任务配置
    * @param isIncrement 是否增量执行
@@ -230,6 +230,17 @@ public class TaskExecutionService {
             // 继续处理其他文件，不中断整个任务
           }
         }
+      }
+
+      // 5. 如果是增量执行，清理孤立的STRM文件（源文件已不存在的STRM文件）
+      if (isIncrement) {
+        log.info("增量执行模式，开始清理孤立的STRM文件");
+        int cleanedCount = strmFileService.cleanOrphanedStrmFiles(
+            taskConfig.getStrmPath(),
+            allFiles,
+            taskConfig.getPath(),
+            taskConfig.getRenameRegex());
+        log.info("清理了 {} 个孤立的STRM文件", cleanedCount);
       }
 
       log.info("任务执行完成: {}, 处理了 {} 个视频文件", taskConfig.getTaskName(), processedCount);
