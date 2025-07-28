@@ -22,25 +22,36 @@
 
 ### 使用 Docker Compose（推荐）
 
+#### 方式一：直接拉取镜像部署（推荐）
+
+创建 `docker-compose.yml`：
+```yaml
+services:
+  app:
+    image: hienao6/openlist-strm:latest
+    container_name: openlist-strm
+    ports:
+      - "3111:80"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/var/log
+    restart: always
+```
+
+启动服务：
 ```bash
-# 克隆项目
-git clone https://github.com/hienao/openlisttostrm.git
-cd openlisttostrm
-
-# 配置环境变量
-cp .env.example .env
-
-# 启动服务
 docker-compose up -d
 ```
 
-访问应用：
-- 前端应用: http://localhost:80
-- 后端API: http://localhost:8080
+#### 方式二：本地构建部署
 
-### 其他部署方式
+```bash
+git clone https://github.com/hienao/openlisttostrm.git
+cd openlisttostrm
+docker-compose up -d
+```
 
-详细的部署指南请参考：[Docker 部署文档](.github/DOCKER_SETUP.md)
+访问应用：http://localhost:3111
 
 ## 开发文档
 
