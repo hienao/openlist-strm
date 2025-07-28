@@ -1,11 +1,16 @@
 # Multi-stage Dockerfile for frontend (Nuxt) and backend (Spring Boot)
 
+# Build argument for version
+ARG APP_VERSION=dev
+
 # Stage 1: Build Frontend (Nuxt)
 FROM node:20-alpine AS frontend-builder
+ARG APP_VERSION
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
+ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
 # Stage 2: Build Backend (Spring Boot)

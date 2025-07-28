@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
-      - 'beta-*.*.*'
+      - 'beta-v*.*.*'
 
 env:
   REGISTRY: docker.io
@@ -13,7 +13,9 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' && github.ref_name != ''
+    if: |
+      (github.ref_type == 'tag' && startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')) ||
+      (github.ref_type == 'tag' && startsWith(github.ref_name, 'beta-v'))
     
     steps:
     - name: Checkout code
@@ -50,17 +52,17 @@ jobs:
         
     - name: Extract metadata for release tags (v*.*.*)
       id: meta-release
-      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-')
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
           type=ref,event=tag
           type=raw,value=latest
-          
-    - name: Extract metadata for beta tags (beta-*.*.*)
+
+    - name: Extract metadata for beta tags (beta-v*.*.*)
       id: meta-beta
-      if: startsWith(github.ref_name, 'beta-')
+      if: startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
@@ -71,7 +73,7 @@ jobs:
           
     - name: Build and push Docker image (release)
       id: build-and-push-release
-      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-')
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -80,12 +82,14 @@ jobs:
         push: true
         tags: ${{ steps.meta-release.outputs.tags }}
         labels: ${{ steps.meta-release.outputs.labels }}
+        build-args: |
+          APP_VERSION=${{ github.ref_name }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        
+
     - name: Build and push Docker image (beta)
       id: build-and-push-beta
-      if: startsWith(github.ref_name, 'beta-')
+      if: startsWith(github.ref_name, 'beta-v')
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -94,6 +98,8 @@ jobs:
         push: true
         tags: ${{ steps.meta-beta.outputs.tags }}
         labels: ${{ steps.meta-beta.outputs.labels }}
+        build-args: |
+          APP_VERSION=${{ github.ref_name }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         

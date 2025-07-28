@@ -47,7 +47,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // 生产环境使用相对路径，开发环境使用完整URL
-      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api'
+      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api',
+      // 应用版本号
+      appVersion: process.env.NUXT_PUBLIC_APP_VERSION || 'dev'
     }
   },
 
