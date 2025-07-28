@@ -305,8 +305,7 @@ public class StrmFileService {
   }
 
   /**
-   * 清理孤立的STRM文件（源文件已不存在的STRM文件）
-   * 用于增量执行时清理已删除源文件对应的STRM文件
+   * 清理孤立的STRM文件（源文件已不存在的STRM文件） 用于增量执行时清理已删除源文件对应的STRM文件
    *
    * @param strmBasePath STRM基础路径
    * @param existingFiles 当前存在的源文件列表
@@ -314,10 +313,11 @@ public class StrmFileService {
    * @param renameRegex 重命名正则表达式
    * @return 清理的文件数量
    */
-  public int cleanOrphanedStrmFiles(String strmBasePath,
-                                   List<OpenlistApiService.OpenlistFile> existingFiles,
-                                   String taskPath,
-                                   String renameRegex) {
+  public int cleanOrphanedStrmFiles(
+      String strmBasePath,
+      List<OpenlistApiService.OpenlistFile> existingFiles,
+      String taskPath,
+      String renameRegex) {
     if (!StringUtils.hasText(strmBasePath)) {
       log.warn("STRM基础路径为空，跳过孤立文件清理");
       return 0;
@@ -333,24 +333,26 @@ public class StrmFileService {
       }
 
       // 构建现有视频文件的STRM文件路径集合
-      Set<Path> expectedStrmFiles = buildExpectedStrmFilePaths(existingFiles, taskPath, strmBasePath, renameRegex);
+      Set<Path> expectedStrmFiles =
+          buildExpectedStrmFilePaths(existingFiles, taskPath, strmBasePath, renameRegex);
 
       // 遍历STRM目录，找出孤立的STRM文件
       AtomicInteger cleanedCount = new AtomicInteger(0);
       Files.walk(strmPath)
           .filter(Files::isRegularFile)
           .filter(path -> path.toString().toLowerCase().endsWith(".strm"))
-          .forEach(strmFile -> {
-            if (!expectedStrmFiles.contains(strmFile)) {
-              try {
-                Files.delete(strmFile);
-                log.info("删除孤立的STRM文件: {}", strmFile);
-                cleanedCount.incrementAndGet();
-              } catch (IOException e) {
-                log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
-              }
-            }
-          });
+          .forEach(
+              strmFile -> {
+                if (!expectedStrmFiles.contains(strmFile)) {
+                  try {
+                    Files.delete(strmFile);
+                    log.info("删除孤立的STRM文件: {}", strmFile);
+                    cleanedCount.incrementAndGet();
+                  } catch (IOException e) {
+                    log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
+                  }
+                }
+              });
 
       // 清理空目录
       cleanEmptyDirectories(strmPath);
@@ -372,10 +374,11 @@ public class StrmFileService {
    * @param renameRegex 重命名正则表达式
    * @return 预期的STRM文件路径集合
    */
-  private Set<Path> buildExpectedStrmFilePaths(List<OpenlistApiService.OpenlistFile> existingFiles,
-                                              String taskPath,
-                                              String strmBasePath,
-                                              String renameRegex) {
+  private Set<Path> buildExpectedStrmFilePaths(
+      List<OpenlistApiService.OpenlistFile> existingFiles,
+      String taskPath,
+      String strmBasePath,
+      String renameRegex) {
     Set<Path> expectedPaths = new HashSet<>();
 
     for (OpenlistApiService.OpenlistFile file : existingFiles) {
@@ -411,17 +414,18 @@ public class StrmFileService {
           .filter(Files::isDirectory)
           .filter(path -> !path.equals(rootPath)) // 不删除根目录
           .sorted((path1, path2) -> path2.compareTo(path1)) // 先删除子目录
-          .forEach(dir -> {
-            try {
-              // 检查目录是否为空
-              if (Files.list(dir).findAny().isEmpty()) {
-                Files.delete(dir);
-                log.debug("删除空目录: {}", dir);
-              }
-            } catch (IOException e) {
-              log.debug("检查或删除目录失败: {}, 错误: {}", dir, e.getMessage());
-            }
-          });
+          .forEach(
+              dir -> {
+                try {
+                  // 检查目录是否为空
+                  if (Files.list(dir).findAny().isEmpty()) {
+                    Files.delete(dir);
+                    log.debug("删除空目录: {}", dir);
+                  }
+                } catch (IOException e) {
+                  log.debug("检查或删除目录失败: {}, 错误: {}", dir, e.getMessage());
+                }
+              });
     } catch (IOException e) {
       log.warn("清理空目录失败: {}, 错误: {}", rootPath, e.getMessage());
     }

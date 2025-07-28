@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -34,8 +35,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -45,131 +44,117 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class LogController {
 
-    private final LogService logService;
+  private final LogService logService;
 
-    @Operation(summary = "获取日志内容", description = "获取指定类型的日志内容")
-    @ApiResponses(value = {
+  @Operation(summary = "获取日志内容", description = "获取指定类型的日志内容")
+  @ApiResponses(
+      value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
             description = "获取成功",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
+            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
-            description = "参数错误"
-        ),
+            description = "参数错误"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "401",
-            description = "未授权"
-        ),
+            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "500",
-            description = "服务器内部错误"
-        )
-    })
-    @GetMapping("/{logType}")
-    public ApiResponse<List<String>> getLogs(
-            @Parameter(description = "日志类型", example = "backend")
-            @PathVariable String logType,
-            @Parameter(description = "获取行数", example = "1000")
-            @RequestParam(defaultValue = "1000") int lines) {
-        try {
-            List<String> logLines = logService.getLogLines(logType, lines);
-            return ApiResponse.success(logLines);
-        } catch (IllegalArgumentException e) {
-            log.warn("获取日志失败，参数错误: {}", e.getMessage());
-            return ApiResponse.error(400, e.getMessage());
-        } catch (Exception e) {
-            log.error("获取日志失败", e);
-            return ApiResponse.error(500, "获取日志失败: " + e.getMessage());
-        }
+            description = "服务器内部错误")
+      })
+  @GetMapping("/{logType}")
+  public ApiResponse<List<String>> getLogs(
+      @Parameter(description = "日志类型", example = "backend") @PathVariable String logType,
+      @Parameter(description = "获取行数", example = "1000") @RequestParam(defaultValue = "1000")
+          int lines) {
+    try {
+      List<String> logLines = logService.getLogLines(logType, lines);
+      return ApiResponse.success(logLines);
+    } catch (IllegalArgumentException e) {
+      log.warn("获取日志失败，参数错误: {}", e.getMessage());
+      return ApiResponse.error(400, e.getMessage());
+    } catch (Exception e) {
+      log.error("获取日志失败", e);
+      return ApiResponse.error(500, "获取日志失败: " + e.getMessage());
     }
+  }
 
-    @Operation(summary = "下载日志文件", description = "下载指定类型的完整日志文件")
-    @ApiResponses(value = {
+  @Operation(summary = "下载日志文件", description = "下载指定类型的完整日志文件")
+  @ApiResponses(
+      value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
             description = "下载成功",
-            content = @Content(mediaType = "application/octet-stream")
-        ),
+            content = @Content(mediaType = "application/octet-stream")),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
-            description = "参数错误"
-        ),
+            description = "参数错误"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "401",
-            description = "未授权"
-        ),
+            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "404",
-            description = "日志文件不存在"
-        ),
+            description = "日志文件不存在"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "500",
-            description = "服务器内部错误"
-        )
-    })
-    @GetMapping("/{logType}/download")
-    public ResponseEntity<Resource> downloadLog(
-            @Parameter(description = "日志类型", example = "backend")
-            @PathVariable String logType) {
-        try {
-            Resource resource = logService.getLogFile(logType);
-            
-            if (resource == null || !resource.exists()) {
-                return ResponseEntity.notFound().build();
-            }
+            description = "服务器内部错误")
+      })
+  @GetMapping("/{logType}/download")
+  public ResponseEntity<Resource> downloadLog(
+      @Parameter(description = "日志类型", example = "backend") @PathVariable String logType) {
+    try {
+      Resource resource = logService.getLogFile(logType);
 
-            String filename = logType + "-" + java.time.LocalDate.now() + ".log";
-            
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, 
-                           "attachment; filename=\"" + filename + "\"")
-                    .body(resource);
-                    
-        } catch (IllegalArgumentException e) {
-            log.warn("下载日志失败，参数错误: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            log.error("下载日志失败", e);
-            return ResponseEntity.internalServerError().build();
-        }
+      if (resource == null || !resource.exists()) {
+        return ResponseEntity.notFound().build();
+      }
+
+      String filename = logType + "-" + java.time.LocalDate.now() + ".log";
+
+      return ResponseEntity.ok()
+          .contentType(MediaType.APPLICATION_OCTET_STREAM)
+          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+          .body(resource);
+
+    } catch (IllegalArgumentException e) {
+      log.warn("下载日志失败，参数错误: {}", e.getMessage());
+      return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+      log.error("下载日志失败", e);
+      return ResponseEntity.internalServerError().build();
     }
+  }
 
-    @Operation(summary = "获取日志统计信息", description = "获取日志的统计信息")
-    @ApiResponses(value = {
+  @Operation(summary = "获取日志统计信息", description = "获取日志的统计信息")
+  @ApiResponses(
+      value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
             description = "获取成功",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
+            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
-            description = "参数错误"
-        ),
+            description = "参数错误"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "401",
-            description = "未授权"
-        ),
+            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "500",
-            description = "服务器内部错误"
-        )
-    })
-    @GetMapping("/{logType}/stats")
-    public ApiResponse<Object> getLogStats(
-            @Parameter(description = "日志类型", example = "backend")
-            @PathVariable String logType) {
-        try {
-            Object stats = logService.getLogStats(logType);
-            return ApiResponse.success(stats);
-        } catch (IllegalArgumentException e) {
-            log.warn("获取日志统计失败，参数错误: {}", e.getMessage());
-            return ApiResponse.error(400, e.getMessage());
-        } catch (Exception e) {
-            log.error("获取日志统计失败", e);
-            return ApiResponse.error(500, "获取日志统计失败: " + e.getMessage());
-        }
+            description = "服务器内部错误")
+      })
+  @GetMapping("/{logType}/stats")
+  public ApiResponse<Object> getLogStats(
+      @Parameter(description = "日志类型", example = "backend") @PathVariable String logType) {
+    try {
+      Object stats = logService.getLogStats(logType);
+      return ApiResponse.success(stats);
+    } catch (IllegalArgumentException e) {
+      log.warn("获取日志统计失败，参数错误: {}", e.getMessage());
+      return ApiResponse.error(400, e.getMessage());
+    } catch (Exception e) {
+      log.error("获取日志统计失败", e);
+      return ApiResponse.error(500, "获取日志统计失败: " + e.getMessage());
     }
+  }
 }

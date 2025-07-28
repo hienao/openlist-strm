@@ -235,11 +235,12 @@ public class TaskExecutionService {
       // 5. 如果是增量执行，清理孤立的STRM文件（源文件已不存在的STRM文件）
       if (isIncrement) {
         log.info("增量执行模式，开始清理孤立的STRM文件");
-        int cleanedCount = strmFileService.cleanOrphanedStrmFiles(
-            taskConfig.getStrmPath(),
-            allFiles,
-            taskConfig.getPath(),
-            taskConfig.getRenameRegex());
+        int cleanedCount =
+            strmFileService.cleanOrphanedStrmFiles(
+                taskConfig.getStrmPath(),
+                allFiles,
+                taskConfig.getPath(),
+                taskConfig.getRenameRegex());
         log.info("清理了 {} 个孤立的STRM文件", cleanedCount);
       }
 

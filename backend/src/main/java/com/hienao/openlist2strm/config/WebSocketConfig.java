@@ -30,11 +30,12 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final LogWebSocketHandler logWebSocketHandler;
+  private final LogWebSocketHandler logWebSocketHandler;
 
-    @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(logWebSocketHandler, "/ws/logs/{logType}")
-                .setAllowedOrigins("*"); // 在生产环境中应该限制允许的源
-    }
+  @Override
+  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    registry
+        .addHandler(logWebSocketHandler, "/ws/logs/{logType}")
+        .setAllowedOrigins("*"); // 在生产环境中应该限制允许的源
+  }
 }
