@@ -19,12 +19,13 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 导航栏 -->
-    <AppHeader 
+    <AppHeader
       title="OpenList2Strm"
       :user-info="userInfo"
       @logout="logout"
       @change-password="changePassword"
       @open-settings="openSettings"
+      @open-logs="openLogs"
     />
 
     <!-- 主要内容 -->
@@ -366,6 +367,12 @@ const changePassword = () => {
 const openSettings = () => {
   // 跳转到设置页面
   navigateTo('/settings')
+}
+
+// 打开日志页面
+const openLogs = () => {
+  // 跳转到日志页面
+  navigateTo('/logs')
 }
 
 // 获取配置列表
