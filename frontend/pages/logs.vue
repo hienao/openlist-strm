@@ -70,11 +70,11 @@
                 <!-- 实时连接状态 -->
                 <div class="flex items-center space-x-2">
                   <span class="text-sm font-medium text-gray-700">连接状态:</span>
-                  <span 
+                  <span
                     :class="wsConnected ? 'text-green-600' : 'text-red-600'"
                     class="text-sm font-medium flex items-center"
                   >
-                    <span 
+                    <span
                       :class="wsConnected ? 'bg-green-500' : 'bg-red-500'"
                       class="w-2 h-2 rounded-full mr-1"
                     ></span>
@@ -227,11 +227,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
-import { authenticatedApiCall } from '~/utils/api.js'
+import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 
-// 页面元数据
+// 页面元数据 - 日志页面无需认证
 definePageMeta({
-  middleware: 'auth'
+  // 移除认证中间件，日志页面公开访问
 })
 
 // 响应式数据
@@ -244,6 +244,7 @@ const wsConnected = ref(false)
 const downloading = ref(false)
 const lastUpdateTime = ref('')
 const logContainer = ref(null)
+
 
 // WebSocket 连接
 let ws = null
@@ -309,6 +310,8 @@ const openLogs = () => {
   // 当前就在日志页面，无需操作
 }
 
+
+
 // 获取日志行的样式类
 const getLogLineClass = (line) => {
   const lowerLine = line.toLowerCase()
@@ -354,7 +357,7 @@ const clearLogs = () => {
 const loadLogs = async () => {
   loading.value = true
   try {
-    const response = await authenticatedApiCall(`/logs/${selectedLogType.value}`, {
+    const response = await apiCall(`/logs/${selectedLogType.value}`, {
       method: 'GET'
     })
 
@@ -376,24 +379,14 @@ const loadLogs = async () => {
 const downloadLogs = async () => {
   downloading.value = true
   try {
-    // 获取token
-    const token = useCookie('token')
-    if (!token.value) {
-      alert('请先登录')
-      return
-    }
-
     // 构建下载URL
     const config = useRuntimeConfig()
     const baseURL = config.public.apiBase || 'http://localhost:8080'
-    const downloadUrl = `${baseURL}/api/logs/${selectedLogType.value}/download`
+    const downloadUrl = `${baseURL}/logs/${selectedLogType.value}/download`
 
     // 使用fetch下载文件
     const response = await fetch(downloadUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
+      method: 'GET'
     })
 
     if (response.ok) {
@@ -430,15 +423,22 @@ const connectWebSocket = () => {
 
   try {
     // 构建WebSocket URL
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    let wsHost = window.location.host
+    const config = useRuntimeConfig()
+    const apiBase = config.public.apiBase
 
-    // 如果是开发环境，可能需要使用不同的端口
-    if (window.location.port === '3000') {
-      wsHost = window.location.hostname + ':8080'
+    let wsUrl
+
+    if (apiBase && apiBase.startsWith('http')) {
+      // 开发环境：使用完整的URL
+      const apiUrl = new URL(apiBase)
+      const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsUrl = `${wsProtocol}//${apiUrl.host}/ws/logs/${selectedLogType.value}`
+    } else {
+      // 生产环境：使用相对路径，基于当前页面的协议和主机
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/logs/${selectedLogType.value}`
     }
 
-    const wsUrl = `${wsProtocol}//${wsHost}/ws/logs/${selectedLogType.value}`
     console.log('连接WebSocket:', wsUrl)
 
     ws = new WebSocket(wsUrl)
