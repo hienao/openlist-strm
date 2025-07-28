@@ -46,6 +46,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'mkdir -p /app/data/log /run/nginx' >> /start.sh && \
+    echo 'chmod 755 /app/data/log' >> /start.sh && \
     echo 'nginx &' >> /start.sh && \
     echo 'java --add-opens java.base/java.lang=ALL-UNNAMED -jar ./openlisttostrm.jar' >> /start.sh && \
     chmod +x /start.sh

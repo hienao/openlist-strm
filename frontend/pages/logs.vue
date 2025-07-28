@@ -227,11 +227,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
-import { apiCall, authenticatedApiCall } from '~/utils/api.js'
+import { apiCall } from '~/utils/api.js'
 
-// 页面元数据 - 日志页面无需认证
+// 页面元数据 - 日志页面无需认证，API接口已配置为公开访问
 definePageMeta({
-  // 移除认证中间件，日志页面公开访问
+  // 移除认证中间件，日志页面和API接口都是公开访问
 })
 
 // 响应式数据
@@ -284,13 +284,21 @@ const goBack = () => {
 const logout = async () => {
   try {
     const token = useCookie('token')
-    await authenticatedApiCall('/auth/sign-out', { method: 'POST' })
+    const userInfoCookie = useCookie('userInfo')
+
+    // 清除本地token和用户信息
     token.value = null
+    userInfoCookie.value = null
+
+    // 跳转到登录页
     await navigateTo('/login')
   } catch (error) {
     console.error('登出失败:', error)
+    // 即使失败也清除本地数据
     const token = useCookie('token')
+    const userInfoCookie = useCookie('userInfo')
     token.value = null
+    userInfoCookie.value = null
     await navigateTo('/login')
   }
 }
@@ -384,7 +392,7 @@ const downloadLogs = async () => {
     const baseURL = config.public.apiBase || 'http://localhost:8080'
     const downloadUrl = `${baseURL}/logs/${selectedLogType.value}/download`
 
-    // 使用fetch下载文件
+    // 使用fetch下载文件，无需认证
     const response = await fetch(downloadUrl, {
       method: 'GET'
     })

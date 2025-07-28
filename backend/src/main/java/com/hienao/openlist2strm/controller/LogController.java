@@ -44,7 +44,7 @@ public class LogController {
 
   private final LogService logService;
 
-  @Operation(summary = "获取日志内容", description = "获取指定类型的日志内容")
+  @Operation(summary = "获取日志内容", description = "获取指定类型的日志内容（无需认证）")
   @ApiResponses(
       value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -54,9 +54,6 @@ public class LogController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
             description = "参数错误"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "500",
             description = "服务器内部错误")
@@ -78,7 +75,7 @@ public class LogController {
     }
   }
 
-  @Operation(summary = "下载日志文件", description = "下载指定类型的完整日志文件")
+  @Operation(summary = "下载日志文件", description = "下载指定类型的完整日志文件（无需认证）")
   @ApiResponses(
       value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -88,9 +85,6 @@ public class LogController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
             description = "参数错误"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "404",
             description = "日志文件不存在"),
@@ -124,7 +118,7 @@ public class LogController {
     }
   }
 
-  @Operation(summary = "获取日志统计信息", description = "获取日志的统计信息")
+  @Operation(summary = "获取日志统计信息", description = "获取日志的统计信息（无需认证）")
   @ApiResponses(
       value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -134,9 +128,6 @@ public class LogController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
             description = "参数错误"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "未授权"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "500",
             description = "服务器内部错误")

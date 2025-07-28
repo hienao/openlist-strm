@@ -27,7 +27,7 @@ export async function apiCall(endpoint, options = {}) {
   // 确保 endpoint 以 / 开头，避免重复的 /api 前缀
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const url = `${baseUrl}${cleanEndpoint}`
-  
+
   // 默认选项
   const defaultOptions = {
     method: 'GET',
@@ -36,7 +36,7 @@ export async function apiCall(endpoint, options = {}) {
       ...options.headers
     }
   }
-  
+
   // 合并选项
   const finalOptions = {
     ...defaultOptions,
@@ -46,12 +46,54 @@ export async function apiCall(endpoint, options = {}) {
       ...options.headers
     }
   }
-  
+
   try {
     return await $fetch(url, finalOptions)
   } catch (error) {
     console.error(`API 调用失败: ${url}`, error)
+
+    // 全局处理 401 未授权错误
+    if (error.status === 401) {
+      await handleUnauthorizedError()
+    }
+
     throw error
+  }
+}
+
+/**
+ * 处理 401 未授权错误的统一逻辑
+ */
+async function handleUnauthorizedError() {
+  console.warn('检测到 401 未授权错误，清除 token 并跳转到登录页')
+
+  // 清除 token 和用户信息
+  const tokenCookie = useCookie('token')
+  const userInfoCookie = useCookie('userInfo')
+
+  tokenCookie.value = null
+  userInfoCookie.value = null
+
+  // 只在客户端执行跳转，避免服务端渲染时的问题
+  if (import.meta.client) {
+    // 检查用户是否存在，决定跳转到登录页还是注册页
+    try {
+      const response = await $fetch(`${getApiBaseUrl()}/auth/check-user`, {
+        method: 'GET'
+      })
+
+      if (response.code === 200 && response.data?.exists) {
+        // 用户存在，跳转到登录页
+        await navigateTo('/login')
+      } else {
+        // 用户不存在，跳转到注册页
+        await navigateTo('/register')
+      }
+    } catch (checkError) {
+      console.error('检查用户失败，默认跳转到登录页:', checkError)
+      // 检查失败时默认跳转到登录页
+      await navigateTo('/login')
+    }
   }
 }
 

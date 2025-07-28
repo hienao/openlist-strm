@@ -93,6 +93,7 @@ docker run -d \
   -v $(pwd)/data/config:/app/data/config \
   -v $(pwd)/data/log:/app/data/log \
   -v $(pwd)/backend/strm:/app/backend/strm \
+  -e LOG_PATH=/app/data/log \
   openlist2strm:latest
 
 if [ $? -eq 0 ]; then

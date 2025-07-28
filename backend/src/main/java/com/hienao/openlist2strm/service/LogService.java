@@ -36,22 +36,45 @@ public class LogService {
   @Value("${logging.file.path:./logs}")
   private String logPath;
 
-  // 默认日志路径，如果配置的路径不存在则使用项目根目录下的logs
+  // 获取实际的日志路径，支持多种路径检测
   private String getActualLogPath() {
+    log.debug("配置的日志路径: {}", logPath);
+
     // 首先尝试使用配置的路径
     Path configuredPath = Paths.get(logPath);
     if (Files.exists(configuredPath)) {
+      log.debug("使用配置的日志路径: {}", configuredPath.toAbsolutePath());
       return logPath;
+    }
+
+    // 尝试创建配置的路径
+    try {
+      Files.createDirectories(configuredPath);
+      log.info("创建日志目录: {}", configuredPath.toAbsolutePath());
+      return logPath;
+    } catch (IOException e) {
+      log.warn("无法创建配置的日志目录: {}, 错误: {}", configuredPath, e.getMessage());
     }
 
     // 如果配置路径不存在，尝试项目根目录下的logs
     String projectRoot = System.getProperty("user.dir");
     Path projectLogsPath = Paths.get(projectRoot, "logs");
     if (Files.exists(projectLogsPath)) {
+      log.info("使用项目根目录下的日志路径: {}", projectLogsPath.toAbsolutePath());
       return projectLogsPath.toString();
     }
 
-    // 都不存在则返回配置的路径（可能需要创建）
+    // 尝试创建项目根目录下的logs
+    try {
+      Files.createDirectories(projectLogsPath);
+      log.info("创建项目日志目录: {}", projectLogsPath.toAbsolutePath());
+      return projectLogsPath.toString();
+    } catch (IOException e) {
+      log.warn("无法创建项目日志目录: {}, 错误: {}", projectLogsPath, e.getMessage());
+    }
+
+    // 最后返回配置的路径
+    log.warn("所有日志路径检测失败，返回配置路径: {}", logPath);
     return logPath;
   }
 
@@ -66,7 +89,14 @@ public class LogService {
     if (fileName == null) {
       throw new IllegalArgumentException("不支持的日志类型: " + logType);
     }
-    return Paths.get(getActualLogPath(), fileName);
+
+    String actualLogPath = getActualLogPath();
+    Path logFilePath = Paths.get(actualLogPath, fileName);
+
+    log.debug("日志文件路径: {} -> {}", logType, logFilePath.toAbsolutePath());
+    log.debug("日志文件是否存在: {}", Files.exists(logFilePath));
+
+    return logFilePath;
   }
 
   /** 获取日志行 */
