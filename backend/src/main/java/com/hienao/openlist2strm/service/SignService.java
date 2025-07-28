@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 public class SignService {
 
   private static final String USER_INFO_FILE = "./data/config/userInfo.json";
+  private static final String PWD_KEY = "pwd";
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public void signUp(SignUpDto signUpDto) {
@@ -36,14 +37,14 @@ public class SignService {
       // 创建用户信息
       Map<String, String> userInfo = new HashMap<>();
       userInfo.put("username", signUpDto.getUsername());
-      userInfo.put("pwd", md5Hash(signUpDto.getPassword()));
+      userInfo.put(PWD_KEY, md5Hash(signUpDto.getPassword()));
 
       // 保存到文件
       objectMapper.writeValue(userFile, userInfo);
       log.info("用户注册成功: {}", signUpDto.getUsername());
     } catch (IOException e) {
       log.error("保存用户信息失败", e);
-      throw new BusinessException("注册失败");
+      throw new BusinessException("注册失败", e);
     }
   }
 
@@ -57,7 +58,7 @@ public class SignService {
     try {
       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
       String storedUsername = userInfo.get("username");
-      String storedPassword = userInfo.get("pwd");
+      String storedPassword = userInfo.get(PWD_KEY);
 
       if (!signInDto.getUsername().equals(storedUsername)) {
         throw new BusinessException("用户名错误");
@@ -71,7 +72,7 @@ public class SignService {
       return storedUsername;
     } catch (IOException e) {
       log.error("读取用户信息失败", e);
-      throw new BusinessException("登录失败");
+      throw new BusinessException("登录失败", e);
     }
   }
 
@@ -84,7 +85,7 @@ public class SignService {
 
     try {
       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
-      String storedPassword = userInfo.get("pwd");
+      String storedPassword = userInfo.get(PWD_KEY);
 
       // 验证旧密码
       if (!md5Hash(changePasswordDto.getOldPassword()).equals(storedPassword)) {
@@ -92,13 +93,13 @@ public class SignService {
       }
 
       // 更新密码
-      userInfo.put("pwd", md5Hash(changePasswordDto.getNewPassword()));
+      userInfo.put(PWD_KEY, md5Hash(changePasswordDto.getNewPassword()));
       objectMapper.writeValue(userFile, userInfo);
 
       log.info("密码修改成功");
     } catch (IOException e) {
       log.error("修改密码失败", e);
-      throw new BusinessException("修改密码失败");
+      throw new BusinessException("修改密码失败", e);
     }
   }
 

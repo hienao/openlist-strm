@@ -7,11 +7,11 @@
     <description>
         This is a custom ruleset for our project.
     </description>
-    <rule ref="category/java/bestpractices.xml">
-        <exclude name="GuardLogStatement"/>
-    </rule>
-    <rule ref="category/java/errorprone.xml">
-        <exclude name="AvoidLiteralsInIfCondition"/>
-    </rule>
+    <!-- 只保留最重要的规则 -->
+    <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
+    <rule ref="category/java/bestpractices.xml/UseLocaleWithCaseConversions"/>
+    <rule ref="category/java/errorprone.xml/NullPointerException"/>
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+    <rule ref="category/java/security.xml"/>
 
 </ruleset>

@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,8 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 public class StrmFileService {
+
+  private static final String ERROR_SUFFIX = ", 错误: ";
 
   private final SystemConfigService systemConfigService;
 
@@ -63,8 +66,8 @@ public class StrmFileService {
       log.info("生成STRM文件成功: {}", strmFilePath);
 
     } catch (Exception e) {
-      log.error("生成STRM文件失败: {}, 错误: {}", fileName, e.getMessage(), e);
-      throw new BusinessException("生成STRM文件失败: " + fileName + ", 错误: " + e.getMessage());
+      log.error("生成STRM文件失败: {}" + ERROR_SUFFIX + "{}", fileName, e.getMessage(), e);
+      throw new BusinessException("生成STRM文件失败: " + fileName + ERROR_SUFFIX + e.getMessage(), e);
     }
   }
 
@@ -139,7 +142,7 @@ public class StrmFileService {
         log.debug("创建目录: {}", directoryPath);
       }
     } catch (IOException e) {
-      throw new BusinessException("创建目录失败: " + directoryPath + ", 错误: " + e.getMessage());
+      throw new BusinessException("创建目录失败: " + directoryPath + ERROR_SUFFIX + e.getMessage(), e);
     }
   }
 
@@ -156,7 +159,7 @@ public class StrmFileService {
           strmFilePath, fileUrl, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
       log.debug("写入STRM文件: {} -> {}", strmFilePath, fileUrl);
     } catch (IOException e) {
-      throw new BusinessException("写入STRM文件失败: " + strmFilePath + ", 错误: " + e.getMessage());
+      throw new BusinessException("写入STRM文件失败: " + strmFilePath + ERROR_SUFFIX + e.getMessage(), e);
     }
   }
 
@@ -213,10 +216,10 @@ public class StrmFileService {
         return isVideoFileWithDefaultExtensions(fileName);
       }
 
-      String lowerCaseFileName = fileName.toLowerCase();
+      String lowerCaseFileName = fileName.toLowerCase(Locale.ROOT);
 
       for (String extension : mediaExtensions) {
-        if (extension != null && lowerCaseFileName.endsWith(extension.toLowerCase())) {
+        if (extension != null && lowerCaseFileName.endsWith(extension.toLowerCase(Locale.ROOT))) {
           return true;
         }
       }
@@ -236,7 +239,7 @@ public class StrmFileService {
    * @return 是否为视频文件
    */
   private boolean isVideoFileWithDefaultExtensions(String fileName) {
-    String lowerCaseFileName = fileName.toLowerCase();
+    String lowerCaseFileName = fileName.toLowerCase(Locale.ROOT);
     String[] defaultVideoExtensions = {".mp4", ".avi", ".mkv", ".rmvb"};
 
     for (String extension : defaultVideoExtensions) {
@@ -286,15 +289,15 @@ public class StrmFileService {
                   Files.delete(path);
                   log.debug("删除: {}", path);
                 } catch (IOException e) {
-                  log.warn("删除文件/目录失败: {}, 错误: {}", path, e.getMessage());
+                  log.warn("删除文件/目录失败: {}" + ERROR_SUFFIX + "{}", path, e.getMessage());
                 }
               });
 
       log.info("STRM目录清理完成: {}", strmPath);
 
     } catch (Exception e) {
-      log.error("清理STRM目录失败: {}, 错误: {}", strmBasePath, e.getMessage(), e);
-      throw new BusinessException("清理STRM目录失败: " + strmBasePath + ", 错误: " + e.getMessage());
+      log.error("清理STRM目录失败: {}" + ERROR_SUFFIX + "{}", strmBasePath, e.getMessage(), e);
+      throw new BusinessException("清理STRM目录失败: " + strmBasePath + ERROR_SUFFIX + e.getMessage(), e);
     }
   }
 }
