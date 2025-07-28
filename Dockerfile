@@ -35,33 +35,8 @@ COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 # Copy backend jar
 COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
 
-# Create nginx configuration
-RUN echo 'error_log /app/data/log/nginx_error.log;' > /etc/nginx/nginx.conf && \
-    echo 'pid /run/nginx.pid;' >> /etc/nginx/nginx.conf && \
-    echo 'events { worker_connections 1024; }' >> /etc/nginx/nginx.conf && \
-    echo 'http {' >> /etc/nginx/nginx.conf && \
-    echo '    include /etc/nginx/mime.types;' >> /etc/nginx/nginx.conf && \
-    echo '    default_type application/octet-stream;' >> /etc/nginx/nginx.conf && \
-    echo '    access_log /app/data/log/nginx_access.log;' >> /etc/nginx/nginx.conf && \
-    echo '    sendfile on;' >> /etc/nginx/nginx.conf && \
-    echo '    keepalive_timeout 65;' >> /etc/nginx/nginx.conf && \
-    echo '    server {' >> /etc/nginx/nginx.conf && \
-    echo '        listen 80;' >> /etc/nginx/nginx.conf && \
-    echo '        server_name localhost;' >> /etc/nginx/nginx.conf && \
-    echo '        root /var/www/html;' >> /etc/nginx/nginx.conf && \
-    echo '        index index.html;' >> /etc/nginx/nginx.conf && \
-    echo '        location /api/ {' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_pass http://localhost:8080;' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_set_header Host $host;' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_set_header X-Real-IP $remote_addr;' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' >> /etc/nginx/nginx.conf && \
-    echo '            proxy_set_header X-Forwarded-Proto $scheme;' >> /etc/nginx/nginx.conf && \
-    echo '        }' >> /etc/nginx/nginx.conf && \
-    echo '        location / {' >> /etc/nginx/nginx.conf && \
-    echo '            try_files $uri $uri/ /index.html;' >> /etc/nginx/nginx.conf && \
-    echo '        }' >> /etc/nginx/nginx.conf && \
-    echo '    }' >> /etc/nginx/nginx.conf && \
-    echo '}' >> /etc/nginx/nginx.conf
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \

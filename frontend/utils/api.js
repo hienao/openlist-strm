@@ -5,27 +5,15 @@
 
 /**
  * 获取 API 基础 URL
- * 在生产环境下动态构建，避免端口映射问题
+ * 统一开发和生产环境的API调用方式
  */
 export function getApiBaseUrl() {
   const config = useRuntimeConfig()
-  
-  // 开发环境直接使用配置的 URL
-  if (process.env.NODE_ENV !== 'production') {
-    return config.public.apiBase
-  }
-  
-  // 生产环境动态构建 API URL
-  if (process.client) {
-    // 客户端：使用当前页面的 protocol 和 hostname（不包含端口）
-    const protocol = window.location.protocol
-    const hostname = window.location.hostname
-    // 在Docker环境中，前端通过Nginx代理，不需要端口号
-    return `${protocol}//${hostname}/api`
-  } else {
-    // 服务端：使用相对路径
-    return '/api'
-  }
+
+  // 直接使用配置的 API 基础路径
+  // 开发环境: http://localhost:8080/api
+  // 生产环境: /api (相对路径，由 Nginx 代理)
+  return config.public.apiBase
 }
 
 /**
@@ -36,7 +24,9 @@ export function getApiBaseUrl() {
  */
 export async function apiCall(endpoint, options = {}) {
   const baseUrl = getApiBaseUrl()
-  const url = `${baseUrl}${endpoint}`
+  // 确保 endpoint 以 / 开头，避免重复的 /api 前缀
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+  const url = `${baseUrl}${cleanEndpoint}`
   
   // 默认选项
   const defaultOptions = {

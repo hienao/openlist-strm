@@ -23,6 +23,8 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class TaskConfigService {
 
+  private static final String TASK_CONFIG_ID_NULL_ERROR = "任务配置ID不能为空";
+
   private final TaskConfigMapper taskConfigMapper;
   private final QuartzSchedulerService quartzSchedulerService;
 
@@ -34,7 +36,7 @@ public class TaskConfigService {
    */
   public TaskConfig getById(Long id) {
     if (id == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
     return taskConfigMapper.selectById(id);
   }
@@ -155,7 +157,7 @@ public class TaskConfigService {
   @Transactional(rollbackFor = Exception.class)
   public TaskConfig updateConfig(TaskConfig taskConfig) {
     if (taskConfig.getId() == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
 
     // 检查配置是否存在
@@ -209,7 +211,7 @@ public class TaskConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void deleteConfig(Long id) {
     if (id == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
 
     TaskConfig existingConfig = taskConfigMapper.selectById(id);
@@ -253,7 +255,7 @@ public class TaskConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void updateActiveStatus(Long id, Boolean isActive) {
     if (id == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
     if (isActive == null) {
       throw new BusinessException("启用状态不能为空");
@@ -308,7 +310,7 @@ public class TaskConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void updateLastExecTime(Long id, Long lastExecTime) {
     if (id == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
     if (lastExecTime == null) {
       throw new BusinessException("执行时间不能为空");
@@ -331,7 +333,7 @@ public class TaskConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void updateLastExecTime(Long id, LocalDateTime lastExecTime) {
     if (id == null) {
-      throw new BusinessException("任务配置ID不能为空");
+      throw new BusinessException(TASK_CONFIG_ID_NULL_ERROR);
     }
     if (lastExecTime == null) {
       throw new BusinessException("执行时间不能为空");

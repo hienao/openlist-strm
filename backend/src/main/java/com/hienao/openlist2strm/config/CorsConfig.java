@@ -33,7 +33,7 @@ public class CorsConfig implements WebMvcConfigurer {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    
+
     // 检查是否包含通配符 "*"
     if (allowedOrigins.contains("*")) {
       // 如果包含通配符，使用 allowedOriginPatterns 而不是 allowedOrigins
@@ -42,7 +42,7 @@ public class CorsConfig implements WebMvcConfigurer {
       // 如果不包含通配符，使用 allowedOrigins
       configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
     }
-    
+
     configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
     configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
     configuration.setExposedHeaders(Arrays.asList(allowedExposeHeaders.split(",")));

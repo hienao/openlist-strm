@@ -189,7 +189,7 @@ public class OpenlistApiService {
 
     } catch (Exception e) {
       log.error("获取目录内容失败: {}, 错误: {}", path, e.getMessage(), e);
-      throw new BusinessException("获取目录内容失败: " + path + ", 错误: " + e.getMessage());
+      throw new BusinessException("获取目录内容失败: " + path + ", 错误: " + e.getMessage(), e);
     }
   }
 
@@ -291,7 +291,7 @@ public class OpenlistApiService {
 
     } catch (Exception e) {
       log.error("调用OpenList API失败: {}, 错误: {}", path, e.getMessage(), e);
-      throw new BusinessException("调用OpenList API失败: " + e.getMessage());
+      throw new BusinessException("调用OpenList API失败: " + e.getMessage(), e);
     }
   }
 }

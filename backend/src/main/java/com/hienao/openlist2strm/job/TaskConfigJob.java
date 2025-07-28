@@ -4,9 +4,9 @@ import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.service.TaskConfigService;
 import com.hienao.openlist2strm.service.TaskExecutionService;
 import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +28,8 @@ public class TaskConfigJob implements Job {
 
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
-    JobDataMap dataMap = context.getJobDetail().getJobDataMap();
-    Long taskConfigId = dataMap.getLong("taskConfigId");
+    Map<String, Object> dataMap = context.getJobDetail().getJobDataMap();
+    Long taskConfigId = (Long) dataMap.get("taskConfigId");
 
     try {
       log.info("开始执行定时任务，任务配置ID: {}", taskConfigId);

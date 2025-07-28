@@ -47,7 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
           );
     } catch (IOException e) {
       log.error("读取用户信息失败", e);
-      throw new UsernameNotFoundException(String.format("用户 %s 验证失败", username));
+      throw new UsernameNotFoundException(String.format("用户 %s 验证失败", username), e);
     }
   }
 }

@@ -39,6 +39,8 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class OpenlistConfigService {
 
+  private static final String CONFIG_ID_NULL_ERROR = "配置ID不能为空";
+
   private final OpenlistConfigMapper openlistConfigMapper;
 
   /**
@@ -49,7 +51,7 @@ public class OpenlistConfigService {
    */
   public OpenlistConfig getById(Long id) {
     if (id == null) {
-      throw new BusinessException("配置ID不能为空");
+      throw new BusinessException(CONFIG_ID_NULL_ERROR);
     }
     return openlistConfigMapper.selectById(id);
   }
@@ -127,7 +129,7 @@ public class OpenlistConfigService {
   @Transactional(rollbackFor = Exception.class)
   public OpenlistConfig updateConfig(OpenlistConfig config) {
     if (config.getId() == null) {
-      throw new BusinessException("配置ID不能为空");
+      throw new BusinessException(CONFIG_ID_NULL_ERROR);
     }
 
     // 检查配置是否存在
@@ -164,7 +166,7 @@ public class OpenlistConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void deleteConfig(Long id) {
     if (id == null) {
-      throw new BusinessException("配置ID不能为空");
+      throw new BusinessException(CONFIG_ID_NULL_ERROR);
     }
 
     OpenlistConfig existingConfig = openlistConfigMapper.selectById(id);
@@ -189,7 +191,7 @@ public class OpenlistConfigService {
   @Transactional(rollbackFor = Exception.class)
   public void updateActiveStatus(Long id, Boolean isActive) {
     if (id == null) {
-      throw new BusinessException("配置ID不能为空");
+      throw new BusinessException(CONFIG_ID_NULL_ERROR);
     }
     if (isActive == null) {
       throw new BusinessException("启用状态不能为空");

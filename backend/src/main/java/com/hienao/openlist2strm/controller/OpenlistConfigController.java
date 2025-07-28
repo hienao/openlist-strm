@@ -47,6 +47,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Openlist配置管理", description = "openlist配置的增删改查接口")
 public class OpenlistConfigController {
 
+  private static final String CONFIG_ID_PARAM = "配置ID";
+
   private final OpenlistConfigService openlistConfigService;
 
   /** 查询所有配置 */
@@ -73,7 +75,7 @@ public class OpenlistConfigController {
   @GetMapping("/{id}")
   @Operation(summary = "根据ID查询配置", description = "根据配置ID获取openlist配置详情")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> getConfigById(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id) {
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     OpenlistConfig config = openlistConfigService.getById(id);
     if (config == null) {
       return ResponseEntity.ok(ApiResponse.error(404, "配置不存在"));
@@ -108,7 +110,7 @@ public class OpenlistConfigController {
   @PutMapping("/{id}")
   @Operation(summary = "更新配置", description = "更新指定ID的openlist配置")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> updateConfig(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id,
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @Parameter(description = "配置信息", required = true) @Valid @RequestBody
           OpenlistConfigDto configDto) {
     configDto.setId(id);
@@ -121,7 +123,7 @@ public class OpenlistConfigController {
   @DeleteMapping("/{id}")
   @Operation(summary = "删除配置", description = "删除指定ID的openlist配置")
   public ResponseEntity<ApiResponse<Void>> deleteConfig(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id) {
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     openlistConfigService.deleteConfig(id);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
@@ -130,7 +132,7 @@ public class OpenlistConfigController {
   @PatchMapping("/{id}/status")
   @Operation(summary = "启用/禁用配置", description = "更新指定配置的启用状态")
   public ResponseEntity<ApiResponse<Void>> updateConfigStatus(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id,
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @Parameter(description = "状态更新请求", required = true) @RequestBody
           UpdateStatusRequest request) {
     openlistConfigService.updateActiveStatus(id, request.getIsActive());

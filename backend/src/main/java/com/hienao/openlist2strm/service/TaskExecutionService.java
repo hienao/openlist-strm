@@ -236,7 +236,7 @@ public class TaskExecutionService {
 
     } catch (Exception e) {
       log.error("任务执行失败: {}, 错误: {}", taskConfig.getTaskName(), e.getMessage(), e);
-      throw new BusinessException("任务执行失败: " + e.getMessage());
+      throw new BusinessException("任务执行失败: " + e.getMessage(), e);
     }
   }
 

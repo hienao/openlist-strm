@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "任务配置管理", description = "任务配置的增删改查接口")
 public class TaskConfigController {
 
+  private static final String CONFIG_ID_PARAM = "配置ID";
+
   private final TaskConfigService taskConfigService;
   private final TaskExecutionService taskExecutionService;
 
@@ -68,7 +70,7 @@ public class TaskConfigController {
   @GetMapping("/{id}")
   @Operation(summary = "根据ID查询配置", description = "根据配置ID获取任务配置详情")
   public ResponseEntity<ApiResponse<TaskConfigDto>> getConfigById(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id) {
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     TaskConfig config = taskConfigService.getById(id);
     if (config == null) {
       return ResponseEntity.ok(ApiResponse.error(404, "配置不存在"));
@@ -114,7 +116,7 @@ public class TaskConfigController {
   @PutMapping("/{id}")
   @Operation(summary = "更新配置", description = "更新指定ID的任务配置")
   public ResponseEntity<ApiResponse<TaskConfigDto>> updateConfig(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id,
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @Valid @RequestBody TaskConfigDto configDto) {
     configDto.setId(id);
     TaskConfig config = convertToEntity(configDto);
@@ -126,7 +128,7 @@ public class TaskConfigController {
   @DeleteMapping("/{id}")
   @Operation(summary = "删除配置", description = "删除指定ID的任务配置")
   public ResponseEntity<ApiResponse<Void>> deleteConfig(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id) {
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     taskConfigService.deleteById(id);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
@@ -135,7 +137,7 @@ public class TaskConfigController {
   @PatchMapping("/{id}/status")
   @Operation(summary = "更新配置启用状态", description = "启用或禁用指定ID的任务配置")
   public ResponseEntity<ApiResponse<Void>> updateConfigStatus(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id,
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @RequestBody UpdateStatusRequest request) {
     taskConfigService.updateActiveStatus(id, request.getIsActive());
     return ResponseEntity.ok(ApiResponse.success(null));
@@ -145,7 +147,7 @@ public class TaskConfigController {
   @PatchMapping("/{id}/last-exec-time")
   @Operation(summary = "更新最后执行时间", description = "更新指定ID任务配置的最后执行时间")
   public ResponseEntity<ApiResponse<Void>> updateLastExecTime(
-      @Parameter(description = "配置ID", required = true) @PathVariable Long id,
+      @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @RequestBody UpdateLastExecTimeRequest request) {
     taskConfigService.updateLastExecTime(id, request.getLastExecTime());
     return ResponseEntity.ok(ApiResponse.success(null));
