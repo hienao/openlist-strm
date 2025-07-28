@@ -37,9 +37,16 @@ public class WebSecurityConfig {
   @Bean
   public RequestMatcher publicEndPointMatcher() {
     return new OrRequestMatcher(
+        // 支持带 /api 前缀的路径（直接访问后端）
         new AntPathRequestMatcher("/api/auth/sign-in", HttpMethod.POST.name()),
         new AntPathRequestMatcher("/api/auth/sign-up", HttpMethod.POST.name()),
         new AntPathRequestMatcher("/api/auth/check-user", HttpMethod.GET.name()),
+        // 支持不带 /api 前缀的路径（前端代理转发）
+        new AntPathRequestMatcher("/auth/sign-in", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/auth/sign-up", HttpMethod.POST.name()),
+        new AntPathRequestMatcher("/auth/check-user", HttpMethod.GET.name()),
+        // 其他公开端点
+        new AntPathRequestMatcher("/actuator/health", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/v3/api-docs/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui/**", HttpMethod.GET.name()),
         new AntPathRequestMatcher("/swagger-ui.html", HttpMethod.GET.name()),

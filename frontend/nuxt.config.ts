@@ -30,18 +30,15 @@ export default defineNuxtConfig({
       routes: ['/login', '/register', '/settings', '/change-password', '/task-management']
     },
     devProxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        prependPath: true
-      }
+      '/api': 'http://localhost:8080/api'
     }
   },
   
   // 运行时配置
   runtimeConfig: {
     public: {
-      apiBase: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8080'
+      // 生产环境使用相对路径，开发环境使用完整URL
+      apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api'
     }
   },
   
