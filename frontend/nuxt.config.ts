@@ -31,6 +31,15 @@ export default defineNuxtConfig({
     },
     devProxy: {
       '/api': 'http://localhost:8080/api'
+    },
+    // 修复Docker端口映射时的重定向问题
+    routeRules: {
+      // 为所有页面设置头部，避免重定向问题
+      '/**': {
+        headers: {
+          'X-Robots-Tag': 'noindex'
+        }
+      }
     }
   },
   
@@ -39,6 +48,14 @@ export default defineNuxtConfig({
     public: {
       // 生产环境使用相对路径，开发环境使用完整URL
       apiBase: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8080/api'
+    }
+  },
+
+  // 路由配置 - 修复Docker端口映射重定向问题
+  router: {
+    options: {
+      // 禁用严格的尾部斜杠处理，避免重定向
+      strict: false
     }
   },
   
