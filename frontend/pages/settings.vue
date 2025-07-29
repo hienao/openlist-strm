@@ -1,12 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <AppHeader 
-      title="系统设置" 
-      :show-back-button="true" 
-      @logout="handleLogout" 
-      @change-password="handleChangePassword" 
+    <AppHeader
+      title="系统设置"
+      :show-back-button="true"
+      @logout="handleLogout"
+      @change-password="handleChangePassword"
       @go-back="goBack"
       @open-settings="handleOpenSettings"
+      @open-logs="handleOpenLogs"
     />
     
     <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -189,6 +190,12 @@ const handleChangePassword = () => {
 // 处理打开设置（当前页面，不需要操作）
 const handleOpenSettings = () => {
   // 当前就在设置页面，不需要操作
+}
+
+// 处理打开日志页面
+const handleOpenLogs = () => {
+  // 跳转到日志页面
+  router.push('/logs')
 }
 </script>
 

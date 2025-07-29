@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 导航栏 -->
-    <AppHeader 
+    <AppHeader
       title="任务管理"
       :show-back-button="true"
       :user-info="configInfo"
@@ -9,6 +9,7 @@
       @change-password="changePassword"
       @go-back="goBack"
       @open-settings="openSettings"
+      @open-logs="openLogs"
     />
 
     <!-- 主要内容区域 -->
@@ -530,6 +531,12 @@ const logout = async () => {
 const openSettings = () => {
   // 跳转到设置页面
   navigateTo('/settings')
+}
+
+// 打开日志页面
+const openLogs = () => {
+  // 跳转到日志页面
+  navigateTo('/logs')
 }
 
 // 全量生成STRM文件

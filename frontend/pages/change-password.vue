@@ -1,32 +1,16 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 导航栏 -->
-    <nav class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <button 
-              @click="goBack" 
-              class="mr-4 text-gray-600 hover:text-gray-900"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <h1 class="text-xl font-semibold text-gray-900">修改密码</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span class="text-gray-700">{{ userInfo?.username || '用户' }}</span>
-            <button 
-              @click="logout" 
-              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              退出登录
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <AppHeader
+      title="修改密码"
+      :show-back-button="true"
+      :user-info="userInfo"
+      @logout="logout"
+      @change-password="handleChangePassword"
+      @go-back="goBack"
+      @open-settings="openSettings"
+      @open-logs="openLogs"
+    />
 
     <!-- 主要内容 -->
     <main class="max-w-2xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -283,7 +267,7 @@ const logout = async () => {
 // 获取用户信息
 const getUserInfo = () => {
   const savedUserInfo = useCookie('userInfo')
-  
+
   if (savedUserInfo.value) {
     userInfo.value = savedUserInfo.value
   } else {
@@ -291,6 +275,16 @@ const getUserInfo = () => {
       username: '用户'
     }
   }
+}
+
+// 打开设置页面
+const openSettings = () => {
+  navigateTo('/settings')
+}
+
+// 打开日志页面
+const openLogs = () => {
+  navigateTo('/logs')
 }
 
 // 组件挂载时获取用户信息
