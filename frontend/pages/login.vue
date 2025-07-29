@@ -362,26 +362,24 @@ const handleLogin = async () => {
         return
       }
 
-      // 使用Nuxt导航进行跳转
+      // 在跳转前，强制刷新Cookie状态，确保中间件能正确读取
+      console.log('跳转前最终验证Cookie状态...')
+      await nextTick()
+
+      // 重新获取token确保最新状态
+      const finalToken = useCookie('token', cookieConfig)
+      console.log('跳转前token确认:', finalToken.value)
+      console.log('跳转前token有效性:', isValidToken(finalToken.value))
+
+      // 使用强制页面跳转，避免中间件时序问题
       console.log('准备跳转到首页')
-      try {
-        // 使用replace避免返回到登录页
-        await navigateTo('/', { replace: true, external: false })
-        console.log('navigateTo跳转成功')
-      } catch (navError) {
-        console.error('navigateTo跳转失败:', navError)
-        // 如果navigateTo失败，尝试使用router.push
-        try {
-          await $router.replace('/')
-          console.log('router.replace跳转成功')
-        } catch (routerError) {
-          console.error('router.replace跳转失败:', routerError)
-          // 最后使用window.location作为备选
-          console.log('使用window.location.replace作为最后备选')
-          if (import.meta.client) {
-            window.location.replace('/')
-          }
-        }
+      if (import.meta.client) {
+        // 直接使用window.location.href进行强制跳转
+        console.log('使用window.location.href强制跳转')
+        window.location.href = '/'
+      } else {
+        // 服务端渲染时使用navigateTo
+        await navigateTo('/', { replace: true })
       }
     } else {
       success.value = false  // 重置成功状态

@@ -3,27 +3,38 @@ import { apiCall } from '~/utils/api.js'
 import { isValidToken, shouldRefreshToken, clearAuthCookies, validateTokenWithBackend, getCookieConfig } from '~/utils/token.js'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  console.log('Auth中间件执行:', { to: to.path, from: from?.path })
+
   // 获取token，使用统一的Cookie配置
   const token = useCookie('token', getCookieConfig())
-  
+  console.log('Auth中间件 - token值:', token.value)
+  console.log('Auth中间件 - token类型:', typeof token.value)
+
   // 如果当前页面是登录或注册页面，只检查用户是否存在，不进行token验证
   if (to.path === '/login' || to.path === '/register') {
+    console.log('Auth中间件 - 访问登录/注册页面，执行用户检查')
     return await handleAuthPages(to)
   }
-  
+
   // 如果没有token，检查用户是否存在后跳转
   if (!token.value) {
+    console.log('Auth中间件 - 没有token，准备跳转')
     const redirectPath = await checkUserAndRedirect()
     return navigateTo(redirectPath)
   }
   
   // 验证token是否有效（前端验证）
-  if (!isValidToken(token.value)) {
-    console.warn('Token前端验证失败，清除token')
+  const tokenValid = isValidToken(token.value)
+  console.log('Auth中间件 - token有效性:', tokenValid)
+
+  if (!tokenValid) {
+    console.warn('Auth中间件 - Token前端验证失败，清除token')
     clearAuthCookies()
     const redirectPath = await checkUserAndRedirect()
     return navigateTo(redirectPath)
   }
+
+  console.log('Auth中间件 - token验证通过，允许访问页面')
 
   // 对于重要页面，进行后端验证（可选，避免每次都验证影响性能）
   // 这里可以根据需要启用后端验证
