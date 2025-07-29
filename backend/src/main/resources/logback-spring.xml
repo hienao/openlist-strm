@@ -107,7 +107,7 @@
     </springProfile>
 
     <!-- 默认配置（如果没有指定profile） -->
-    <springProfile name="!dev & !prod">
+    <springProfile name="!dev &amp; !prod">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
