@@ -67,12 +67,9 @@ export async function apiCall(endpoint, options = {}) {
 async function handleUnauthorizedError() {
   console.warn('检测到 401 未授权错误，清除 token 并跳转到登录页')
 
-  // 清除 token 和用户信息
-  const tokenCookie = useCookie('token')
-  const userInfoCookie = useCookie('userInfo')
-
-  tokenCookie.value = null
-  userInfoCookie.value = null
+  // 使用clearAuthCookies函数统一清除认证信息
+  const { clearAuthCookies } = await import('~/utils/token.js')
+  clearAuthCookies()
 
   // 只在客户端执行跳转，避免服务端渲染时的问题
   if (import.meta.client) {
@@ -104,7 +101,9 @@ async function handleUnauthorizedError() {
  * @returns {Promise} - API 响应
  */
 export async function authenticatedApiCall(endpoint, options = {}) {
-  const tokenCookie = useCookie('token')
+  // 使用统一的Cookie配置
+  const { getCookieConfig } = await import('~/utils/token.js')
+  const tokenCookie = useCookie('token', getCookieConfig())
   const token = tokenCookie.value
   
   if (!token) {

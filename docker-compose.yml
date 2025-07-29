@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      extra_hosts:
-        - host.docker.internal:host-gateway
     container_name: app
     hostname: app
     environment:
@@ -17,8 +15,6 @@ services:
       ALLOWED_EXPOSE_HEADERS: ${ALLOWED_EXPOSE_HEADERS}
     ports:
       - "3111:80"  # 外部端口:内部端口，用户可根据需要修改外部端口
-    extra_hosts:
-      - host.docker.internal:host-gateway
     volumes:
       - ${LOG_PATH}:/app/data/log
       - ${DATABASE_STORE}:/app/data

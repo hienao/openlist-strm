@@ -4,6 +4,22 @@
  */
 
 /**
+ * 获取统一的Cookie配置
+ * @param {number} maxAge - Cookie最大存活时间（秒）
+ * @returns {object} - Cookie配置对象
+ */
+export function getCookieConfig(maxAge = 60 * 60 * 24) {
+  return {
+    default: () => null,
+    maxAge: maxAge,
+    secure: false, // Docker环境中使用HTTP，设为false
+    sameSite: 'lax', // 使用lax策略，兼容性更好
+    httpOnly: false, // 客户端需要访问
+    path: '/' // 明确设置路径
+  }
+}
+
+/**
  * 解析JWT payload
  * @param {string} token - JWT token
  * @returns {object} - 解析后的payload
@@ -76,12 +92,22 @@ export function shouldRefreshToken(token) {
  * 清除所有认证相关的cookie
  */
 export function clearAuthCookies() {
-  const tokenCookie = useCookie('token')
-  const userInfoCookie = useCookie('userInfo')
-  
+  // 使用统一的Cookie配置来清除Cookie
+  const tokenCookie = useCookie('token', getCookieConfig())
+  const userInfoCookie = useCookie('userInfo', getCookieConfig())
+
+  // 设置为null并立即过期
   tokenCookie.value = null
   userInfoCookie.value = null
-  
+
+  // 在客户端环境下，额外使用document.cookie来确保清除
+  if (import.meta.client) {
+    // 设置过期时间为过去的时间来删除Cookie
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax'
+    document.cookie = 'userInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax'
+    console.log('已通过document.cookie强制清除认证Cookie')
+  }
+
   console.log('已清除所有认证相关的cookie')
 }
 

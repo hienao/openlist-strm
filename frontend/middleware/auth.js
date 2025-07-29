@@ -1,10 +1,10 @@
 // 认证中间件 - 保护需要登录的页面
 import { apiCall } from '~/utils/api.js'
-import { isValidToken, shouldRefreshToken, parseJwtPayload, clearAuthCookies, validateTokenWithBackend } from '~/utils/token.js'
+import { isValidToken, shouldRefreshToken, clearAuthCookies, validateTokenWithBackend, getCookieConfig } from '~/utils/token.js'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // 获取token
-  const token = useCookie('token')
+  // 获取token，使用统一的Cookie配置
+  const token = useCookie('token', getCookieConfig())
   
   // 如果当前页面是登录或注册页面，只检查用户是否存在，不进行token验证
   if (to.path === '/login' || to.path === '/register') {

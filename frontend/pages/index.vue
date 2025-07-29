@@ -310,9 +310,13 @@ const formLoading = ref(false)
 const formError = ref('')
 
 // 获取用户信息
-const getUserInfo = () => {
-  const token = useCookie('token')
-  const savedUserInfo = useCookie('userInfo')
+const getUserInfo = async () => {
+  // 使用统一的Cookie配置
+  const { getCookieConfig } = await import('~/utils/token.js')
+  const cookieConfig = getCookieConfig()
+
+  const token = useCookie('token', cookieConfig)
+  const savedUserInfo = useCookie('userInfo', cookieConfig)
   
   if (token.value) {
     // 从cookie中获取用户信息
@@ -600,10 +604,12 @@ const goToTaskManagement = (config) => {
 }
 
 // 组件挂载时获取用户信息和配置列表
-onMounted(() => {
-  const token = useCookie('token')
+onMounted(async () => {
+  // 使用统一的Cookie配置
+  const { getCookieConfig } = await import('~/utils/token.js')
+  const token = useCookie('token', getCookieConfig())
   console.log('首页加载，当前token:', token.value)
-  getUserInfo()
+  await getUserInfo()
   getConfigs()
 })
 </script>
