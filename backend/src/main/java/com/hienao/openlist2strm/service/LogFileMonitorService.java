@@ -22,6 +22,7 @@ import com.hienao.openlist2strm.component.LogWebSocketHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -182,10 +183,31 @@ public class LogFileMonitorService {
         try (RandomAccessFile file = new RandomAccessFile(logFilePath.toFile(), "r")) {
           file.seek(lastPosition);
 
-          String line;
-          while ((line = file.readLine()) != null) {
-            // 广播新行到WebSocket客户端
-            webSocketHandler.broadcastToLogType(logType, line);
+          // 使用UTF-8编码读取剩余内容
+          byte[] buffer = new byte[(int) (currentSize - lastPosition)];
+          int bytesRead = file.read(buffer);
+
+          if (bytesRead > 0) {
+            // 将字节转换为UTF-8字符串
+            String content = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+
+            // 按行分割并广播
+            String[] lines = content.split("\r?\n");
+            for (int i = 0; i < lines.length; i++) {
+              String line = lines[i];
+
+              // 如果不是最后一行，或者文件以换行符结尾，则广播这一行
+              if (i < lines.length - 1 || content.endsWith("\n") || content.endsWith("\r\n")) {
+                if (!line.isEmpty()) {
+                  webSocketHandler.broadcastToLogType(logType, line);
+                }
+              } else {
+                // 最后一行可能不完整，需要调整位置
+                byte[] lineBytes = line.getBytes(StandardCharsets.UTF_8);
+                file.seek(currentSize - lineBytes.length);
+                break;
+              }
+            }
           }
 
           lastReadPositions.put(logType, file.getFilePointer());
