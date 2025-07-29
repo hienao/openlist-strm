@@ -1,14 +1,21 @@
 // 认证中间件 - 保护需要登录的页面
 import { apiCall } from '~/utils/api.js'
-import { isValidToken, shouldRefreshToken, clearAuthCookies, validateTokenWithBackend, getCookieConfig } from '~/utils/token.js'
+import { shouldRefreshToken, validateTokenWithBackend } from '~/utils/token.js'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   console.log('Auth中间件执行:', { to: to.path, from: from?.path })
 
-  // 获取token，使用统一的Cookie配置
-  const token = useCookie('token', getCookieConfig())
-  console.log('Auth中间件 - token值:', token.value)
-  console.log('Auth中间件 - token类型:', typeof token.value)
+  // 获取认证store
+  const { useAuthStore } = await import('~/stores/auth.js')
+  const authStore = useAuthStore()
+
+  // 尝试恢复认证状态
+  authStore.restoreAuth()
+
+  console.log('Auth中间件 - 认证状态:', {
+    token: authStore.getToken,
+    isAuthenticated: authStore.isAuthenticated
+  })
 
   // 如果当前页面是登录或注册页面，只检查用户是否存在，不进行token验证
   if (to.path === '/login' || to.path === '/register') {
@@ -16,25 +23,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return await handleAuthPages(to)
   }
 
-  // 如果没有token，检查用户是否存在后跳转
-  if (!token.value) {
-    console.log('Auth中间件 - 没有token，准备跳转')
-    const redirectPath = await checkUserAndRedirect()
-    return navigateTo(redirectPath)
-  }
-  
-  // 验证token是否有效（前端验证）
-  const tokenValid = isValidToken(token.value)
-  console.log('Auth中间件 - token有效性:', tokenValid)
-
-  if (!tokenValid) {
-    console.warn('Auth中间件 - Token前端验证失败，清除token')
-    clearAuthCookies()
+  // 如果没有认证，检查用户是否存在后跳转
+  if (!authStore.isAuthenticated) {
+    console.log('Auth中间件 - 未认证，准备跳转')
     const redirectPath = await checkUserAndRedirect()
     return navigateTo(redirectPath)
   }
 
-  console.log('Auth中间件 - token验证通过，允许访问页面')
+  console.log('Auth中间件 - 认证验证通过，允许访问页面')
 
   // 对于重要页面，进行后端验证（可选，避免每次都验证影响性能）
   // 这里可以根据需要启用后端验证
@@ -50,9 +46,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
   
   // 检查token是否需要刷新（剩余有效期在7-14天之间）
-  if (shouldRefreshToken(token.value)) {
+  if (shouldRefreshToken(authStore.getToken)) {
     // 在后台刷新token，不阻塞页面加载
-    refreshTokenInBackground(token)
+    refreshTokenInBackground(authStore)
   }
 })
 
@@ -111,15 +107,16 @@ async function checkUserAndRedirect() {
 }
 
 // 后台刷新token
-async function refreshTokenInBackground(tokenCookie) {
+async function refreshTokenInBackground(authStore) {
   try {
+    const { authenticatedApiCall } = await import('~/utils/api.js')
     const response = await authenticatedApiCall('/auth/refresh', {
           method: 'POST'
         })
-    
+
     if (response.code === 200 && response.data?.token) {
       // 更新token
-      tokenCookie.value = response.data.token
+      authStore.updateToken(response.data.token)
       console.log('Token已自动刷新')
     }
   } catch (error) {

@@ -288,13 +288,15 @@
 import { ref, onMounted } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall, authenticatedApiCall } from '~/utils/api.js'
+import { useAuthStore } from '~/stores/auth.js'
 
 // 页面元数据
 definePageMeta({
   middleware: 'auth'
 })
 
-// 响应式数据
+// 响应式数据和认证store
+const authStore = useAuthStore()
 const userInfo = ref(null)
 const loginTime = ref('')
 const configs = ref([])
@@ -310,53 +312,33 @@ const formLoading = ref(false)
 const formError = ref('')
 
 // 获取用户信息
-const getUserInfo = async () => {
-  // 使用统一的Cookie配置
-  const { getCookieConfig } = await import('~/utils/token.js')
-  const cookieConfig = getCookieConfig()
-
-  const token = useCookie('token', cookieConfig)
-  const savedUserInfo = useCookie('userInfo', cookieConfig)
-  
-  if (token.value) {
-    // 从cookie中获取用户信息
-    if (savedUserInfo.value) {
-      userInfo.value = savedUserInfo.value
-    } else {
-      // 如果没有保存的用户信息，使用默认值
-      userInfo.value = {
-        username: '用户'
-      }
-    }
+const getUserInfo = () => {
+  // 从认证store获取用户信息
+  if (authStore.isAuthenticated) {
+    userInfo.value = authStore.getUserInfo || { username: '用户' }
     loginTime.value = new Date().toLocaleString('zh-CN')
+    console.log('首页加载，当前token:', authStore.getToken)
   }
 }
 
 // 退出登录
 const logout = async () => {
   try {
-    const token = useCookie('token')
-    
     // 调用后端登出接口
     const response = await authenticatedApiCall('/auth/sign-out', {
       method: 'POST'
     })
-    
+
     // 检查响应格式
     if (response.code === 200) {
       console.log('登出成功:', response.message)
     }
-    
-    // 清除本地token
-    token.value = null
-    
-    // 跳转到登录页
-    await navigateTo('/login')
   } catch (error) {
     console.error('登出失败:', error)
-    // 即使登出失败也清除本地token
-    const token = useCookie('token')
-    token.value = null
+  } finally {
+    // 无论成功失败都清除本地认证信息
+    authStore.clearAuth()
+    // 跳转到登录页
     await navigateTo('/login')
   }
 }
@@ -604,12 +586,10 @@ const goToTaskManagement = (config) => {
 }
 
 // 组件挂载时获取用户信息和配置列表
-onMounted(async () => {
-  // 使用统一的Cookie配置
-  const { getCookieConfig } = await import('~/utils/token.js')
-  const token = useCookie('token', getCookieConfig())
-  console.log('首页加载，当前token:', token.value)
-  await getUserInfo()
+onMounted(() => {
+  // 初始化认证状态
+  authStore.restoreAuth()
+  getUserInfo()
   getConfigs()
 })
 </script>

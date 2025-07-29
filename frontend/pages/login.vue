@@ -254,10 +254,11 @@
 <script setup>
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
-import { clearAuthCookies, getCookieConfig, isValidToken } from '~/utils/token.js'
+import { useAuthStore } from '~/stores/auth.js'
 
-// 获取router实例
+// 获取router实例和认证store
 const { $router } = useNuxtApp()
+const authStore = useAuthStore()
 
 // 页面元数据
 definePageMeta({
@@ -313,74 +314,40 @@ const handleLogin = async () => {
     if (response.code === 200 && response.data?.token) {
       console.log('登录成功，响应数据:', response.data)
 
-      // 首先清除所有旧的认证信息，避免冲突
+      // 清除旧的认证信息
       console.log('清除旧的认证信息...')
-      clearAuthCookies()
+      authStore.clearAuth()
 
-      // 等待清除完成
-      await nextTick()
+      // 登录成功，保存新的认证信息到store
+      const token = response.data.token
+      const userInfo = response.data.user || { username: form.username }
 
-      // 再等待一段时间确保清除操作完成
-      await new Promise(resolve => setTimeout(resolve, 100))
+      console.log('保存新的认证信息到store...')
+      authStore.setAuth(token, userInfo, form.rememberMe)
 
-      // 登录成功，保存新的token和用户信息
-      const cookieConfig = getCookieConfig(form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24)
-
-      const token = useCookie('token', cookieConfig)
-      const userInfo = useCookie('userInfo', cookieConfig)
-
-      // 设置token和用户信息
-      token.value = response.data.token
-      userInfo.value = response.data.user || { username: form.username }
-      console.log('新Token和用户信息已保存:', token.value, userInfo.value)
-
-      // 等待Cookie设置完成
-      await nextTick()
-
-      // 验证Cookie是否正确设置
-      console.log('验证Cookie设置:')
-      console.log('- token值:', token.value)
-      console.log('- userInfo值:', userInfo.value)
+      console.log('认证信息已保存:', {
+        token: authStore.getToken,
+        userInfo: authStore.getUserInfo,
+        isAuthenticated: authStore.isAuthenticated
+      })
 
       success.value = true
 
-      // 等待Cookie设置完成后再跳转
+      // 等待状态更新完成
       await nextTick()
-      console.log('nextTick完成，准备跳转...')
 
-      // 等待Cookie设置完成
-      await new Promise(resolve => setTimeout(resolve, 200))
-
-      // 验证token是否有效
-      const tokenIsValid = isValidToken(token.value)
-      console.log('- token有效性:', tokenIsValid)
-
-      if (!tokenIsValid) {
-        console.error('Token无效，登录失败')
-        success.value = false  // 重置成功状态
+      // 验证认证状态
+      if (!authStore.isAuthenticated) {
+        console.error('认证状态无效，登录失败')
+        success.value = false
         error.value = '登录状态异常，请重试'
         return
       }
 
-      // 在跳转前，强制刷新Cookie状态，确保中间件能正确读取
-      console.log('跳转前最终验证Cookie状态...')
-      await nextTick()
-
-      // 重新获取token确保最新状态
-      const finalToken = useCookie('token', cookieConfig)
-      console.log('跳转前token确认:', finalToken.value)
-      console.log('跳转前token有效性:', isValidToken(finalToken.value))
-
-      // 使用强制页面跳转，避免中间件时序问题
+      // 跳转到首页
       console.log('准备跳转到首页')
-      if (import.meta.client) {
-        // 直接使用window.location.href进行强制跳转
-        console.log('使用window.location.href强制跳转')
-        window.location.href = '/'
-      } else {
-        // 服务端渲染时使用navigateTo
-        await navigateTo('/', { replace: true })
-      }
+      await navigateTo('/', { replace: true })
+      console.log('跳转成功')
     } else {
       success.value = false  // 重置成功状态
       error.value = response.message || '登录失败，请检查用户名和密码'
