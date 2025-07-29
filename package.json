@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@pinia/nuxt": "^0.11.2",
+    "pinia": "^3.0.3"
+  }
+}
