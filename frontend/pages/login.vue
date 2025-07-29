@@ -254,7 +254,7 @@
 <script setup>
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
-import { clearAuthCookies } from '~/utils/token.js'
+import { clearAuthCookies, getCookieConfig, isValidToken } from '~/utils/token.js'
 
 // 获取router实例
 const { $router } = useNuxtApp()
@@ -324,25 +324,23 @@ const handleLogin = async () => {
       await new Promise(resolve => setTimeout(resolve, 100))
 
       // 登录成功，保存新的token和用户信息
-      // 导入Cookie配置函数
-      const { getCookieConfig } = await import('~/utils/token.js')
       const cookieConfig = getCookieConfig(form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24)
 
       const token = useCookie('token', cookieConfig)
       const userInfo = useCookie('userInfo', cookieConfig)
 
+      // 设置token和用户信息
       token.value = response.data.token
       userInfo.value = response.data.user || { username: form.username }
       console.log('新Token和用户信息已保存:', token.value, userInfo.value)
-      
-      // 强制刷新Cookie状态
+
+      // 等待Cookie设置完成
       await nextTick()
 
       // 验证Cookie是否正确设置
       console.log('验证Cookie设置:')
-      console.log('- token cookie:', document.cookie.includes('token'))
-      console.log('- userInfo cookie:', document.cookie.includes('userInfo'))
-      console.log('- 所有cookies:', document.cookie)
+      console.log('- token值:', token.value)
+      console.log('- userInfo值:', userInfo.value)
 
       success.value = true
 
@@ -350,34 +348,18 @@ const handleLogin = async () => {
       await nextTick()
       console.log('nextTick完成，准备跳转...')
 
-      // 等待更长时间确保Cookie完全设置
-      console.log('等待Cookie设置完成...')
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // 等待Cookie设置完成
+      await new Promise(resolve => setTimeout(resolve, 200))
 
-      // 再次验证Cookie和token
-      console.log('延迟后验证Cookie:')
-      console.log('- token cookie存在:', document.cookie.includes('token'))
-      console.log('- token值:', token.value)
-
-      // 重新获取Cookie值确保最新状态
-      const freshToken = useCookie('token')
-      console.log('- 重新获取的token值:', freshToken.value)
-
-      // 验证新token是否有效
-      const { isValidToken } = await import('~/utils/token.js')
-      const tokenIsValid = isValidToken(freshToken.value || token.value)
+      // 验证token是否有效
+      const tokenIsValid = isValidToken(token.value)
       console.log('- token有效性:', tokenIsValid)
 
       if (!tokenIsValid) {
-        console.error('新token无效，登录可能失败')
+        console.error('Token无效，登录失败')
+        success.value = false  // 重置成功状态
         error.value = '登录状态异常，请重试'
         return
-      }
-
-      // 确保token值一致
-      if (freshToken.value !== token.value) {
-        console.warn('Token值不一致，使用最新值')
-        token.value = freshToken.value
       }
 
       // 使用Nuxt导航进行跳转
@@ -402,11 +384,13 @@ const handleLogin = async () => {
         }
       }
     } else {
+      success.value = false  // 重置成功状态
       error.value = response.message || '登录失败，请检查用户名和密码'
     }
   } catch (err) {
     console.error('登录错误:', err)
-    
+    success.value = false  // 重置成功状态
+
     if (err.status === 401) {
       error.value = '用户名或密码错误'
     } else if (err.status === 404) {
