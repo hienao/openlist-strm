@@ -1,5 +1,6 @@
 // 认证中间件 - 保护需要登录的页面
 import { apiCall } from '~/utils/api.js'
+import { isValidToken, shouldRefreshToken, parseJwtPayload, clearAuthCookies, validateTokenWithBackend } from '~/utils/token.js'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // 获取token
@@ -16,12 +17,25 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo(redirectPath)
   }
   
-  // 验证token是否有效
+  // 验证token是否有效（前端验证）
   if (!isValidToken(token.value)) {
-    // token无效，清除并检查用户是否存在后跳转
-    token.value = null
+    console.warn('Token前端验证失败，清除token')
+    clearAuthCookies()
     const redirectPath = await checkUserAndRedirect()
     return navigateTo(redirectPath)
+  }
+
+  // 对于重要页面，进行后端验证（可选，避免每次都验证影响性能）
+  // 这里可以根据需要启用后端验证
+  const shouldValidateWithBackend = false // 可以根据页面重要性决定
+  if (shouldValidateWithBackend) {
+    const isBackendValid = await validateTokenWithBackend(token.value)
+    if (!isBackendValid) {
+      console.warn('Token后端验证失败，清除token')
+      clearAuthCookies()
+      const redirectPath = await checkUserAndRedirect()
+      return navigateTo(redirectPath)
+    }
   }
   
   // 检查token是否需要刷新（剩余有效期在7-14天之间）
@@ -31,57 +45,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 })
 
-// 验证token是否有效
-function isValidToken(token) {
-  if (!token) return false
-  
-  try {
-    // 解析JWT token
-    const payload = parseJwtPayload(token)
-    
-    // 检查token是否有exp字段
-    if (!payload.exp) {
-      console.warn('Token缺少exp字段')
-      return true // 暂时允许通过，避免阻塞
-    }
-    
-    // 检查是否过期
-    const now = Math.floor(Date.now() / 1000)
-    return payload.exp > now
-  } catch (error) {
-    console.error('Token解析失败:', error)
-    // 如果解析失败，暂时允许通过，让后端验证
-    return true
-  }
-}
 
-// 检查是否需要刷新token
-function shouldRefreshToken(token) {
-  try {
-    const payload = parseJwtPayload(token)
-    const now = Math.floor(Date.now() / 1000)
-    const timeUntilExpiry = payload.exp - now
-    
-    // 如果剩余时间少于7天（7*24*3600 秒），则需要刷新
-    const sevenDays = 7 * 24 * 3600
-    
-    return timeUntilExpiry < sevenDays && timeUntilExpiry > 0
-  } catch (error) {
-    return false
-  }
-}
-
-// 解析JWT payload
-function parseJwtPayload(token) {
-  const parts = token.split('.')
-  if (parts.length !== 3) {
-    throw new Error('Invalid JWT format')
-  }
-  
-  const payload = parts[1]
-  const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-  return JSON.parse(decoded)
-}
 
 // 处理登录和注册页面的逻辑
 async function handleAuthPages(to) {

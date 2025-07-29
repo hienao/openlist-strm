@@ -254,6 +254,7 @@
 <script setup>
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
+import { clearAuthCookies } from '~/utils/token.js'
 
 // 获取router实例
 const { $router } = useNuxtApp()
@@ -311,8 +312,15 @@ const handleLogin = async () => {
 
     if (response.code === 200 && response.data?.token) {
       console.log('登录成功，响应数据:', response.data)
-      
-      // 登录成功，保存token和用户信息
+
+      // 首先清除所有旧的认证信息，避免冲突
+      console.log('清除旧的认证信息...')
+      clearAuthCookies()
+
+      // 等待清除完成
+      await nextTick()
+
+      // 登录成功，保存新的token和用户信息
       const token = useCookie('token', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24, // 记住我：14天，否则1天
@@ -320,7 +328,7 @@ const handleLogin = async () => {
         sameSite: 'lax', // 使用lax策略，兼容性更好
         httpOnly: false // 客户端需要访问
       })
-      
+
       const userInfo = useCookie('userInfo', {
         default: () => null,
         maxAge: form.rememberMe ? 60 * 60 * 24 * 14 : 60 * 60 * 24,
@@ -328,49 +336,61 @@ const handleLogin = async () => {
         sameSite: 'lax', // 使用lax策略，兼容性更好
         httpOnly: false
       })
-      
+
       token.value = response.data.token
       userInfo.value = response.data.user || { username: form.username }
-      console.log('Token和用户信息已保存:', token.value, userInfo.value)
+      console.log('新Token和用户信息已保存:', token.value, userInfo.value)
       
       // 验证Cookie是否正确设置
       console.log('验证Cookie设置:')
       console.log('- token cookie:', document.cookie.includes('token'))
       console.log('- userInfo cookie:', document.cookie.includes('userInfo'))
       console.log('- 所有cookies:', document.cookie)
-      
+
       success.value = true
-      
+
       // 等待Cookie设置完成后再跳转
       await nextTick()
       console.log('nextTick完成，准备跳转...')
-      
+
       // 等待一段时间确保Cookie完全设置
       console.log('等待Cookie设置完成...')
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // 再次验证Cookie
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // 再次验证Cookie和token
       console.log('延迟后验证Cookie:')
       console.log('- token cookie存在:', document.cookie.includes('token'))
       console.log('- token值:', token.value)
-      
+
+      // 验证新token是否有效
+      const { isValidToken } = await import('~/utils/token.js')
+      const tokenIsValid = isValidToken(token.value)
+      console.log('- token有效性:', tokenIsValid)
+
+      if (!tokenIsValid) {
+        console.error('新token无效，登录可能失败')
+        error.value = '登录状态异常，请重试'
+        return
+      }
+
       // 使用Nuxt导航进行跳转
       console.log('准备跳转到首页')
       try {
-        await navigateTo('/', { replace: true })
+        // 使用replace避免返回到登录页
+        await navigateTo('/', { replace: true, external: false })
         console.log('navigateTo跳转成功')
       } catch (navError) {
         console.error('navigateTo跳转失败:', navError)
         // 如果navigateTo失败，尝试使用router.push
         try {
-          await $router.push('/')
-          console.log('router.push跳转成功')
+          await $router.replace('/')
+          console.log('router.replace跳转成功')
         } catch (routerError) {
-          console.error('router.push跳转失败:', routerError)
+          console.error('router.replace跳转失败:', routerError)
           // 最后使用window.location作为备选
-          console.log('使用window.location.href作为最后备选')
+          console.log('使用window.location.replace作为最后备选')
           if (process.client) {
-            window.location.href = '/'
+            window.location.replace('/')
           }
         }
       }

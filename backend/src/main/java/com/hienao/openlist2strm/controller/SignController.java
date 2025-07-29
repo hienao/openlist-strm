@@ -234,6 +234,50 @@ public class SignController {
   }
 
   @ResponseStatus(HttpStatus.OK)
+  @GetMapping("/validate")
+  @Operation(summary = "验证Token", description = "验证JWT token是否有效，需要JWT认证")
+  @SecurityRequirement(name = "Bearer Authentication")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "Token有效",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    examples =
+                        @ExampleObject(
+                            value =
+                                "{\"code\": 200, \"message\": \"Token有效\", \"data\": {\"valid\": true, \"username\": \"user123\", \"expiresAt\": 1234567890}}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "Token无效",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    examples =
+                        @ExampleObject(
+                            value =
+                                "{\"code\": 401, \"message\": \"Token无效\", \"data\": {\"valid\": false}}")))
+      })
+  ApiResponse<Map<String, Object>> validate(HttpServletRequest request) {
+    String token = jwt.extract(request);
+    Map<String, Object> data = new HashMap<>();
+
+    if (token != null && jwt.verify(token)) {
+      String username = jwt.getSubject(token);
+      data.put("valid", true);
+      data.put("username", username);
+      data.put("expiresAt", jwt.getExpiresAt(token));
+      data.put("issuedAt", jwt.getIssuedAt(token));
+      return ApiResponse.success(data, "Token有效");
+    } else {
+      data.put("valid", false);
+      return ApiResponse.error(401, "Token无效");
+    }
+  }
+
+  @ResponseStatus(HttpStatus.OK)
   @PostMapping("/change-password")
   @Operation(summary = "修改密码", description = "修改用户密码接口，需要JWT认证")
   @SecurityRequirement(name = "Bearer Authentication")
