@@ -3,11 +3,6 @@ server:
 logging:
   file:
     path: ${LOG_PATH:/app/data/log}
-  level:
-    org:
-      springframework:
-        security: debug
-      flywaydb: debug
 cors:
   allowedOrigins: "*"
   allowedMethods: "*"

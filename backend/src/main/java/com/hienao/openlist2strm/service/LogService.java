@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -35,6 +36,21 @@ public class LogService {
 
   @Value("${logging.file.path:./logs}")
   private String logPath;
+
+  @PostConstruct
+  public void init() {
+    log.info("=== LogService 初始化 ===");
+    log.info("配置的日志路径: {}", logPath);
+    log.info("实际日志路径: {}", getActualLogPath());
+    log.info("工作目录: {}", System.getProperty("user.dir"));
+    log.info("支持的日志类型: {}", getSupportedLogTypes());
+
+    // 检查日志文件状态
+    for (String logType : getSupportedLogTypes()) {
+      Path logFile = getLogFilePath(logType);
+      log.info("日志文件 [{}]: {} (存在: {})", logType, logFile.toAbsolutePath(), Files.exists(logFile));
+    }
+  }
 
   // 获取实际的日志路径，支持多种路径检测
   private String getActualLogPath() {

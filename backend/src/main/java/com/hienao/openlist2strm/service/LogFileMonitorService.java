@@ -67,7 +67,15 @@ public class LogFileMonitorService {
 
   @PostConstruct
   public void init() {
-    log.info("初始化日志文件监控服务");
+    log.info("=== 初始化日志文件监控服务 ===");
+    log.info("配置的日志路径: {}", logPath);
+    log.info("实际日志路径: {}", getActualLogPath());
+    log.info("工作目录: {}", System.getProperty("user.dir"));
+
+    // 检查日志目录
+    Path logDir = Paths.get(getActualLogPath());
+    log.info("日志目录: {} (存在: {})", logDir.toAbsolutePath(), Files.exists(logDir));
+
     startMonitoring("backend");
     startMonitoring("frontend");
   }

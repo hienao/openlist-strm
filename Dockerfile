@@ -32,7 +32,8 @@ WORKDIR $WORKDIR
 RUN apk add --no-cache nginx tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log
+    mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log && \
+    chmod -R 755 /app/data
 
 # Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
@@ -45,10 +46,15 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'echo "=== 启动容器 ==="' >> /start.sh && \
     echo 'mkdir -p /app/data/log /run/nginx' >> /start.sh && \
-    echo 'chmod 755 /app/data/log' >> /start.sh && \
+    echo 'chmod -R 755 /app/data' >> /start.sh && \
+    echo 'echo "=== 启动 Nginx ==="' >> /start.sh && \
     echo 'nginx &' >> /start.sh && \
-    echo 'java --add-opens java.base/java.lang=ALL-UNNAMED -jar ./openlisttostrm.jar' >> /start.sh && \
+    echo 'echo "=== 启动 Spring Boot 应用 ==="' >> /start.sh && \
+    echo 'echo "日志路径: $LOG_PATH"' >> /start.sh && \
+    echo 'echo "Spring Profile: $SPRING_PROFILES_ACTIVE"' >> /start.sh && \
+    echo 'exec java --add-opens java.base/java.lang=ALL-UNNAMED -jar ./openlisttostrm.jar' >> /start.sh && \
     chmod +x /start.sh
 
 EXPOSE 80 8080
