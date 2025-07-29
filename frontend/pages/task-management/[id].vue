@@ -107,9 +107,10 @@
                 </div>
                 
                 <div class="mt-3 flex items-center space-x-4">
-                  <label class="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" :checked="task.needScrap" disabled class="mr-1">
+                  <label class="flex items-center text-sm text-gray-500">
+                    <input type="checkbox" :checked="false" disabled class="mr-1 opacity-50">
                     需要刮削
+                    <span class="ml-1 text-xs text-gray-400">(暂未实现)</span>
                   </label>
                   <label class="flex items-center text-sm text-gray-600">
                     <input type="checkbox" :checked="task.isIncrement" disabled class="mr-1">
@@ -205,11 +206,13 @@
               </div>
               
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <label class="flex items-center">
-                  <input v-model="taskForm.needScrap" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                  <span class="ml-2 text-sm text-gray-700">需要刮削</span>
+                <label class="flex items-center cursor-not-allowed" @click="showScrapNotImplementedMessage">
+                  <input v-model="taskForm.needScrap" type="checkbox" disabled
+                         class="rounded border-gray-300 text-gray-400 shadow-sm cursor-not-allowed opacity-50">
+                  <span class="ml-2 text-sm text-gray-500">需要刮削</span>
+                  <span class="ml-1 text-xs text-gray-400">(暂未实现)</span>
                 </label>
-                
+
                 <label class="flex items-center">
                   <input v-model="taskForm.isIncrement" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                   <span class="ml-2 text-sm text-gray-700">增量更新</span>
@@ -334,7 +337,7 @@ const editTask = (task) => {
     path: task.path,
     strmPath: task.strmPath,
     cron: task.cron || '',
-    needScrap: task.needScrap,
+    needScrap: false, // 强制设置为false，因为功能暂未实现
     renameRegex: task.renameRegex || '',
     isIncrement: task.isIncrement,
     isActive: task.isActive
@@ -543,14 +546,14 @@ const openLogs = () => {
 const generateStrm = async (taskId) => {
   try {
     generatingStrm.value[taskId] = true
-    
+
     const response = await authenticatedApiCall(`/task-config/${taskId}/submit`, {
       method: 'POST',
       body: {
         isIncremental: false // 全量生成，不是增量
       }
     })
-    
+
     if (response.code === 200) {
       alert('任务已提交，正在后台执行全量生成STRM文件...')
     } else {
@@ -562,6 +565,11 @@ const generateStrm = async (taskId) => {
   } finally {
     generatingStrm.value[taskId] = false
   }
+}
+
+// 显示刮削功能未实现提示
+const showScrapNotImplementedMessage = () => {
+  alert('刮削功能暂未实现，敬请期待后续版本更新。')
 }
 
 // 组件挂载时获取配置信息和任务列表
