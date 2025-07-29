@@ -23,8 +23,9 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
-      - ${LOG_PATH}:/var/log
-      - ${DATABASE_PATH}:/app/data/config/db/openlist2strm.db
+      - ${LOG_PATH}:/app/data/log
+      - ${DATABASE_STORE}:/app/data/config
+      - ./strm:/app/backend/strm
     restart: always
   rabbitmq:
     image: rabbitmq:4.1.2-management-alpine

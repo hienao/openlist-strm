@@ -18,4 +18,5 @@ services:
     volumes:
       - ${LOG_PATH}:/app/data/log
       - ${DATABASE_STORE}:/app/data
+      - ./strm:/app/backend/strm
     restart: always
