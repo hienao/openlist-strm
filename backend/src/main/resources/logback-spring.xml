@@ -2,13 +2,13 @@
 <configuration>
     <!-- 定义日志文件路径变量 -->
     <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="./logs"/>
-    
+
     <!-- 定义日志格式 -->
-    <property name="CONSOLE_LOG_PATTERN" 
-              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
-    
-    <property name="FILE_LOG_PATTERN" 
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %thread --- [%logger{36}] : %msg%n%ex"/>
+
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %thread --- [%logger{36}] : %msg%n%ex"/>
 
     <!-- 控制台输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -59,17 +59,17 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <logger name="org.springframework.security" level="DEBUG" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <logger name="org.flywaydb" level="DEBUG" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
@@ -83,22 +83,22 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <logger name="org.springframework.security" level="WARN" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <logger name="org.flywaydb" level="INFO" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
         </logger>
-        
+
         <!-- 减少Spring框架日志输出 -->
         <logger name="org.springframework" level="WARN"/>
         <logger name="org.apache.catalina" level="WARN"/>
         <logger name="org.hibernate" level="WARN"/>
-        
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="APPLICATION_FILE"/>
