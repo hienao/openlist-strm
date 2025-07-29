@@ -33,8 +33,9 @@ services:
     ports:
       - "3111:80"
     volumes:
-      - ./data:/app/data
-      - ./logs:/var/log
+      - ./config:/app/data/config    # 配置文件和数据库存储
+      - ./logs:/app/data/log         # 日志文件存储
+      - ./strm:/app/backend/strm     # STRM 文件输出目录
     restart: always
 ```
 
@@ -42,6 +43,11 @@ services:
 ```bash
 docker-compose up -d
 ```
+
+**目录说明：**
+- `./config` → `/app/data/config` - 存储应用配置文件和 SQLite 数据库
+- `./logs` → `/app/data/log` - 存储应用运行日志
+- `./strm` → `/app/backend/strm` - 存储生成的 STRM 流媒体文件（核心输出目录）
 
 #### 方式二：本地构建部署
 
