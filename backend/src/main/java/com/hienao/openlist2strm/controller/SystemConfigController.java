@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.controller;
 
 import com.hienao.openlist2strm.dto.ApiResponse;
+import com.hienao.openlist2strm.service.AiFileNameRecognitionService;
 import com.hienao.openlist2strm.service.SystemConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class SystemConfigController {
 
   private final SystemConfigService systemConfigService;
+  private final AiFileNameRecognitionService aiFileNameRecognitionService;
 
   /** 获取系统配置 */
   @GetMapping("/config")
@@ -87,6 +89,42 @@ public class SystemConfigController {
     } catch (Exception e) {
       log.error("保存系统配置失败", e);
       return ResponseEntity.ok(ApiResponse.error("保存系统配置失败: " + e.getMessage()));
+    }
+  }
+
+  /** 测试 AI 配置 */
+  @PostMapping("/test-ai-config")
+  @Operation(summary = "测试 AI 配置", description = "测试 AI 识别配置是否有效")
+  public ResponseEntity<ApiResponse<String>> testAiConfig(@RequestBody Map<String, Object> testConfig) {
+    try {
+      String baseUrl = (String) testConfig.get("baseUrl");
+      String apiKey = (String) testConfig.get("apiKey");
+      String model = (String) testConfig.get("model");
+
+      if (baseUrl == null || baseUrl.trim().isEmpty()) {
+        return ResponseEntity.ok(ApiResponse.error("API 基础 URL 不能为空"));
+      }
+
+      if (apiKey == null || apiKey.trim().isEmpty()) {
+        return ResponseEntity.ok(ApiResponse.error("API Key 不能为空"));
+      }
+
+      if (model == null || model.trim().isEmpty()) {
+        return ResponseEntity.ok(ApiResponse.error("模型名称不能为空"));
+      }
+
+      // 调用 AI 服务验证配置
+      boolean isValid = aiFileNameRecognitionService.validateAiConfig(baseUrl, apiKey, model);
+
+      if (isValid) {
+        return ResponseEntity.ok(ApiResponse.success("AI 配置测试成功"));
+      } else {
+        return ResponseEntity.ok(ApiResponse.error("AI 配置测试失败，请检查配置信息"));
+      }
+
+    } catch (Exception e) {
+      log.error("测试 AI 配置失败", e);
+      return ResponseEntity.ok(ApiResponse.error("测试 AI 配置失败: " + e.getMessage()));
     }
   }
 }
