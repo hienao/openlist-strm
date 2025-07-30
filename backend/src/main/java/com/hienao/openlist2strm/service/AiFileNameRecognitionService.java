@@ -306,16 +306,69 @@ public class AiFileNameRecognitionService {
    * @param response 原始响应
    * @return JSON 字符串，如果未找到则返回 null
    */
-  private String extractJsonFromResponse(String response) {
+  protected String extractJsonFromResponse(String response) {
+    if (response == null || response.trim().isEmpty()) {
+      return null;
+    }
+
+    String content = response.trim();
+
+    // 处理 Markdown 代码块格式 ```json ... ``` 或 ``` ... ```
+    if (content.contains("```")) {
+      // 查找第一个代码块开始
+      int codeBlockStart = content.indexOf("```");
+      if (codeBlockStart != -1) {
+        // 确定内容开始位置
+        int contentStart;
+        String afterTicks = content.substring(codeBlockStart + 3);
+
+        // 检查是否是 ```json 格式
+        if (afterTicks.startsWith("json")) {
+          // 跳过 "json" 和可能的换行符
+          contentStart = codeBlockStart + 7;
+          if (contentStart < content.length() && content.charAt(contentStart) == '\n') {
+            contentStart++;
+          } else if (contentStart < content.length() && content.charAt(contentStart) == '\r') {
+            contentStart++;
+            if (contentStart < content.length() && content.charAt(contentStart) == '\n') {
+              contentStart++;
+            }
+          }
+        } else {
+          // 普通的 ``` 格式，查找换行符
+          int newlinePos = content.indexOf('\n', codeBlockStart + 3);
+          if (newlinePos != -1) {
+            contentStart = newlinePos + 1;
+          } else {
+            contentStart = codeBlockStart + 3;
+          }
+        }
+
+        // 查找代码块结束
+        int codeBlockEnd = content.indexOf("```", contentStart);
+        if (codeBlockEnd != -1) {
+          content = content.substring(contentStart, codeBlockEnd).trim();
+        } else {
+          // 如果没有找到结束标记，取到字符串末尾
+          content = content.substring(contentStart).trim();
+        }
+
+        log.debug("从 Markdown 代码块中提取内容: {}", content);
+      }
+    }
+
     // 查找 JSON 开始和结束位置
-    int jsonStart = response.indexOf('{');
-    int jsonEnd = response.lastIndexOf('}');
+    int jsonStart = content.indexOf('{');
+    int jsonEnd = content.lastIndexOf('}');
 
     if (jsonStart == -1 || jsonEnd == -1 || jsonStart >= jsonEnd) {
       return null;
     }
 
-    return response.substring(jsonStart, jsonEnd + 1);
+    String jsonContent = content.substring(jsonStart, jsonEnd + 1);
+    log.debug("提取的 JSON 内容: {}", jsonContent);
+
+    return jsonContent;
   }
 
 
