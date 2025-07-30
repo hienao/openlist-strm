@@ -358,10 +358,10 @@ const validateTaskPath = async (taskPath) => {
     if (!configInfo.value) {
       throw new Error('配置信息未加载')
     }
-    
+
     // 拼接完整路径：basePath + taskPath
     let fullPath = configInfo.value.basePath
-    
+
     // 处理路径拼接规则：如果basePath结尾和taskPath开头都是/，则移除basePath结尾的/
     if (fullPath.endsWith('/') && taskPath.startsWith('/')) {
       fullPath = fullPath.slice(0, -1) + taskPath
@@ -370,12 +370,13 @@ const validateTaskPath = async (taskPath) => {
     } else {
       fullPath = fullPath + taskPath
     }
-    
+
     // 构建完整的API URL
     const baseUrl = configInfo.value.baseUrl
     const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/fs/get' : baseUrl + '/api/fs/get'
-    
-    const response = await apiCall(apiUrl, {
+
+    // 直接使用 $fetch 调用 OpenList API，避免触发全局 401 处理逻辑
+    const response = await $fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': configInfo.value.token,
@@ -389,7 +390,7 @@ const validateTaskPath = async (taskPath) => {
         refresh: false
       }
     })
-    
+
     if (response.code === 200 && response.data) {
       // 检查是否为目录
       if (!response.data.is_dir) {
@@ -401,7 +402,7 @@ const validateTaskPath = async (taskPath) => {
     }
   } catch (error) {
     if (error.status === 401) {
-      throw new Error('Token无效或已过期')
+      throw new Error('OpenList Token无效或已过期')
     } else if (error.status === 403) {
       throw new Error('没有权限访问该路径')
     } else if (error.status === 404) {
