@@ -5,6 +5,7 @@ import com.hienao.openlist2strm.dto.tmdb.TmdbMovieDetail;
 import com.hienao.openlist2strm.dto.tmdb.TmdbSearchResponse;
 import com.hienao.openlist2strm.dto.tmdb.TmdbTvDetail;
 import com.hienao.openlist2strm.util.MediaFileParser;
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -85,6 +86,13 @@ public class MediaScrapingService {
       // 构建保存目录
       String saveDirectory = buildSaveDirectory(strmDirectory, relativePath);
       String baseFileName = coverImageService.getStandardizedFileName(fileName);
+
+      // 检查是否已刮削
+      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
+      if (!overwriteExisting && isAlreadyScraped(saveDirectory, baseFileName, mediaInfo)) {
+        log.info("文件已刮削且未启用覆盖模式，跳过: {}", fileName);
+        return;
+      }
 
       // 根据媒体类型执行不同的刮削逻辑
       if (mediaInfo.isMovie()) {
@@ -277,6 +285,195 @@ public class MediaScrapingService {
     // 检查刮削配置
     Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
     return (Boolean) scrapingConfig.getOrDefault("enabled", true);
+  }
+
+  /**
+   * 检查文件是否已经被刮削过
+   *
+   * @param saveDirectory 保存目录
+   * @param baseFileName 基础文件名
+   * @param mediaInfo 媒体信息
+   * @return 是否已刮削
+   */
+  private boolean isAlreadyScraped(String saveDirectory, String baseFileName, MediaInfo mediaInfo) {
+    try {
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean generateNfo = (Boolean) scrapingConfig.getOrDefault("generateNfo", true);
+      boolean downloadPoster = (Boolean) scrapingConfig.getOrDefault("downloadPoster", true);
+      boolean downloadBackdrop = (Boolean) scrapingConfig.getOrDefault("downloadBackdrop", false);
+
+      // 确保保存目录存在
+      File saveDir = new File(saveDirectory);
+      if (!saveDir.exists()) {
+        log.debug("保存目录不存在，需要刮削: {}", saveDirectory);
+        return false;
+      }
+
+      // 检查单个文件的刮削文件
+      if (mediaInfo.isMovie()) {
+        return isMovieScraped(saveDirectory, baseFileName, generateNfo, downloadPoster, downloadBackdrop);
+      } else if (mediaInfo.isTvShow()) {
+        return isTvShowEpisodeScraped(saveDirectory, baseFileName, generateNfo, downloadPoster, downloadBackdrop);
+      }
+
+      return false;
+
+    } catch (Exception e) {
+      log.warn("检查刮削状态时出错，继续刮削: {}", baseFileName, e);
+      return false;
+    }
+  }
+
+  /**
+   * 检查电影是否已刮削
+   */
+  private boolean isMovieScraped(String saveDirectory, String baseFileName,
+                                boolean generateNfo, boolean downloadPoster, boolean downloadBackdrop) {
+    // 检查 NFO 文件
+    if (generateNfo) {
+      String nfoPath = saveDirectory + "/" + baseFileName + ".nfo";
+      if (!new File(nfoPath).exists()) {
+        log.debug("电影 NFO 文件不存在，需要刮削: {}", nfoPath);
+        return false;
+      }
+    }
+
+    // 检查海报文件
+    if (downloadPoster) {
+      String posterPath = saveDirectory + "/" + baseFileName + "-poster.jpg";
+      if (!new File(posterPath).exists()) {
+        log.debug("电影海报文件不存在，需要刮削: {}", posterPath);
+        return false;
+      }
+    }
+
+    // 检查背景图文件
+    if (downloadBackdrop) {
+      String backdropPath = saveDirectory + "/" + baseFileName + "-fanart.jpg";
+      if (!new File(backdropPath).exists()) {
+        log.debug("电影背景图文件不存在，需要刮削: {}", backdropPath);
+        return false;
+      }
+    }
+
+    log.debug("电影所有刮削文件都已存在，跳过刮削: {}", baseFileName);
+    return true;
+  }
+
+  /**
+   * 检查电视剧集是否已刮削
+   */
+  private boolean isTvShowEpisodeScraped(String saveDirectory, String baseFileName,
+                                        boolean generateNfo, boolean downloadPoster, boolean downloadBackdrop) {
+    // 检查剧集 NFO 文件
+    if (generateNfo) {
+      String episodeNfoPath = saveDirectory + "/" + baseFileName + ".nfo";
+      if (!new File(episodeNfoPath).exists()) {
+        log.debug("剧集 NFO 文件不存在，需要刮削: {}", episodeNfoPath);
+        return false;
+      }
+    }
+
+    // 检查剧集海报文件
+    if (downloadPoster) {
+      String episodePosterPath = saveDirectory + "/" + baseFileName + "-thumb.jpg";
+      if (!new File(episodePosterPath).exists()) {
+        log.debug("剧集海报文件不存在，需要刮削: {}", episodePosterPath);
+        return false;
+      }
+    }
+
+    // 检查电视剧主 NFO 文件（tvshow.nfo）
+    if (generateNfo) {
+      String tvShowNfoPath = saveDirectory + "/tvshow.nfo";
+      if (!new File(tvShowNfoPath).exists()) {
+        log.debug("电视剧主 NFO 文件不存在，需要刮削: {}", tvShowNfoPath);
+        return false;
+      }
+    }
+
+    // 检查电视剧海报和背景图（在剧集目录的父目录或当前目录）
+    if (downloadPoster) {
+      String tvShowPosterPath = saveDirectory + "/poster.jpg";
+      if (!new File(tvShowPosterPath).exists()) {
+        log.debug("电视剧海报文件不存在，需要刮削: {}", tvShowPosterPath);
+        return false;
+      }
+    }
+
+    if (downloadBackdrop) {
+      String tvShowBackdropPath = saveDirectory + "/fanart.jpg";
+      if (!new File(tvShowBackdropPath).exists()) {
+        log.debug("电视剧背景图文件不存在，需要刮削: {}", tvShowBackdropPath);
+        return false;
+      }
+    }
+
+    log.debug("电视剧集所有刮削文件都已存在，跳过刮削: {}", baseFileName);
+    return true;
+  }
+
+  /**
+   * 检查目录是否已完全刮削
+   * 用于批量处理时的目录级别检查
+   *
+   * @param directoryPath 目录路径
+   * @return 是否已完全刮削
+   */
+  public boolean isDirectoryFullyScraped(String directoryPath) {
+    try {
+      File directory = new File(directoryPath);
+      if (!directory.exists() || !directory.isDirectory()) {
+        return false;
+      }
+
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
+
+      if (overwriteExisting) {
+        // 如果启用覆盖模式，总是返回 false 以重新刮削
+        return false;
+      }
+
+      File[] files = directory.listFiles();
+      if (files == null || files.length == 0) {
+        return false;
+      }
+
+      boolean hasVideoFiles = false;
+      boolean allVideoFilesScraped = true;
+
+      for (File file : files) {
+        if (file.isFile() && MediaFileParser.isVideoFile(file.getName())) {
+          hasVideoFiles = true;
+
+          // 解析文件名以确定媒体类型
+          MediaInfo mediaInfo = MediaFileParser.parseFileName(file.getName());
+          if (mediaInfo.getConfidence() >= 50) {
+            String baseFileName = coverImageService.getStandardizedFileName(file.getName());
+
+            if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
+              allVideoFilesScraped = false;
+              break;
+            }
+          }
+        }
+      }
+
+      boolean result = hasVideoFiles && allVideoFilesScraped;
+      if (result) {
+        log.debug("目录已完全刮削: {}", directoryPath);
+      } else {
+        log.debug("目录需要刮削: {} (hasVideoFiles: {}, allScraped: {})",
+                 directoryPath, hasVideoFiles, allVideoFilesScraped);
+      }
+
+      return result;
+
+    } catch (Exception e) {
+      log.warn("检查目录刮削状态时出错: {}", directoryPath, e);
+      return false;
+    }
   }
 
   /**

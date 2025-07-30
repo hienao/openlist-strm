@@ -206,6 +206,11 @@ public class TaskExecutionService {
 
       // 4. 过滤并处理视频文件
       int processedCount = 0;
+      int scrapSkippedCount = 0;
+
+      // 如果启用了刮削功能，先进行目录级别的优化检查
+      boolean needScrap = Boolean.TRUE.equals(taskConfig.getNeedScrap());
+
       for (OpenlistApiService.OpenlistFile file : allFiles) {
         if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
           try {
@@ -225,12 +230,21 @@ public class TaskExecutionService {
                 taskConfig.getRenameRegex());
 
             // 如果启用了刮削功能，执行媒体刮削
-            if (Boolean.TRUE.equals(taskConfig.getNeedScrap())) {
+            if (needScrap) {
               try {
-                mediaScrapingService.scrapMedia(
-                    file.getName(),
-                    taskConfig.getStrmPath(),
-                    relativePath);
+                // 构建完整的保存目录路径
+                String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
+
+                // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
+                if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
+                  log.debug("目录已完全刮削，跳过: {}", saveDirectory);
+                  scrapSkippedCount++;
+                } else {
+                  mediaScrapingService.scrapMedia(
+                      file.getName(),
+                      taskConfig.getStrmPath(),
+                      relativePath);
+                }
               } catch (Exception scrapException) {
                 log.error("刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
                 // 刮削失败不影响STRM文件生成，继续处理
@@ -244,6 +258,10 @@ public class TaskExecutionService {
             // 继续处理其他文件，不中断整个任务
           }
         }
+      }
+
+      if (needScrap && scrapSkippedCount > 0) {
+        log.info("跳过了 {} 个已刮削目录中的文件", scrapSkippedCount);
       }
 
       // 5. 如果是增量执行，清理孤立的STRM文件（源文件已不存在的STRM文件）
@@ -311,5 +329,34 @@ public class TaskExecutionService {
 
     // 拼接sign参数
     return originalUrl + separator + "sign=" + sign;
+  }
+
+  /**
+   * 构建刮削保存目录路径
+   * 复用 MediaScrapingService 中的逻辑
+   *
+   * @param strmDirectory STRM文件目录
+   * @param relativePath 相对路径
+   * @return 保存目录路径
+   */
+  private String buildScrapSaveDirectory(String strmDirectory, String relativePath) {
+    if (relativePath == null || relativePath.trim().isEmpty()) {
+      return strmDirectory;
+    }
+
+    // 移除文件名，只保留目录路径
+    String directoryPath = relativePath;
+    int lastSlashIndex = relativePath.lastIndexOf('/');
+    if (lastSlashIndex > 0) {
+      directoryPath = relativePath.substring(0, lastSlashIndex);
+    } else if (lastSlashIndex == 0) {
+      directoryPath = "";
+    }
+
+    if (directoryPath.isEmpty()) {
+      return strmDirectory;
+    }
+
+    return strmDirectory + "/" + directoryPath;
   }
 }
