@@ -185,8 +185,9 @@ public class AiFileNameRecognitionService {
       // 构建请求体
       Map<String, Object> requestBody = new HashMap<>();
       requestBody.put("model", model);
-      requestBody.put("max_tokens", 200);
+      requestBody.put("max_tokens", 300); // 增加 token 数量以适应 JSON 格式
       requestBody.put("temperature", 0.1);
+      requestBody.put("response_format", Map.of("type", "json_object")); // 强制 JSON 格式（如果模型支持）
       
       // 构建消息
       Map<String, Object> systemMessage = new HashMap<>();
@@ -211,7 +212,7 @@ public class AiFileNameRecognitionService {
       // 解析响应
       JsonNode responseJson = objectMapper.readTree(response.getBody());
       JsonNode choices = responseJson.get("choices");
-      
+
       if (choices != null && choices.isArray() && choices.size() > 0) {
         JsonNode firstChoice = choices.get(0);
         JsonNode message = firstChoice.get("message");
@@ -219,8 +220,13 @@ public class AiFileNameRecognitionService {
           JsonNode content = message.get("content");
           if (content != null) {
             String result = content.asText().trim();
-            log.debug("AI API 响应: {}", result);
-            return result;
+            log.debug("AI API 原始响应: {}", result);
+
+            // 解析 JSON 响应
+            String parsedResult = parseJsonResponse(result);
+            log.debug("AI API 解析后响应: {}", parsedResult);
+
+            return parsedResult;
           }
         }
       }
@@ -235,6 +241,86 @@ public class AiFileNameRecognitionService {
   }
 
   /**
+   * 解析 AI 的 JSON 响应
+   *
+   * @param rawResponse AI 的原始响应
+   * @return 解析后的文件名，如果失败则返回 null
+   */
+  private String parseJsonResponse(String rawResponse) {
+    if (rawResponse == null || rawResponse.trim().isEmpty()) {
+      log.warn("AI 响应为空");
+      return null;
+    }
+
+    String response = rawResponse.trim();
+
+    try {
+      // 尝试提取 JSON 部分
+      String jsonContent = extractJsonFromResponse(response);
+      if (jsonContent == null) {
+        log.warn("无法从响应中提取 JSON，跳过处理: {}", response);
+        return null;
+      }
+
+      // 解析 JSON
+      JsonNode jsonNode = objectMapper.readTree(jsonContent);
+
+      // 检查是否成功
+      JsonNode successNode = jsonNode.get("success");
+      if (successNode == null) {
+        log.warn("JSON 响应缺少 success 字段，跳过处理: {}", jsonContent);
+        return null;
+      }
+
+      boolean success = successNode.asBoolean();
+
+      if (success) {
+        // 成功情况，提取文件名
+        JsonNode filenameNode = jsonNode.get("filename");
+        if (filenameNode != null && !filenameNode.isNull()) {
+          String filename = filenameNode.asText().trim();
+          if (!filename.isEmpty()) {
+            log.debug("成功解析 JSON 响应，文件名: {}", filename);
+            return filename;
+          }
+        }
+        log.warn("JSON 响应标记成功但缺少有效文件名，跳过处理: {}", jsonContent);
+        return null;
+      } else {
+        // 失败情况，提取失败原因
+        JsonNode reasonNode = jsonNode.get("reason");
+        String reason = reasonNode != null ? reasonNode.asText() : "未知原因";
+        log.info("AI 无法解析文件名: {}", reason);
+        return "[无法解析] 原因：" + reason;
+      }
+
+    } catch (Exception e) {
+      log.warn("解析 JSON 响应失败，跳过处理: {}, 错误: {}", response, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * 从响应中提取 JSON 内容
+   *
+   * @param response 原始响应
+   * @return JSON 字符串，如果未找到则返回 null
+   */
+  private String extractJsonFromResponse(String response) {
+    // 查找 JSON 开始和结束位置
+    int jsonStart = response.indexOf('{');
+    int jsonEnd = response.lastIndexOf('}');
+
+    if (jsonStart == -1 || jsonEnd == -1 || jsonStart >= jsonEnd) {
+      return null;
+    }
+
+    return response.substring(jsonStart, jsonEnd + 1);
+  }
+
+
+
+  /**
    * 验证 AI 配置
    *
    * @param baseUrl API 基础 URL
@@ -244,37 +330,54 @@ public class AiFileNameRecognitionService {
    */
   public boolean validateAiConfig(String baseUrl, String apiKey, String model) {
     try {
-      // 构建测试请求
-      String testInput = "测试文件名: Test Movie (2023).mkv";
-      
       // 构建请求 URL
       String apiUrl = baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
-      
+
       // 构建请求头
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.setBearerAuth(apiKey);
-      
+
       // 构建简单的测试请求体
       Map<String, Object> requestBody = new HashMap<>();
       requestBody.put("model", model);
-      requestBody.put("max_tokens", 10);
+      requestBody.put("max_tokens", 50);
       requestBody.put("temperature", 0.1);
-      
+
+      // 使用简单的测试消息
+      Map<String, Object> systemMessage = new HashMap<>();
+      systemMessage.put("role", "system");
+      systemMessage.put("content", "请返回 JSON 格式: {\"test\": \"success\"}");
+
       Map<String, Object> userMessage = new HashMap<>();
       userMessage.put("role", "user");
-      userMessage.put("content", "Hello");
-      
-      requestBody.put("messages", new Object[]{userMessage});
-      
+      userMessage.put("content", "测试");
+
+      requestBody.put("messages", new Object[]{systemMessage, userMessage});
+
+      // 尝试添加 JSON 格式要求（某些模型支持）
+      try {
+        requestBody.put("response_format", Map.of("type", "json_object"));
+      } catch (Exception e) {
+        // 如果不支持，忽略这个参数
+        log.debug("模型可能不支持 response_format 参数");
+      }
+
       // 发送测试请求
       HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
       ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
-      
-      return response.getStatusCode().is2xxSuccessful();
-      
+
+      boolean success = response.getStatusCode().is2xxSuccessful();
+      if (success) {
+        log.info("AI 配置验证成功: {}", model);
+      } else {
+        log.warn("AI 配置验证失败，状态码: {}", response.getStatusCode());
+      }
+
+      return success;
+
     } catch (Exception e) {
-      log.error("验证 AI 配置失败", e);
+      log.error("验证 AI 配置失败: {}", e.getMessage(), e);
       return false;
     }
   }

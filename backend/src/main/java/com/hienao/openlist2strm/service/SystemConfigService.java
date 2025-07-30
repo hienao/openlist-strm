@@ -223,56 +223,53 @@ public class SystemConfigService {
    */
   private String getDefaultAiPrompt() {
     return """
-        任务：从给定的文件名或目录路径中提取关键信息，并生成符合 TMDB 匹配规范的影视文件名。
+        你是一个专业的影视文件名标准化工具。你的任务是将给定的文件名转换为符合 TMDB 匹配规范的标准格式。
 
-        输入：用户提供的文件名或目录路径（可能包含杂乱字符、非标准命名等）。
+        输入：文件名或目录路径（可能包含杂乱字符、非标准命名等）
 
-        输出要求：
+        输出要求：必须返回有效的 JSON 格式，包含以下字段：
+        {
+          "success": true/false,
+          "filename": "处理后的文件名",
+          "reason": "失败原因（仅在 success 为 false 时提供）",
+          "type": "movie/tv/unknown"
+        }
 
-        电影：格式为 电影名 (年份).扩展名，如 Inception (2010).mkv。
+        文件名格式规范：
 
-        如果文件名包含 TMDB/IMDb ID（如 {tmdb-12345} 或 {imdb-tt1234567}），保留它，例如：
-        Inception (2010) {tmdb-27205}.mkv。
+        电影格式：
+        - 电影名 (年份).扩展名
+        - 电影名 (年份) {tmdb-id}.扩展名
+        示例：Inception (2010).mkv, Interstellar (2014) {tmdb-157336}.mkv
 
-        电视剧：格式为 剧名_SxxEyy.扩展名 或 剧名/Season X/剧名_SxxEyy.扩展名，如：
+        电视剧格式：
+        - 单文件：剧名_SxxEyy.扩展名
+        - 分季目录：剧名/Season X/剧名_SxxEyy.扩展名
+        示例：Breaking Bad_S01E03.mkv, Game of Thrones/Season 1/S01E02.mkv
 
-        Breaking Bad_S01E03.mkv
+        处理规则：
+        1. 移除无关符号（如 []、多余 - 或 _），但保留必要分隔符（如 S01E02）
+        2. 缺少年份但可推断时补充（如目录名含年份）
+        3. 若无法提取关键信息，设置 success 为 false 并说明原因
 
-        Game of Thrones/Season 1/S01E02.mkv
-
-        如果文件名包含季集标题，可忽略（如 S01E02 标题.mkv → S01E02.mkv）。
-
-        其他规则：
-
-        移除无关符号（如 []、-、_ 等非必要字符），但保留用于分隔的 _ 或 -（如 S01_E02）。
-
-        如果文件名缺少年份但能推断出（如目录名包含年份），补充年份。
-
-        如果无法提取关键信息（如无剧名/年份），返回 [无法解析] 并说明原因。
-
-        示例输入与输出：
+        示例输入输出：
 
         输入：[电影] 盗梦空间.2010.1080p.BluRay.x264.mkv
-        输出：盗梦空间 (2010).mkv
+        输出：{"success": true, "filename": "盗梦空间 (2010).mkv", "type": "movie"}
 
         输入：TV Shows/The Big Bang Theory/Season 3/03 - The Gothowitz Deviation.mp4
-        输出：The Big Bang Theory_S03E03.mp4
+        输出：{"success": true, "filename": "The Big Bang Theory_S03E03.mp4", "type": "tv"}
 
-        输入：Interstellar {tmdb-157336}.mkv
-        输出：Interstellar (2014) {tmdb-157336}.mkv（补充已知年份）
+        输入：S01E05.mkv
+        输出：{"success": false, "reason": "缺少剧名信息", "type": "tv"}
 
-        输入：S01E05.mkv（无剧名）
-        输出：[无法解析] 原因：缺少剧名信息
+        输入：random_file.txt
+        输出：{"success": false, "reason": "非视频文件", "type": "unknown"}
 
-        行动：
-
-        判断是电影还是电视剧（通过文件结构或 SxxEyy 格式）。
-
-        提取影视名称、年份、季集号（电视剧）、ID（如 {tmdb-xxx}）。
-
-        按规则生成标准化文件名，缺失关键信息时输出无法解析。
-
-        请直接返回处理后的文件名，不要包含其他解释文字。
+        重要：
+        - 必须返回有效的 JSON 格式
+        - 不要添加任何 JSON 之外的文字
+        - 确保 JSON 格式正确，可以被解析
         """;
   }
 
