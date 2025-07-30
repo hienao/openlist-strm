@@ -170,6 +170,16 @@ public class SystemConfigService {
     scrapConfig.put("nfoFormat", "kodi"); // NFO格式：kodi, jellyfin, emby
     defaultConfig.put("scraping", scrapConfig);
 
+    // AI 识别配置
+    Map<String, Object> aiConfig = new HashMap<>();
+    aiConfig.put("enabled", false); // 是否启用AI识别功能
+    aiConfig.put("baseUrl", "https://api.openai.com/v1"); // OpenAI API基础URL
+    aiConfig.put("apiKey", ""); // OpenAI API Key
+    aiConfig.put("model", "gpt-3.5-turbo"); // 使用的模型
+    aiConfig.put("qpmLimit", 60); // 每分钟请求限制
+    aiConfig.put("prompt", getDefaultAiPrompt()); // 默认提示词
+    defaultConfig.put("ai", aiConfig);
+
     return defaultConfig;
   }
 
@@ -193,6 +203,77 @@ public class SystemConfigService {
   public Map<String, Object> getScrapingConfig() {
     Map<String, Object> systemConfig = getSystemConfig();
     return (Map<String, Object>) systemConfig.getOrDefault("scraping", new HashMap<>());
+  }
+
+  /**
+   * 获取AI识别配置
+   *
+   * @return AI配置Map
+   */
+  @SuppressWarnings("unchecked")
+  public Map<String, Object> getAiConfig() {
+    Map<String, Object> systemConfig = getSystemConfig();
+    return (Map<String, Object>) systemConfig.getOrDefault("ai", new HashMap<>());
+  }
+
+  /**
+   * 获取默认AI提示词
+   *
+   * @return 默认提示词
+   */
+  private String getDefaultAiPrompt() {
+    return """
+        任务：从给定的文件名或目录路径中提取关键信息，并生成符合 TMDB 匹配规范的影视文件名。
+
+        输入：用户提供的文件名或目录路径（可能包含杂乱字符、非标准命名等）。
+
+        输出要求：
+
+        电影：格式为 电影名 (年份).扩展名，如 Inception (2010).mkv。
+
+        如果文件名包含 TMDB/IMDb ID（如 {tmdb-12345} 或 {imdb-tt1234567}），保留它，例如：
+        Inception (2010) {tmdb-27205}.mkv。
+
+        电视剧：格式为 剧名_SxxEyy.扩展名 或 剧名/Season X/剧名_SxxEyy.扩展名，如：
+
+        Breaking Bad_S01E03.mkv
+
+        Game of Thrones/Season 1/S01E02.mkv
+
+        如果文件名包含季集标题，可忽略（如 S01E02 标题.mkv → S01E02.mkv）。
+
+        其他规则：
+
+        移除无关符号（如 []、-、_ 等非必要字符），但保留用于分隔的 _ 或 -（如 S01_E02）。
+
+        如果文件名缺少年份但能推断出（如目录名包含年份），补充年份。
+
+        如果无法提取关键信息（如无剧名/年份），返回 [无法解析] 并说明原因。
+
+        示例输入与输出：
+
+        输入：[电影] 盗梦空间.2010.1080p.BluRay.x264.mkv
+        输出：盗梦空间 (2010).mkv
+
+        输入：TV Shows/The Big Bang Theory/Season 3/03 - The Gothowitz Deviation.mp4
+        输出：The Big Bang Theory_S03E03.mp4
+
+        输入：Interstellar {tmdb-157336}.mkv
+        输出：Interstellar (2014) {tmdb-157336}.mkv（补充已知年份）
+
+        输入：S01E05.mkv（无剧名）
+        输出：[无法解析] 原因：缺少剧名信息
+
+        行动：
+
+        判断是电影还是电视剧（通过文件结构或 SxxEyy 格式）。
+
+        提取影视名称、年份、季集号（电视剧）、ID（如 {tmdb-xxx}）。
+
+        按规则生成标准化文件名，缺失关键信息时输出无法解析。
+
+        请直接返回处理后的文件名，不要包含其他解释文字。
+        """;
   }
 
   /**

@@ -106,7 +106,7 @@
           </div>
 
           <!-- 刮削设置 -->
-          <div class="pb-6">
+          <div class="border-b border-gray-200 pb-6">
             <h3 class="text-lg font-medium text-gray-900 mb-4">刮削设置</h3>
             <div class="space-y-4">
               <div class="flex items-center">
@@ -172,6 +172,112 @@
               </div>
             </div>
           </div>
+
+          <!-- AI 识别设置 -->
+          <div class="pb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">AI 文件名识别设置</h3>
+            <div class="space-y-4">
+              <div class="flex items-center">
+                <input
+                  id="aiEnabled"
+                  v-model="aiConfig.enabled"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="aiEnabled" class="ml-2 block text-sm text-gray-900">
+                  启用 AI 文件名识别
+                </label>
+                <span class="ml-2 text-xs text-gray-500">（提高 TMDB 刮削准确性）</span>
+              </div>
+
+              <div v-if="aiConfig.enabled" class="space-y-4 pl-6 border-l-2 border-gray-200">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="aiBaseUrl" class="block text-sm font-medium text-gray-700">
+                      API 基础 URL
+                    </label>
+                    <input
+                      id="aiBaseUrl"
+                      v-model="aiConfig.baseUrl"
+                      type="url"
+                      placeholder="https://api.openai.com/v1"
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label for="aiApiKey" class="block text-sm font-medium text-gray-700">
+                      API Key
+                    </label>
+                    <input
+                      id="aiApiKey"
+                      v-model="aiConfig.apiKey"
+                      type="password"
+                      placeholder="sk-..."
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label for="aiModel" class="block text-sm font-medium text-gray-700">
+                      模型名称
+                    </label>
+                    <input
+                      id="aiModel"
+                      v-model="aiConfig.model"
+                      type="text"
+                      placeholder="gpt-3.5-turbo"
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label for="aiQpmLimit" class="block text-sm font-medium text-gray-700">
+                      QPM 限制
+                    </label>
+                    <input
+                      id="aiQpmLimit"
+                      v-model.number="aiConfig.qpmLimit"
+                      type="number"
+                      min="1"
+                      max="1000"
+                      placeholder="60"
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                    <p class="mt-1 text-xs text-gray-500">每分钟最大请求数</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="aiPrompt" class="block text-sm font-medium text-gray-700">
+                    提示词
+                  </label>
+                  <textarea
+                    id="aiPrompt"
+                    v-model="aiConfig.prompt"
+                    rows="8"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="输入 AI 识别提示词..."
+                  ></textarea>
+                  <p class="mt-1 text-xs text-gray-500">定义 AI 如何识别和标准化文件名</p>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                  <button
+                    @click="testAiConfig"
+                    type="button"
+                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                    :disabled="testingAi"
+                  >
+                    {{ testingAi ? '测试中...' : '测试配置' }}
+                  </button>
+                  <span v-if="aiTestResult" :class="aiTestResult.success ? 'text-green-600' : 'text-red-600'" class="text-sm">
+                    {{ aiTestResult.message }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <!-- 保存按钮 -->
           <div class="flex justify-end space-x-3">
@@ -230,10 +336,20 @@ const scrapingConfig = ref({
   downloadBackdrop: false,
   overwriteExisting: false
 })
+const aiConfig = ref({
+  enabled: false,
+  baseUrl: 'https://api.openai.com/v1',
+  apiKey: '',
+  model: 'gpt-3.5-turbo',
+  qpmLimit: 60,
+  prompt: ''
+})
 const showApiKey = ref(false)
 const saving = ref(false)
 const showSuccess = ref(false)
 const errorMessage = ref('')
+const testingAi = ref(false)
+const aiTestResult = ref(null)
 
 // 页面加载时获取当前设置
 onMounted(async () => {
@@ -282,6 +398,19 @@ const loadCurrentSettings = async () => {
         console.log('已加载刮削配置')
       }
 
+      // 加载 AI 配置
+      if (config.ai && typeof config.ai === 'object') {
+        aiConfig.value = {
+          enabled: config.ai.enabled === true,
+          baseUrl: config.ai.baseUrl || 'https://api.openai.com/v1',
+          apiKey: config.ai.apiKey || '',
+          model: config.ai.model || 'gpt-3.5-turbo',
+          qpmLimit: config.ai.qpmLimit || 60,
+          prompt: config.ai.prompt || ''
+        }
+        console.log('已加载 AI 配置')
+      }
+
     } else {
       // 如果获取失败，使用默认选择
       selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
@@ -321,6 +450,14 @@ const saveSettings = async () => {
         downloadPoster: scrapingConfig.value.downloadPoster,
         downloadBackdrop: scrapingConfig.value.downloadBackdrop,
         overwriteExisting: scrapingConfig.value.overwriteExisting
+      },
+      ai: {
+        enabled: aiConfig.value.enabled,
+        baseUrl: aiConfig.value.baseUrl,
+        apiKey: aiConfig.value.apiKey,
+        model: aiConfig.value.model,
+        qpmLimit: aiConfig.value.qpmLimit,
+        prompt: aiConfig.value.prompt
       }
     }
 
@@ -348,6 +485,55 @@ const saveSettings = async () => {
     }, 3000)
   } finally {
     saving.value = false
+  }
+}
+
+// 测试 AI 配置
+const testAiConfig = async () => {
+  if (!aiConfig.value.baseUrl || !aiConfig.value.apiKey || !aiConfig.value.model) {
+    aiTestResult.value = {
+      success: false,
+      message: '请填写完整的 AI 配置信息'
+    }
+    return
+  }
+
+  testingAi.value = true
+  aiTestResult.value = null
+
+  try {
+    const response = await authenticatedApiCall('/system/test-ai-config', {
+      method: 'POST',
+      body: {
+        baseUrl: aiConfig.value.baseUrl,
+        apiKey: aiConfig.value.apiKey,
+        model: aiConfig.value.model
+      }
+    })
+
+    if (response && response.code === 200) {
+      aiTestResult.value = {
+        success: true,
+        message: 'AI 配置测试成功'
+      }
+    } else {
+      aiTestResult.value = {
+        success: false,
+        message: response?.message || 'AI 配置测试失败'
+      }
+    }
+  } catch (error) {
+    console.error('测试 AI 配置失败:', error)
+    aiTestResult.value = {
+      success: false,
+      message: error.data?.message || '测试 AI 配置失败'
+    }
+  } finally {
+    testingAi.value = false
+    // 3秒后清除测试结果
+    setTimeout(() => {
+      aiTestResult.value = null
+    }, 3000)
   }
 }
 

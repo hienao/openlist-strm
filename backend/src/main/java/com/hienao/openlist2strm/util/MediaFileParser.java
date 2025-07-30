@@ -242,19 +242,136 @@ public class MediaFileParser {
   }
 
   /**
+   * 验证文件名是否符合 TMDB 刮削规则
+   *
+   * @param fileName 文件名
+   * @return 验证结果，包含是否符合规则和原因
+   */
+  public static ValidationResult validateForTmdbScraping(String fileName) {
+    if (fileName == null || fileName.trim().isEmpty()) {
+      return new ValidationResult(false, "文件名为空");
+    }
+
+    // 移除文件扩展名进行检查
+    String nameWithoutExt = removeFileExtension(fileName);
+
+    // 检查是否包含 TMDB/IMDb ID（这种情况下直接通过）
+    if (containsTmdbOrImdbId(nameWithoutExt)) {
+      return new ValidationResult(true, "包含 TMDB/IMDb ID");
+    }
+
+    // 检测季集信息
+    boolean hasSeasonEpisode = SEASON_EPISODE_PATTERN.matcher(nameWithoutExt).find();
+
+    // 检测年份信息
+    boolean hasYear = YEAR_PATTERN.matcher(nameWithoutExt).find();
+
+    if (hasSeasonEpisode) {
+      // 电视剧规则验证
+      return validateTvShowFileName(nameWithoutExt);
+    } else {
+      // 电影规则验证
+      return validateMovieFileName(nameWithoutExt, hasYear);
+    }
+  }
+
+  /**
+   * 检查是否包含 TMDB 或 IMDb ID
+   */
+  private static boolean containsTmdbOrImdbId(String fileName) {
+    return fileName.matches(".*\\{(?:tmdb-\\d+|imdb-tt\\d+)\\}.*");
+  }
+
+  /**
+   * 验证电影文件名
+   */
+  private static ValidationResult validateMovieFileName(String fileName, boolean hasYear) {
+    // 清理文件名
+    String cleanName = CLEAN_PATTERN.matcher(fileName).replaceAll(" ");
+    cleanName = SEPARATOR_PATTERN.matcher(cleanName).replaceAll(" ");
+    cleanName = cleanName.trim().replaceAll("\\s+", " ");
+
+    // 电影必须有年份信息
+    if (!hasYear) {
+      return new ValidationResult(false, "电影文件缺少年份信息");
+    }
+
+    // 检查清理后的标题长度
+    if (cleanName.length() < 2) {
+      return new ValidationResult(false, "电影标题过短");
+    }
+
+    // 检查是否只包含特殊字符或数字
+    if (cleanName.matches("^[\\d\\s\\p{Punct}]+$")) {
+      return new ValidationResult(false, "电影标题只包含数字和特殊字符");
+    }
+
+    return new ValidationResult(true, "电影文件名符合规则");
+  }
+
+  /**
+   * 验证电视剧文件名
+   */
+  private static ValidationResult validateTvShowFileName(String fileName) {
+    // 清理文件名
+    String cleanName = CLEAN_PATTERN.matcher(fileName).replaceAll(" ");
+    cleanName = SEASON_EPISODE_PATTERN.matcher(cleanName).replaceAll(" ");
+    cleanName = SEPARATOR_PATTERN.matcher(cleanName).replaceAll(" ");
+    cleanName = cleanName.trim().replaceAll("\\s+", " ");
+
+    // 检查是否有剧名
+    if (cleanName.length() < 2) {
+      return new ValidationResult(false, "电视剧文件缺少剧名信息");
+    }
+
+    // 检查是否只包含特殊字符或数字
+    if (cleanName.matches("^[\\d\\s\\p{Punct}]+$")) {
+      return new ValidationResult(false, "电视剧标题只包含数字和特殊字符");
+    }
+
+    return new ValidationResult(true, "电视剧文件名符合规则");
+  }
+
+  /**
    * 判断是否为视频文件
    */
   public static boolean isVideoFile(String fileName) {
     if (fileName == null || fileName.trim().isEmpty()) {
       return false;
     }
-    
+
     String lowerName = fileName.toLowerCase();
-    return lowerName.endsWith(".mp4") || lowerName.endsWith(".avi") || 
+    return lowerName.endsWith(".mp4") || lowerName.endsWith(".avi") ||
            lowerName.endsWith(".mkv") || lowerName.endsWith(".mov") ||
            lowerName.endsWith(".wmv") || lowerName.endsWith(".flv") ||
            lowerName.endsWith(".webm") || lowerName.endsWith(".m4v") ||
            lowerName.endsWith(".rmvb") || lowerName.endsWith(".ts") ||
            lowerName.endsWith(".vob") || lowerName.endsWith(".3gp");
+  }
+
+  /**
+   * 验证结果类
+   */
+  public static class ValidationResult {
+    private final boolean valid;
+    private final String reason;
+
+    public ValidationResult(boolean valid, String reason) {
+      this.valid = valid;
+      this.reason = reason;
+    }
+
+    public boolean isValid() {
+      return valid;
+    }
+
+    public String getReason() {
+      return reason;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("ValidationResult{valid=%s, reason='%s'}", valid, reason);
+    }
   }
 }

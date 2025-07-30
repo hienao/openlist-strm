@@ -29,6 +29,7 @@ public class MediaScrapingService {
   private final NfoGeneratorService nfoGeneratorService;
   private final CoverImageService coverImageService;
   private final SystemConfigService systemConfigService;
+  private final AiFileNameRecognitionService aiFileNameRecognitionService;
 
   /**
    * 执行媒体刮削
@@ -50,12 +51,34 @@ public class MediaScrapingService {
         return;
       }
 
+      // 验证文件名是否符合 TMDB 刮削规则
+      MediaFileParser.ValidationResult validation = MediaFileParser.validateForTmdbScraping(fileName);
+      if (!validation.isValid()) {
+        log.info("文件名不符合 TMDB 刮削规则，跳过刮削: {} - {}", fileName, validation.getReason());
+        return;
+      }
+
+      // 尝试使用 AI 识别文件名
+      String recognizedFileName = aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
+      String fileNameToUse = recognizedFileName != null ? recognizedFileName : fileName;
+
+      if (recognizedFileName != null) {
+        log.info("使用 AI 识别的文件名进行刮削: {} -> {}", fileName, recognizedFileName);
+
+        // 重新验证 AI 识别后的文件名
+        MediaFileParser.ValidationResult aiValidation = MediaFileParser.validateForTmdbScraping(recognizedFileName);
+        if (!aiValidation.isValid()) {
+          log.warn("AI 识别的文件名仍不符合规则，使用原文件名: {} - {}", recognizedFileName, aiValidation.getReason());
+          fileNameToUse = fileName;
+        }
+      }
+
       // 解析文件名
-      MediaInfo mediaInfo = MediaFileParser.parseFileName(fileName);
+      MediaInfo mediaInfo = MediaFileParser.parseFileName(fileNameToUse);
       log.debug("解析媒体信息: {}", mediaInfo);
 
       if (mediaInfo.getConfidence() < 50) {
-        log.warn("媒体信息解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), fileName);
+        log.warn("媒体信息解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), fileNameToUse);
         return;
       }
 
