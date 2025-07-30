@@ -1,0 +1,36 @@
+server:
+  port: 8080
+logging:
+  file:
+    path: ${LOG_PATH:/app/data/log}
+cors:
+  allowedOrigins: "*"
+  allowedMethods: "*"
+  allowedHeaders: "*"
+  allowedExposeHeaders: "*"
+spring:
+  datasource:
+    url: jdbc:sqlite:/app/data/config/db/openlist2strm.db
+    driver-class-name: org.sqlite.JDBC
+  # MyBatis configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: main
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.hienao.openlist2strm.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    auto-startup: true
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+jwt:
+  secret: ${JWT_SECRET:secret}
+  expiration-min: ${JWT_EXPIRATION_MIN:20160}  # 14天 = 14 * 24 * 60 = 20160分钟

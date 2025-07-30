@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hienao.openlist2strm.mapper.TaskConfigMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.hienao.openlist2strm.entity.TaskConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_name" property="taskName" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="openlist_config_id" property="openlistConfigId" jdbcType="BIGINT"/>
+        <result column="need_scrap" property="needScrap" jdbcType="BOOLEAN"/>
+        <result column="rename_regex" property="renameRegex" jdbcType="VARCHAR"/>
+        <result column="cron" property="cron" jdbcType="VARCHAR"/>
+        <result column="is_increment" property="isIncrement" jdbcType="BOOLEAN"/>
+        <result column="strm_path" property="strmPath" jdbcType="VARCHAR"/>
+        <result column="last_exec_time" property="lastExecTime" jdbcType="BIGINT"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+        <result column="is_active" property="isActive" jdbcType="BOOLEAN"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, task_name, path, openlist_config_id, need_scrap, rename_regex, cron, is_increment, strm_path, last_exec_time, created_at, updated_at, is_active
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据任务名称查询 -->
+    <select id="selectByTaskName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        WHERE task_name = #{taskName}
+        LIMIT 1
+    </select>
+
+    <!-- 根据路径查询 -->
+    <select id="selectByPath" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        WHERE path = #{path}
+        LIMIT 1
+    </select>
+
+    <!-- 查询所有启用的任务配置 -->
+    <select id="selectActiveConfigs" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        WHERE is_active = 1
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询所有任务配置 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询有定时任务的配置 -->
+    <select id="selectWithCron" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_config
+        WHERE cron IS NOT NULL AND cron != '' AND is_active = 1
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 插入任务配置 -->
+    <insert id="insert" parameterType="com.hienao.openlist2strm.entity.TaskConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="taskName != null and taskName != ''">
+                task_name,
+            </if>
+            <if test="path != null and path != ''">
+                path,
+            </if>
+            <if test="openlistConfigId != null">
+                openlist_config_id,
+            </if>
+            <if test="needScrap != null">
+                need_scrap,
+            </if>
+            <if test="renameRegex != null">
+                rename_regex,
+            </if>
+            <if test="cron != null">
+                cron,
+            </if>
+            <if test="isIncrement != null">
+                is_increment,
+            </if>
+            <if test="strmPath != null">
+                strm_path,
+            </if>
+            <if test="lastExecTime != null">
+                last_exec_time,
+            </if>
+            <if test="isActive != null">
+                is_active,
+            </if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="taskName != null and taskName != ''">
+                #{taskName},
+            </if>
+            <if test="path != null and path != ''">
+                #{path},
+            </if>
+            <if test="openlistConfigId != null">
+                #{openlistConfigId},
+            </if>
+            <if test="needScrap != null">
+                #{needScrap},
+            </if>
+            <if test="renameRegex != null">
+                #{renameRegex},
+            </if>
+            <if test="cron != null">
+                #{cron},
+            </if>
+            <if test="isIncrement != null">
+                #{isIncrement},
+            </if>
+            <if test="strmPath != null">
+                #{strmPath},
+            </if>
+            <if test="lastExecTime != null">
+                #{lastExecTime},
+            </if>
+            <if test="isActive != null">
+                #{isActive},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 更新任务配置 -->
+    <update id="updateById" parameterType="com.hienao.openlist2strm.entity.TaskConfig">
+        UPDATE task_config
+        <set>
+            <if test="taskName != null and taskName != ''">
+                task_name = #{taskName},
+            </if>
+            <if test="path != null and path != ''">
+                path = #{path},
+            </if>
+            <if test="openlistConfigId != null">
+                openlist_config_id = #{openlistConfigId},
+            </if>
+            <if test="needScrap != null">
+                need_scrap = #{needScrap},
+            </if>
+            <if test="renameRegex != null">
+                rename_regex = #{renameRegex},
+            </if>
+            <if test="cron != null">
+                cron = #{cron},
+            </if>
+            <if test="isIncrement != null">
+                is_increment = #{isIncrement},
+            </if>
+            <if test="strmPath != null">
+                strm_path = #{strmPath},
+            </if>
+            <if test="lastExecTime != null">
+                last_exec_time = #{lastExecTime},
+            </if>
+            <if test="isActive != null">
+                is_active = #{isActive},
+            </if>
+            updated_at = CURRENT_TIMESTAMP,
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM task_config
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 更新启用状态 -->
+    <update id="updateActiveStatus">
+        UPDATE task_config
+        SET is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新最后执行时间 -->
+    <update id="updateLastExecTime">
+        UPDATE task_config
+        SET last_exec_time = #{lastExecTime},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+</mapper>

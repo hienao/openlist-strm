@@ -1,0 +1,41 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      extra_hosts:
+        - host.docker.internal:host-gateway
+    container_name: web
+    hostname: web
+    environment:
+      LOG_PATH: ${LOG_PATH}
+      DATABASE_PATH: ${DATABASE_PATH}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ALLOWED_METHODS: ${ALLOWED_METHODS}
+      ALLOWED_HEADERS: ${ALLOWED_HEADERS}
+      ALLOWED_EXPOSE_HEADERS: ${ALLOWED_EXPOSE_HEADERS}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - ${WEB_EXPOSE_PORT}:8080
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ${LOG_PATH}:/app/data/log
+      - ${DATABASE_STORE}:/app/data/config
+      - ./strm:/app/backend/strm
+    restart: always
+  rabbitmq:
+    image: rabbitmq:4.1.2-management-alpine
+    container_name: rabbitmq
+    ports:
+      - ${RABBITMQ_PORT}:5672
+      - ${RABBITMQ_UI_PORT}:15672
+    volumes:
+      - ${RABBITMQ_DATA_STORE}:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DATA_STORE: ${RABBITMQ_DATA_STORE}

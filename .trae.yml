@@ -1,0 +1,192 @@
+# Trae Rules for OpenList2Strm Project
+name: "OpenList2Strm"
+description: "A full-stack application for converting open lists to streaming format"
+version: "1.0.0"
+
+# Project architecture
+architecture:
+  type: "full-stack"
+  pattern: "frontend-backend-separation"
+  
+  components:
+    - name: "frontend"
+      path: "frontend/"
+      technology: "Nuxt 3"
+      description: "Vue.js frontend application"
+      port: 3000
+    
+    - name: "backend"
+      path: "backend/"
+      technology: "Spring Boot"
+      description: "Java REST API backend"
+      port: 8080
+
+# Project structure
+structure:
+  - path: "frontend/"
+    description: "Nuxt 3 frontend application"
+    type: "directory"
+    config: "frontend/.trae.yml"
+  
+  - path: "backend/"
+    description: "Spring Boot backend API"
+    type: "directory"
+    config: "backend/.trae.yml"
+  
+  - path: "data/"
+    description: "Data storage directory"
+    type: "directory"
+    optional: true
+  
+  - path: "docker-compose.yml"
+    description: "Docker Compose configuration"
+    type: "config"
+  
+  - path: "Dockerfile"
+    description: "Main Docker configuration"
+    type: "config"
+  
+  - path: "README.md"
+    description: "Project documentation"
+    type: "documentation"
+  
+  - path: "dev-start.sh"
+    description: "Development startup script"
+    type: "script"
+  
+  - path: "dev-stop.sh"
+    description: "Development stop script"
+    type: "script"
+  
+  - path: "dev-logs.sh"
+    description: "Development logs script"
+    type: "script"
+
+# Development workflow
+workflow:
+  setup:
+    - "Clone the repository"
+    - "Install frontend dependencies: cd frontend && npm install"
+    - "Build backend: cd backend && ./gradlew build"
+    - "Start development: ./dev-start.sh"
+  
+  development:
+    - "Frontend runs on http://localhost:3000"
+    - "Backend API runs on http://localhost:8080"
+    - "API proxy configured in frontend for development"
+  
+  testing:
+    - "Frontend: cd frontend && npm run test (when tests are added)"
+    - "Backend: cd backend && ./gradlew test"
+  
+  deployment:
+    - "Use Docker Compose for containerized deployment"
+    - "Build production frontend: cd frontend && npm run build"
+    - "Build backend JAR: cd backend && ./gradlew build"
+
+# API communication
+api:
+  base_url:
+    development: "http://localhost:8080"
+    production: "/api"
+  
+  endpoints:
+    - path: "/api/auth/**"
+      description: "Authentication endpoints"
+      controller: "SignController"
+    
+    - path: "/api/users/**"
+      description: "User management endpoints"
+      controller: "UserRolePermissionController"
+  
+  proxy:
+    development:
+      from: "/api"
+      to: "http://localhost:8080"
+
+# Technology stack
+technology:
+  frontend:
+    framework: "Nuxt 3"
+    language: "TypeScript"
+    ui_framework: "Vue 3"
+    build_tool: "Vite"
+    package_manager: "npm"
+  
+  backend:
+    framework: "Spring Boot 3.3.9"
+    language: "Java 21"
+    build_tool: "Gradle"
+    database: "SQLite"
+    orm: "MyBatis"
+    security: "Spring Security"
+    migration: "Flyway"
+  
+  deployment:
+    containerization: "Docker"
+    orchestration: "Docker Compose"
+
+# Development guidelines
+guidelines:
+  general:
+    - "Follow consistent code formatting"
+    - "Write meaningful commit messages"
+    - "Use proper error handling"
+    - "Implement comprehensive logging"
+    - "Write tests for critical functionality"
+  
+  frontend:
+    - "Use TypeScript for type safety"
+    - "Follow Vue 3 Composition API patterns"
+    - "Implement responsive design"
+    - "Use proper SEO practices"
+  
+  backend:
+    - "Follow Spring Boot best practices"
+    - "Use proper REST API design"
+    - "Implement proper security measures"
+    - "Use database transactions appropriately"
+  
+  api:
+    - "Use consistent response formats"
+    - "Implement proper error responses"
+    - "Use appropriate HTTP status codes"
+    - "Include proper API documentation"
+
+# Environment setup
+environment:
+  requirements:
+    - "Node.js >= 18.0.0"
+    - "Java 21"
+    - "Docker (for containerized deployment)"
+  
+  development:
+    frontend_port: 3000
+    backend_port: 8080
+    database: "SQLite (file-based)"
+  
+  production:
+    deployment: "Docker Compose"
+    reverse_proxy: "Nginx (recommended)"
+
+# Scripts
+scripts:
+  - name: "dev-start.sh"
+    description: "Start development environment"
+    usage: "./dev-start.sh"
+  
+  - name: "dev-stop.sh"
+    description: "Stop development environment"
+    usage: "./dev-stop.sh"
+  
+  - name: "dev-logs.sh"
+    description: "View development logs"
+    usage: "./dev-logs.sh"
+
+# Security considerations
+security:
+  - "JWT-based authentication"
+  - "CORS configuration for cross-origin requests"
+  - "Input validation on both frontend and backend"
+  - "SQL injection prevention through MyBatis"
+  - "Proper error handling without exposing sensitive information"
