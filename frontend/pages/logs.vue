@@ -35,26 +35,32 @@
       <div class="px-4 py-6 sm:px-0">
         <!-- 日志控制面板 -->
         <div class="bg-white rounded-lg shadow mb-6">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex justify-between items-center">
+          <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <!-- 标题 -->
+            <div class="mb-4 sm:mb-0">
               <h2 class="text-lg font-medium text-gray-900">日志控制面板</h2>
-              <div class="flex items-center space-x-4">
+            </div>
+
+            <!-- 控制项 - 移动端垂直布局，桌面端水平布局 -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+              <!-- 左侧控制组 -->
+              <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <!-- 日志类型选择 -->
                 <div class="flex items-center space-x-2">
-                  <label class="text-sm font-medium text-gray-700">日志类型:</label>
-                  <select 
-                    v-model="selectedLogType" 
+                  <label class="text-sm font-medium text-gray-700 whitespace-nowrap">日志类型:</label>
+                  <select
+                    v-model="selectedLogType"
                     @change="switchLogType"
-                    class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 flex-1 sm:flex-initial"
                   >
                     <option value="backend">后端日志</option>
                     <option value="frontend">前端日志</option>
                   </select>
                 </div>
-                
+
                 <!-- 自动滚动开关 -->
                 <div class="flex items-center space-x-2">
-                  <label class="text-sm font-medium text-gray-700">自动滚动:</label>
+                  <label class="text-sm font-medium text-gray-700 whitespace-nowrap">自动滚动:</label>
                   <button
                     @click="toggleAutoScroll"
                     :class="autoScroll ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500'"
@@ -66,10 +72,10 @@
                     />
                   </button>
                 </div>
-                
+
                 <!-- 实时连接状态 -->
                 <div class="flex items-center space-x-2">
-                  <span class="text-sm font-medium text-gray-700">连接状态:</span>
+                  <span class="text-sm font-medium text-gray-700 whitespace-nowrap">连接状态:</span>
                   <span
                     :class="wsConnected ? 'text-green-600' : 'text-red-600'"
                     class="text-sm font-medium flex items-center"
@@ -81,30 +87,30 @@
                     {{ wsConnected ? '已连接' : '未连接' }}
                   </span>
                 </div>
-                
-                <!-- 操作按钮 -->
-                <div class="flex items-center space-x-2">
-                  <button
-                    @click="clearLogs"
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors"
-                  >
-                    清空显示
-                  </button>
-                  <button
-                    @click="downloadLogs"
-                    :disabled="downloading"
-                    class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors flex items-center"
-                  >
-                    <svg v-if="downloading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    {{ downloading ? '下载中...' : '下载日志' }}
-                  </button>
-                </div>
+              </div>
+
+              <!-- 右侧操作按钮 -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <button
+                  @click="clearLogs"
+                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors text-center"
+                >
+                  清空显示
+                </button>
+                <button
+                  @click="downloadLogs"
+                  :disabled="downloading"
+                  class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                >
+                  <svg v-if="downloading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  {{ downloading ? '下载中...' : '下载日志' }}
+                </button>
               </div>
             </div>
           </div>
