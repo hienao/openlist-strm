@@ -107,10 +107,9 @@
                 </div>
                 
                 <div class="mt-3 flex items-center space-x-4">
-                  <label class="flex items-center text-sm text-gray-500">
-                    <input type="checkbox" :checked="false" disabled class="mr-1 opacity-50">
+                  <label class="flex items-center text-sm" :class="task.needScrap ? 'text-gray-600' : 'text-gray-500'">
+                    <input type="checkbox" :checked="task.needScrap" disabled class="mr-1">
                     需要刮削
-                    <span class="ml-1 text-xs text-gray-400">(暂未实现)</span>
                   </label>
                   <label class="flex items-center text-sm text-gray-600">
                     <input type="checkbox" :checked="task.isIncrement" disabled class="mr-1">
@@ -337,7 +336,7 @@ const editTask = (task) => {
     path: task.path,
     strmPath: task.strmPath,
     cron: task.cron || '',
-    needScrap: false, // 强制设置为false，因为功能暂未实现
+    needScrap: task.needScrap || false, // 使用实际的数据库值
     renameRegex: task.renameRegex || '',
     isIncrement: task.isIncrement,
     isActive: task.isActive
