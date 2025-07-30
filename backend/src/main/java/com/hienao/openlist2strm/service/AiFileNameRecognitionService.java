@@ -68,11 +68,8 @@ public class AiFileNameRecognitionService {
         return null;
       }
 
-      // 检查 QPM 限制
-      if (!checkQpmLimit(aiConfig)) {
-        log.warn("已达到 QPM 限制，跳过 AI 识别: {}", originalFileName);
-        return null;
-      }
+      // 等待 QPM 限制
+      waitForQpmLimit(aiConfig);
 
       // 构建输入文本
       String inputText = buildInputText(originalFileName, directoryPath);
@@ -95,28 +92,65 @@ public class AiFileNameRecognitionService {
   }
 
   /**
-   * 检查 QPM 限制
+   * 等待 QPM 限制，智能控制请求速度
    */
-  private boolean checkQpmLimit(Map<String, Object> aiConfig) {
+  private void waitForQpmLimit(Map<String, Object> aiConfig) {
     int qpmLimit = (Integer) aiConfig.getOrDefault("qpmLimit", 60);
     String key = "ai_requests";
-    
+
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime lastReset = lastResetTimes.get(key);
-    
+
     // 如果超过一分钟，重置计数器
     if (lastReset == null || ChronoUnit.MINUTES.between(lastReset, now) >= 1) {
       requestCounts.put(key, new AtomicInteger(0));
       lastResetTimes.put(key, now);
+      lastReset = now;
     }
-    
+
     AtomicInteger count = requestCounts.get(key);
+    long secondsElapsed = ChronoUnit.SECONDS.between(lastReset, now);
+
+    // 如果达到限制，等待到下一分钟
     if (count.get() >= qpmLimit) {
-      return false;
+      long secondsToWait = 60 - secondsElapsed;
+      if (secondsToWait > 0) {
+        log.info("已达到 QPM 限制 ({}/{}), 等待 {} 秒后继续刮削", count.get(), qpmLimit, secondsToWait);
+        try {
+          Thread.sleep(secondsToWait * 1000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          log.warn("等待 QPM 限制时被中断", e);
+          return;
+        }
+
+        // 重置计数器
+        requestCounts.put(key, new AtomicInteger(0));
+        lastResetTimes.put(key, LocalDateTime.now());
+      }
+    } else {
+      // 智能速度控制：如果请求过快，适当延迟
+      double expectedRate = (double) qpmLimit / 60.0; // 每秒期望请求数
+      double actualRate = secondsElapsed > 0 ? (double) count.get() / secondsElapsed : 0;
+
+      if (actualRate > expectedRate * 1.2) { // 如果超过期望速度的120%
+        long delayMs = (long) (1000 / expectedRate); // 计算延迟时间
+        if (delayMs > 100) { // 最小延迟100ms
+          log.debug("请求速度过快，延迟 {} ms 以控制速度", delayMs);
+          try {
+            Thread.sleep(delayMs);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("速度控制延迟时被中断", e);
+            return;
+          }
+        }
+      }
     }
-    
+
+    // 增加请求计数
     count.incrementAndGet();
-    return true;
+    log.debug("AI 请求计数: {}/{}, 已用时: {}s", count.get(), qpmLimit, secondsElapsed);
   }
 
   /**
