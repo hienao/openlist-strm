@@ -63,6 +63,25 @@ public class SystemConfigController {
         }
       }
 
+      // 验证TMDB配置
+      if (config.containsKey("tmdb")) {
+        Object tmdbConfig = config.get("tmdb");
+        if (!(tmdbConfig instanceof Map)) {
+          return ResponseEntity.ok(ApiResponse.error("tmdb配置必须是对象类型"));
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> tmdb = (Map<String, Object>) tmdbConfig;
+
+        // 验证API Key
+        if (tmdb.containsKey("apiKey")) {
+          String apiKey = (String) tmdb.get("apiKey");
+          if (apiKey != null && !apiKey.trim().isEmpty() && !systemConfigService.validateTmdbApiKey(apiKey)) {
+            return ResponseEntity.ok(ApiResponse.error("TMDB API Key格式不正确"));
+          }
+        }
+      }
+
       systemConfigService.saveSystemConfig(config);
       return ResponseEntity.ok(ApiResponse.success("配置保存成功"));
     } catch (Exception e) {

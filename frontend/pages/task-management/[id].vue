@@ -206,11 +206,11 @@
               </div>
               
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <label class="flex items-center cursor-not-allowed" @click="showScrapNotImplementedMessage">
-                  <input v-model="taskForm.needScrap" type="checkbox" disabled
-                         class="rounded border-gray-300 text-gray-400 shadow-sm cursor-not-allowed opacity-50">
-                  <span class="ml-2 text-sm text-gray-500">需要刮削</span>
-                  <span class="ml-1 text-xs text-gray-400">(暂未实现)</span>
+                <label class="flex items-center">
+                  <input v-model="taskForm.needScrap" type="checkbox"
+                         class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                  <span class="ml-2 text-sm text-gray-700">需要刮削</span>
+                  <span class="ml-1 text-xs text-gray-500">(生成NFO和封面)</span>
                 </label>
 
                 <label class="flex items-center">
@@ -567,10 +567,7 @@ const generateStrm = async (taskId) => {
   }
 }
 
-// 显示刮削功能未实现提示
-const showScrapNotImplementedMessage = () => {
-  alert('刮削功能暂未实现，敬请期待后续版本更新。')
-}
+
 
 // 组件挂载时获取配置信息和任务列表
 onMounted(() => {

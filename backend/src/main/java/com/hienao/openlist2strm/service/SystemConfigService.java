@@ -65,9 +65,17 @@ public class SystemConfigService {
           // 合并现有配置
           result.putAll(config);
 
-          // 检查是否缺少mediaExtensions字段
+          // 检查是否缺少必要字段
           if (!config.containsKey("mediaExtensions")) {
             log.info("系统配置中缺少mediaExtensions字段，添加默认配置");
+            needSave = true;
+          }
+          if (!config.containsKey("tmdb")) {
+            log.info("系统配置中缺少tmdb字段，添加默认配置");
+            needSave = true;
+          }
+          if (!config.containsKey("scraping")) {
+            log.info("系统配置中缺少scraping字段，添加默认配置");
             needSave = true;
           }
         }
@@ -139,7 +147,68 @@ public class SystemConfigService {
             ".divx", ".f4v", ".m2ts", ".m2v", ".mts", ".ogv", ".rm", ".rmvb", ".ts", ".vob",
             ".xvid"));
 
+    // TMDB API 配置
+    Map<String, Object> tmdbConfig = new HashMap<>();
+    tmdbConfig.put("apiKey", ""); // TMDB API Key，需要用户配置
+    tmdbConfig.put("baseUrl", "https://api.themoviedb.org/3"); // TMDB API 基础URL
+    tmdbConfig.put("imageBaseUrl", "https://image.tmdb.org/t/p"); // TMDB 图片基础URL
+    tmdbConfig.put("language", "zh-CN"); // 默认语言
+    tmdbConfig.put("region", "CN"); // 默认地区
+    tmdbConfig.put("timeout", 30); // API 请求超时时间（秒）
+    tmdbConfig.put("retryCount", 3); // 重试次数
+    tmdbConfig.put("posterSize", "w500"); // 海报图片尺寸
+    tmdbConfig.put("backdropSize", "w1280"); // 背景图片尺寸
+    defaultConfig.put("tmdb", tmdbConfig);
+
+    // 刮削配置
+    Map<String, Object> scrapConfig = new HashMap<>();
+    scrapConfig.put("enabled", true); // 是否启用刮削功能
+    scrapConfig.put("generateNfo", true); // 是否生成NFO文件
+    scrapConfig.put("downloadPoster", true); // 是否下载海报
+    scrapConfig.put("downloadBackdrop", false); // 是否下载背景图
+    scrapConfig.put("overwriteExisting", false); // 是否覆盖已存在的文件
+    scrapConfig.put("nfoFormat", "kodi"); // NFO格式：kodi, jellyfin, emby
+    defaultConfig.put("scraping", scrapConfig);
+
     return defaultConfig;
+  }
+
+  /**
+   * 获取TMDB API配置
+   *
+   * @return TMDB配置Map
+   */
+  @SuppressWarnings("unchecked")
+  public Map<String, Object> getTmdbConfig() {
+    Map<String, Object> systemConfig = getSystemConfig();
+    return (Map<String, Object>) systemConfig.getOrDefault("tmdb", new HashMap<>());
+  }
+
+  /**
+   * 获取刮削配置
+   *
+   * @return 刮削配置Map
+   */
+  @SuppressWarnings("unchecked")
+  public Map<String, Object> getScrapingConfig() {
+    Map<String, Object> systemConfig = getSystemConfig();
+    return (Map<String, Object>) systemConfig.getOrDefault("scraping", new HashMap<>());
+  }
+
+  /**
+   * 验证TMDB API Key是否有效
+   *
+   * @param apiKey TMDB API Key
+   * @return 验证结果
+   */
+  public boolean validateTmdbApiKey(String apiKey) {
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+      return false;
+    }
+
+    // 这里可以添加实际的API验证逻辑
+    // 暂时只检查格式：TMDB API Key通常是32位字符
+    return apiKey.trim().length() >= 32;
   }
 
   /** 创建配置目录（如果不存在） */

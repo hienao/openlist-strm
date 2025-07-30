@@ -16,9 +16,10 @@
           <h2 class="text-lg font-medium text-gray-900">系统设置</h2>
         </div>
         
-        <div class="p-6">
+        <div class="p-6 space-y-8">
           <!-- 媒体文件后缀设置 -->
-          <div class="mb-6">
+          <div class="border-b border-gray-200 pb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">媒体文件设置</h3>
             <div class="flex items-center gap-4">
               <label class="text-sm font-medium text-gray-700">
                 生成 STRM 媒体文件后缀
@@ -34,6 +35,138 @@
                   >
                   <label :for="extension" class="ml-2 block text-sm text-gray-900">
                     {{ extension }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TMDB API 配置 -->
+          <div class="border-b border-gray-200 pb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">TMDB API 配置</h3>
+            <div class="space-y-4">
+              <div>
+                <label for="tmdbApiKey" class="block text-sm font-medium text-gray-700">
+                  TMDB API Key
+                </label>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                  <input
+                    id="tmdbApiKey"
+                    v-model="tmdbConfig.apiKey"
+                    type="password"
+                    class="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="请输入 TMDB API Key"
+                  />
+                  <button
+                    type="button"
+                    @click="toggleApiKeyVisibility"
+                    class="ml-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    {{ showApiKey ? '隐藏' : '显示' }}
+                  </button>
+                </div>
+                <p class="mt-2 text-sm text-gray-500">
+                  请在 <a href="https://www.themoviedb.org/settings/api" target="_blank" class="text-blue-600 hover:text-blue-500">TMDB 官网</a> 申请 API Key
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="tmdbLanguage" class="block text-sm font-medium text-gray-700">
+                    语言设置
+                  </label>
+                  <select
+                    id="tmdbLanguage"
+                    v-model="tmdbConfig.language"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="zh-CN">中文（简体）</option>
+                    <option value="zh-TW">中文（繁体）</option>
+                    <option value="en-US">English</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="tmdbRegion" class="block text-sm font-medium text-gray-700">
+                    地区设置
+                  </label>
+                  <select
+                    id="tmdbRegion"
+                    v-model="tmdbConfig.region"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="CN">中国</option>
+                    <option value="TW">台湾</option>
+                    <option value="HK">香港</option>
+                    <option value="US">美国</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 刮削设置 -->
+          <div class="pb-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">刮削设置</h3>
+            <div class="space-y-4">
+              <div class="flex items-center">
+                <input
+                  id="scrapingEnabled"
+                  v-model="scrapingConfig.enabled"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="scrapingEnabled" class="ml-2 block text-sm text-gray-900">
+                  启用刮削功能
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="flex items-center">
+                  <input
+                    id="generateNfo"
+                    v-model="scrapingConfig.generateNfo"
+                    type="checkbox"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label for="generateNfo" class="ml-2 block text-sm text-gray-900">
+                    生成 NFO 文件
+                  </label>
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    id="downloadPoster"
+                    v-model="scrapingConfig.downloadPoster"
+                    type="checkbox"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label for="downloadPoster" class="ml-2 block text-sm text-gray-900">
+                    下载海报图片
+                  </label>
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    id="downloadBackdrop"
+                    v-model="scrapingConfig.downloadBackdrop"
+                    type="checkbox"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label for="downloadBackdrop" class="ml-2 block text-sm text-gray-900">
+                    下载背景图片
+                  </label>
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    id="overwriteExisting"
+                    v-model="scrapingConfig.overwriteExisting"
+                    type="checkbox"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label for="overwriteExisting" class="ml-2 block text-sm text-gray-900">
+                    覆盖已存在的文件
                   </label>
                 </div>
               </div>
@@ -85,6 +218,19 @@ const router = useRouter()
 // 响应式数据
 const availableExtensions = ref([])
 const selectedExtensions = ref([])
+const tmdbConfig = ref({
+  apiKey: '',
+  language: 'zh-CN',
+  region: 'CN'
+})
+const scrapingConfig = ref({
+  enabled: true,
+  generateNfo: true,
+  downloadPoster: true,
+  downloadBackdrop: false,
+  overwriteExisting: false
+})
+const showApiKey = ref(false)
 const saving = ref(false)
 const showSuccess = ref(false)
 const errorMessage = ref('')
@@ -98,21 +244,44 @@ onMounted(async () => {
 const loadCurrentSettings = async () => {
   // 设置所有可选的后缀列表（包含所有支持的格式）
   availableExtensions.value = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.3g2', '.asf', '.divx', '.f4v', '.m2ts', '.m2v', '.mts', '.ogv', '.rm', '.rmvb', '.ts', '.vob', '.xvid']
-  
+
   try {
     const response = await authenticatedApiCall('/system/config')
-    
+
     if (response && response.code === 200 && response.data) {
       const config = response.data
+
+      // 加载媒体扩展名配置
       if (config.mediaExtensions && Array.isArray(config.mediaExtensions)) {
-        // 设置当前已选择的后缀（从后端获取的当前配置）
         selectedExtensions.value = [...config.mediaExtensions]
         console.log('已加载配置的媒体扩展名:', config.mediaExtensions)
       } else {
-        // 如果没有配置，使用默认选择
         selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
         console.log('使用默认媒体扩展名配置')
       }
+
+      // 加载 TMDB 配置
+      if (config.tmdb && typeof config.tmdb === 'object') {
+        tmdbConfig.value = {
+          apiKey: config.tmdb.apiKey || '',
+          language: config.tmdb.language || 'zh-CN',
+          region: config.tmdb.region || 'CN'
+        }
+        console.log('已加载 TMDB 配置')
+      }
+
+      // 加载刮削配置
+      if (config.scraping && typeof config.scraping === 'object') {
+        scrapingConfig.value = {
+          enabled: config.scraping.enabled !== false,
+          generateNfo: config.scraping.generateNfo !== false,
+          downloadPoster: config.scraping.downloadPoster !== false,
+          downloadBackdrop: config.scraping.downloadBackdrop === true,
+          overwriteExisting: config.scraping.overwriteExisting === true
+        }
+        console.log('已加载刮削配置')
+      }
+
     } else {
       // 如果获取失败，使用默认选择
       selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
@@ -134,18 +303,32 @@ const saveSettings = async () => {
     }, 3000)
     return
   }
-  
+
   saving.value = true
   errorMessage.value = ''
-  
+
   try {
+    const configData = {
+      mediaExtensions: selectedExtensions.value,
+      tmdb: {
+        apiKey: tmdbConfig.value.apiKey,
+        language: tmdbConfig.value.language,
+        region: tmdbConfig.value.region
+      },
+      scraping: {
+        enabled: scrapingConfig.value.enabled,
+        generateNfo: scrapingConfig.value.generateNfo,
+        downloadPoster: scrapingConfig.value.downloadPoster,
+        downloadBackdrop: scrapingConfig.value.downloadBackdrop,
+        overwriteExisting: scrapingConfig.value.overwriteExisting
+      }
+    }
+
     const response = await authenticatedApiCall('/system/config', {
       method: 'POST',
-      body: {
-        mediaExtensions: selectedExtensions.value
-      }
+      body: configData
     })
-    
+
     if (response && response.code === 200) {
       showSuccess.value = true
       setTimeout(() => {
@@ -165,6 +348,15 @@ const saveSettings = async () => {
     }, 3000)
   } finally {
     saving.value = false
+  }
+}
+
+// 切换 API Key 显示状态
+const toggleApiKeyVisibility = () => {
+  showApiKey.value = !showApiKey.value
+  const apiKeyInput = document.getElementById('tmdbApiKey')
+  if (apiKeyInput) {
+    apiKeyInput.type = showApiKey.value ? 'text' : 'password'
   }
 }
 

@@ -45,6 +45,7 @@ public class TaskExecutionService {
   private final OpenlistConfigService openlistConfigService;
   private final OpenlistApiService openlistApiService;
   private final StrmFileService strmFileService;
+  private final MediaScrapingService mediaScrapingService;
   private final Executor taskSubmitExecutor;
 
   /**
@@ -222,6 +223,19 @@ public class TaskExecutionService {
                 file.getName(),
                 fileUrlWithSign,
                 taskConfig.getRenameRegex());
+
+            // 如果启用了刮削功能，执行媒体刮削
+            if (Boolean.TRUE.equals(taskConfig.getNeedScrap())) {
+              try {
+                mediaScrapingService.scrapMedia(
+                    file.getName(),
+                    taskConfig.getStrmPath(),
+                    relativePath);
+              } catch (Exception scrapException) {
+                log.error("刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
+                // 刮削失败不影响STRM文件生成，继续处理
+              }
+            }
 
             processedCount++;
 
