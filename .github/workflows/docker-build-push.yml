@@ -13,6 +13,9 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     if: |
       (github.ref_type == 'tag' && startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')) ||
       (github.ref_type == 'tag' && startsWith(github.ref_name, 'beta-v'))
@@ -87,6 +90,21 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Create source code archive
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
+      run: |
+        # 创建源码压缩包，排除不必要的文件
+        zip -r "openlist-strm-${{ github.ref_name }}-source.zip" . \
+          -x "*.git*" \
+          -x "node_modules/*" \
+          -x "target/*" \
+          -x "*.log" \
+          -x ".DS_Store" \
+          -x "Thumbs.db"
+
+        # 显示压缩包信息
+        ls -lh "openlist-strm-${{ github.ref_name }}-source.zip"
+
     - name: Create GitHub Release
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       env:
@@ -94,21 +112,11 @@ jobs:
       run: |
         gh release create "${{ github.ref_name }}" \
           --title "Release ${{ github.ref_name }}" \
-          --notes "## Docker Image
-
-        The Docker image for this release has been built and pushed to Docker Hub:
-
-        \`\`\`bash
-        docker pull docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}
-        docker pull docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest
-        \`\`\`
-
-        **Image Digest:** \`${{ steps.build-and-push-release.outputs.digest }}\`
-
-        ## Changes
+          --notes "## 📝 Changes
 
         Please see the commit history for detailed changes in this release." \
-          --latest
+          --latest \
+          "openlist-strm-${{ github.ref_name }}-source.zip"
 
     - name: Build and push Docker image (beta)
       id: build-and-push-beta
