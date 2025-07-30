@@ -386,21 +386,24 @@ const validateOpenListConfig = async (baseUrl, token) => {
   try {
     // 构建完整的API URL
     const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/me' : baseUrl + '/api/me'
-    
-    const response = await apiCall(apiUrl, {
+
+    // 直接使用 $fetch 调用 OpenList API，避免触发全局 401 处理逻辑
+    const response = await $fetch(apiUrl, {
+      method: 'GET',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': token
       }
     })
-    
+
     if (response.code === 200 && response.data) {
       const userData = response.data
-      
+
       // 检查用户是否被禁用
       if (userData.disabled) {
         throw new Error('该账号已被禁用，无法添加配置')
       }
-      
+
       return {
         username: userData.username,
         basePath: userData.base_path || '/'
@@ -409,6 +412,7 @@ const validateOpenListConfig = async (baseUrl, token) => {
       throw new Error(response.message || '验证失败')
     }
   } catch (error) {
+    console.error('OpenList配置验证失败:', error)
     if (error.status === 401) {
       throw new Error('Token无效或已过期')
     } else if (error.status === 403) {
