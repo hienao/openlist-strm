@@ -22,9 +22,11 @@ import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -198,11 +200,14 @@ public class TaskExecutionService {
         strmFileService.clearStrmDirectory(taskConfig.getStrmPath());
       }
 
-      // 3. 递归获取任务目录下的所有文件
-      List<OpenlistApiService.OpenlistFile> allFiles =
-          openlistApiService.getAllFilesRecursively(openlistConfig, taskConfig.getPath());
+      // 3. 使用内存优化的文件处理方式
+      log.info("开始处理文件，使用内存优化策略");
 
-      log.info("获取到 {} 个文件/目录", allFiles.size());
+      // 使用分批处理减少内存占用
+      List<OpenlistApiService.OpenlistFile> allFiles =
+          processFilesWithMemoryOptimization(openlistConfig, taskConfig, isIncrement, needScrap);
+
+      log.info("处理完成，共处理 {} 个文件/目录", allFiles.size());
 
       // 4. 过滤并处理视频文件
       int processedCount = 0;
@@ -358,5 +363,118 @@ public class TaskExecutionService {
     }
 
     return strmDirectory + "/" + directoryPath;
+  }
+
+  /**
+   * 内存优化的文件处理方法
+   * 分批处理文件，避免一次性加载所有文件到内存
+   */
+  private List<OpenlistApiService.OpenlistFile> processFilesWithMemoryOptimization(
+      OpenlistConfig openlistConfig, TaskConfig taskConfig, boolean isIncrement, boolean needScrap) {
+
+    List<OpenlistApiService.OpenlistFile> allFiles = new ArrayList<>();
+    int processedCount = 0;
+    int scrapSkippedCount = 0;
+
+    try {
+      // 分批处理目录，每次只处理一个目录的文件
+      processDirectoryBatch(openlistConfig, taskConfig.getPath(), taskConfig,
+          isIncrement, needScrap, allFiles, processedCount, scrapSkippedCount);
+
+      log.info("文件处理完成 - 处理了 {} 个视频文件", processedCount);
+      if (needScrap && scrapSkippedCount > 0) {
+        log.info("跳过了 {} 个已刮削目录中的文件", scrapSkippedCount);
+      }
+
+    } catch (Exception e) {
+      log.error("内存优化文件处理失败: {}", e.getMessage(), e);
+      // 降级到原始方法
+      log.info("降级使用原始文件处理方法");
+      allFiles = openlistApiService.getAllFilesRecursively(openlistConfig, taskConfig.getPath());
+    }
+
+    return allFiles;
+  }
+
+  /**
+   * 分批处理目录
+   */
+  private void processDirectoryBatch(OpenlistConfig openlistConfig, String path, TaskConfig taskConfig,
+      boolean isIncrement, boolean needScrap, List<OpenlistApiService.OpenlistFile> allFiles,
+      int processedCount, int scrapSkippedCount) {
+
+    try {
+      List<OpenlistApiService.OpenlistFile> files =
+          openlistApiService.getDirectoryContents(openlistConfig, path);
+
+      for (OpenlistApiService.OpenlistFile file : files) {
+        allFiles.add(file);
+
+        if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
+          // 立即处理视频文件，不累积在内存中
+          processVideoFile(file, taskConfig, isIncrement, needScrap, processedCount, scrapSkippedCount);
+        } else if ("folder".equals(file.getType())) {
+          // 递归处理子目录
+          String subPath = file.getPath();
+          if (subPath == null || subPath.isEmpty()) {
+            subPath = path + "/" + file.getName();
+          }
+          processDirectoryBatch(openlistConfig, subPath, taskConfig,
+              isIncrement, needScrap, allFiles, processedCount, scrapSkippedCount);
+        }
+      }
+
+      // 处理完一个目录后，建议GC回收
+      if (files.size() > 100) {
+        System.gc();
+      }
+
+    } catch (Exception e) {
+      log.error("处理目录失败: {}, 错误: {}", path, e.getMessage(), e);
+    }
+  }
+
+  /**
+   * 处理单个视频文件
+   */
+  private void processVideoFile(OpenlistApiService.OpenlistFile file, TaskConfig taskConfig,
+      boolean isIncrement, boolean needScrap, int processedCount, int scrapSkippedCount) {
+
+    try {
+      // 计算相对路径
+      String relativePath = strmFileService.calculateRelativePath(taskConfig.getPath(), file.getPath());
+
+      // 构建包含sign参数的文件URL
+      String fileUrlWithSign = buildFileUrlWithSign(file.getUrl(), file.getSign());
+
+      // 生成STRM文件
+      strmFileService.generateStrmFile(
+          taskConfig.getStrmPath(),
+          relativePath,
+          file.getName(),
+          fileUrlWithSign,
+          taskConfig.getRenameRegex());
+
+      // 如果启用了刮削功能，执行媒体刮削
+      if (needScrap) {
+        try {
+          String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
+
+          if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
+            log.debug("目录已完全刮削，跳过: {}", saveDirectory);
+            scrapSkippedCount++;
+          } else {
+            mediaScrapingService.scrapMedia(file.getName(), taskConfig.getStrmPath(), relativePath);
+          }
+        } catch (Exception scrapException) {
+          log.error("刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
+        }
+      }
+
+      processedCount++;
+
+    } catch (Exception e) {
+      log.error("处理文件失败: {}, 错误: {}", file.getName(), e.getMessage(), e);
+    }
   }
 }

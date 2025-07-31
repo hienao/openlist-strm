@@ -54,7 +54,7 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "=== 启动 Spring Boot 应用 ==="' >> /start.sh && \
     echo 'echo "日志路径: $LOG_PATH"' >> /start.sh && \
     echo 'echo "Spring Profile: $SPRING_PROFILES_ACTIVE"' >> /start.sh && \
-    echo 'exec java --add-opens java.base/java.lang=ALL-UNNAMED -jar ./openlisttostrm.jar' >> /start.sh && \
+    echo 'exec java --add-opens java.base/java.lang=ALL-UNNAMED -Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+OptimizeStringConcat -jar ./openlisttostrm.jar' >> /start.sh && \
     chmod +x /start.sh
 
 EXPOSE 80 8080
