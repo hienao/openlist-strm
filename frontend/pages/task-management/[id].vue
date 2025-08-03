@@ -78,8 +78,8 @@
                     <button class="text-blue-600 hover:text-blue-800 text-sm" @click="editTask(task)">
                       编辑
                     </button>
-                    <button class="text-green-600 hover:text-green-800 text-sm" @click="generateStrm(task.id)" :disabled="generatingStrm[task.id]">
-                      {{ generatingStrm[task.id] ? '生成中...' : '全量生成strm' }}
+                    <button class="text-green-600 hover:text-green-800 text-sm" @click="showExecuteModal(task.id)" :disabled="generatingStrm[task.id]">
+                      {{ generatingStrm[task.id] ? '执行中...' : '立即执行' }}
                     </button>
                     <button class="text-red-600 hover:text-red-800 text-sm" @click="deleteTask(task.id)">
                       删除
@@ -240,6 +240,59 @@
         </div>
       </div>
     </div>
+    
+    <!-- 执行模式选择模态框 -->
+    <div v-if="showExecuteTaskModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeExecuteModal">
+      <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">
+              选择执行模式
+            </h3>
+            <button @click="closeExecuteModal" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="space-y-4">
+            <p class="text-sm text-gray-600 mb-4">请选择任务执行模式：</p>
+            
+            <div class="space-y-3">
+              <button @click="executeTask(currentTaskId, false)" 
+                      class="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="text-left">
+                  <div class="font-medium text-gray-900">全量执行</div>
+                  <div class="text-sm text-gray-500">清空STRM目录，重新生成所有文件</div>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </button>
+              
+              <button @click="executeTask(currentTaskId, true)" 
+                      class="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="text-left">
+                  <div class="font-medium text-gray-900">增量执行</div>
+                  <div class="text-sm text-gray-500">只处理变化的文件，清理孤立文件</div>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+              <button @click="closeExecuteModal" 
+                      class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -259,8 +312,10 @@ const tasks = ref([])
 const loading = ref(true)
 const showCreateTaskModal = ref(false)
 const showEditTaskModal = ref(false)
+const showExecuteTaskModal = ref(false)
 const submitting = ref(false)
 const editingTaskId = ref(null)
+const currentTaskId = ref(null)
 const generatingStrm = ref({})
 const taskForm = ref({
   taskName: '',
@@ -542,20 +597,34 @@ const openLogs = () => {
   navigateTo('/logs')
 }
 
-// 全量生成STRM文件
-const generateStrm = async (taskId) => {
+// 显示执行模式选择弹窗
+const showExecuteModal = (taskId) => {
+  currentTaskId.value = taskId
+  showExecuteTaskModal.value = true
+}
+
+// 关闭执行模式选择弹窗
+const closeExecuteModal = () => {
+  showExecuteTaskModal.value = false
+  currentTaskId.value = null
+}
+
+// 执行任务
+const executeTask = async (taskId, isIncremental) => {
   try {
     generatingStrm.value[taskId] = true
+    closeExecuteModal()
 
     const response = await authenticatedApiCall(`/task-config/${taskId}/submit`, {
       method: 'POST',
       body: {
-        isIncremental: false // 全量生成，不是增量
+        isIncremental: isIncremental
       }
     })
 
     if (response.code === 200) {
-      alert('任务已提交，正在后台执行全量生成STRM文件...')
+      const modeText = isIncremental ? '增量' : '全量'
+      alert(`任务已提交，正在后台执行${modeText}生成STRM文件...`)
     } else {
       throw new Error(response.message || '提交任务失败')
     }
