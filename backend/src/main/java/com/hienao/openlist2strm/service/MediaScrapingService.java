@@ -57,8 +57,9 @@ public class MediaScrapingService {
       String fileNameToUse = fileName;
       
       if (!validation.isValid()) {
-        // 检查是否启用AI识别
-        boolean aiRecognitionEnabled = (Boolean) scrapingConfig.getOrDefault("aiRecognitionEnabled", false);
+        // 检查是否启用AI识别 - 修复：从AI配置中获取enabled状态
+        Map<String, Object> aiConfig = systemConfigService.getAiConfig();
+        boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
         
         if (aiRecognitionEnabled) {
           // 如果启用AI识别，尝试使用AI识别文件名
