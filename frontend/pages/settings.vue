@@ -467,7 +467,9 @@ const saveSettings = async () => {
       tmdb: {
         apiKey: tmdbConfig.value.apiKey,
         language: tmdbConfig.value.language,
-        region: tmdbConfig.value.region
+        region: tmdbConfig.value.region,
+        proxyHost: tmdbConfig.value.proxyHost,
+        proxyPort: tmdbConfig.value.proxyPort
       },
       scraping: {
         enabled: scrapingConfig.value.enabled,
