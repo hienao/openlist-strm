@@ -1,0 +1,126 @@
+{
+  "categories": [
+    {
+      "title": "## 🚀 Features",
+      "labels": ["feature", "enhancement", "feat"]
+    },
+    {
+      "title": "## 🐛 Bug Fixes",
+      "labels": ["bug", "bugfix", "fix"]
+    },
+    {
+      "title": "## 📚 Documentation",
+      "labels": ["documentation", "docs"]
+    },
+    {
+      "title": "## 🔧 Maintenance",
+      "labels": ["maintenance", "chore", "refactor"]
+    },
+    {
+      "title": "## 🔒 Security",
+      "labels": ["security"]
+    },
+    {
+      "title": "## ⚡ Performance",
+      "labels": ["performance", "perf"]
+    },
+    {
+      "title": "## 🎨 Style",
+      "labels": ["style", "ui", "ux"]
+    },
+    {
+      "title": "## 🧪 Tests",
+      "labels": ["test", "tests"]
+    },
+    {
+      "title": "## 📦 Dependencies",
+      "labels": ["dependencies", "deps"]
+    },
+    {
+      "title": "## 🔄 Other Changes",
+      "labels": []
+    }
+  ],
+  "ignore_labels": [
+    "ignore-for-release",
+    "duplicate",
+    "invalid",
+    "wontfix"
+  ],
+  "sort": {
+    "order": "ASC",
+    "on_property": "mergedAt"
+  },
+  "template": "${{CHANGELOG}}",
+  "pr_template": "- ${{TITLE}} (#${{NUMBER}}) @${{AUTHOR}}",
+  "empty_template": "- No changes",
+  "label_extractor": [
+    {
+      "pattern": "(feat|feature)\\b",
+      "target": "feature",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(fix|bug)\\b",
+      "target": "bug",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(doc|docs)\\b",
+      "target": "documentation",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(chore|maintenance)\\b",
+      "target": "maintenance",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(perf|performance)\\b",
+      "target": "performance",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(style|ui|ux)\\b",
+      "target": "style",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(test|tests)\\b",
+      "target": "test",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(deps|dependencies)\\b",
+      "target": "dependencies",
+      "flags": "gu"
+    },
+    {
+      "pattern": "(security|sec)\\b",
+      "target": "security",
+      "flags": "gu"
+    }
+  ],
+  "duplicate_filter": {
+    "pattern": "\\[automation\\]",
+    "on_property": "title",
+    "method": "match"
+  },
+  "reference": {
+    "pattern": "(closes|fixes|resolves)\\s*#([0-9]+)",
+    "on_property": "body"
+  },
+  "max_tags_to_fetch": 200,
+  "max_pull_requests": 200,
+  "max_back_track_time_days": 365,
+  "exclude_merge_branches": [
+    "Owner/qa"
+  ],
+  "tag_resolver": {
+    "method": "sort",
+    "filter": {
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "flags": "gu"
+    }
+  }
+}

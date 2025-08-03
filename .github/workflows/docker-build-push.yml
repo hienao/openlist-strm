@@ -105,6 +105,17 @@ jobs:
         # 显示压缩包信息
         ls -lh "openlist-strm-${{ github.ref_name }}-source.zip"
 
+    - name: Build Changelog
+      id: github_release
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
+      uses: mikepenz/release-changelog-builder-action@v4
+      with:
+        configuration: ".github/release-changelog-config.json"
+        ignorePreReleases: true
+        fetchViaCommits: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Create GitHub Release
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       env:
@@ -112,9 +123,7 @@ jobs:
       run: |
         gh release create "${{ github.ref_name }}" \
           --title "Release ${{ github.ref_name }}" \
-          --notes "## 📝 Changes
-
-        Please see the commit history for detailed changes in this release." \
+          --notes "${{ steps.github_release.outputs.changelog }}" \
           --latest \
           "openlist-strm-${{ github.ref_name }}-source.zip"
 
