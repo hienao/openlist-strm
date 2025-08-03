@@ -203,6 +203,9 @@ public class TaskExecutionService {
       // 3. 使用内存优化的文件处理方式
       log.info("开始处理文件，使用内存优化策略");
 
+      // 如果启用了刮削功能，先进行目录级别的优化检查
+      boolean needScrap = Boolean.TRUE.equals(taskConfig.getNeedScrap());
+
       // 使用分批处理减少内存占用
       List<OpenlistApiService.OpenlistFile> allFiles =
           processFilesWithMemoryOptimization(openlistConfig, taskConfig, isIncrement, needScrap);
@@ -212,9 +215,6 @@ public class TaskExecutionService {
       // 4. 过滤并处理视频文件
       int processedCount = 0;
       int scrapSkippedCount = 0;
-
-      // 如果启用了刮削功能，先进行目录级别的优化检查
-      boolean needScrap = Boolean.TRUE.equals(taskConfig.getNeedScrap());
 
       for (OpenlistApiService.OpenlistFile file : allFiles) {
         if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
