@@ -127,7 +127,8 @@ public class MediaScrapingService {
           mediaInfo.getSearchQuery(), mediaInfo.getYear());
 
       if (searchResult.getResults() == null || searchResult.getResults().isEmpty()) {
-        log.warn("未找到匹配的电影: {}", mediaInfo.getSearchQuery());
+        log.warn("刮削失败 - 未找到匹配的电影: {} (年份: {}), TMDB搜索返回空结果", 
+            mediaInfo.getSearchQuery(), mediaInfo.getYear());
         return;
       }
 
@@ -136,7 +137,8 @@ public class MediaScrapingService {
           searchResult.getResults(), mediaInfo);
 
       if (bestMatch == null) {
-        log.warn("未找到合适的电影匹配: {}", mediaInfo.getSearchQuery());
+        log.warn("刮削失败 - 未找到合适的电影匹配: {} (年份: {}), 搜索到 {} 个结果但无合适匹配", 
+            mediaInfo.getSearchQuery(), mediaInfo.getYear(), searchResult.getResults().size());
         return;
       }
 
@@ -173,7 +175,8 @@ public class MediaScrapingService {
           mediaInfo.getSearchQuery(), mediaInfo.getYear());
 
       if (searchResult.getResults() == null || searchResult.getResults().isEmpty()) {
-        log.warn("未找到匹配的电视剧: {}", mediaInfo.getSearchQuery());
+        log.warn("刮削失败 - 未找到匹配的电视剧: {} (年份: {}), TMDB搜索返回空结果", 
+            mediaInfo.getSearchQuery(), mediaInfo.getYear());
         return;
       }
 
@@ -182,7 +185,8 @@ public class MediaScrapingService {
           searchResult.getResults(), mediaInfo);
 
       if (bestMatch == null) {
-        log.warn("未找到合适的电视剧匹配: {}", mediaInfo.getSearchQuery());
+        log.warn("刮削失败 - 未找到合适的电视剧匹配: {} (年份: {}), 搜索到 {} 个结果但无合适匹配", 
+            mediaInfo.getSearchQuery(), mediaInfo.getYear(), searchResult.getResults().size());
         return;
       }
 

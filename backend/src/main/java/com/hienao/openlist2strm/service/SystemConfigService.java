@@ -158,6 +158,8 @@ public class SystemConfigService {
     tmdbConfig.put("retryCount", 3); // 重试次数
     tmdbConfig.put("posterSize", "w500"); // 海报图片尺寸
     tmdbConfig.put("backdropSize", "w1280"); // 背景图片尺寸
+    tmdbConfig.put("proxyHost", ""); // HTTP代理主机地址
+    tmdbConfig.put("proxyPort", ""); // HTTP代理端口
     defaultConfig.put("tmdb", tmdbConfig);
 
     // 刮削配置

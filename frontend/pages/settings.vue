@@ -102,6 +102,41 @@
                   </select>
                 </div>
               </div>
+
+              <!-- HTTP 代理配置 -->
+              <div>
+                <h4 class="text-md font-medium text-gray-900 mb-3">HTTP 代理配置</h4>
+                <p class="text-sm text-gray-500 mb-3">
+                  如果需要通过代理访问 TMDB API，请配置以下选项（可选）
+                </p>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="tmdbProxyHost" class="block text-sm font-medium text-gray-700">
+                      代理主机地址
+                    </label>
+                    <input
+                      id="tmdbProxyHost"
+                      v-model="tmdbConfig.proxyHost"
+                      type="text"
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="例如: 127.0.0.1"
+                    />
+                  </div>
+
+                  <div>
+                    <label for="tmdbProxyPort" class="block text-sm font-medium text-gray-700">
+                      代理端口
+                    </label>
+                    <input
+                      id="tmdbProxyPort"
+                      v-model="tmdbConfig.proxyPort"
+                      type="text"
+                      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="例如: 7890"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -315,7 +350,9 @@ const selectedExtensions = ref([])
 const tmdbConfig = ref({
   apiKey: '',
   language: 'zh-CN',
-  region: 'CN'
+  region: 'CN',
+  proxyHost: '',
+  proxyPort: ''
 })
 const scrapingConfig = ref({
   enabled: true,
@@ -368,7 +405,9 @@ const loadCurrentSettings = async () => {
         tmdbConfig.value = {
           apiKey: config.tmdb.apiKey || '',
           language: config.tmdb.language || 'zh-CN',
-          region: config.tmdb.region || 'CN'
+          region: config.tmdb.region || 'CN',
+          proxyHost: config.tmdb.proxyHost || '',
+          proxyPort: config.tmdb.proxyPort || ''
         }
         console.log('已加载 TMDB 配置')
       }
