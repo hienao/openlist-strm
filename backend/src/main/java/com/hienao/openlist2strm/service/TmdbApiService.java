@@ -7,8 +7,7 @@ import com.hienao.openlist2strm.dto.tmdb.TmdbTvDetail;
 import com.hienao.openlist2strm.exception.BusinessException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +135,7 @@ public class TmdbApiService {
       UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + "/search/movie")
           .queryParam("api_key", apiKey)
           .queryParam("language", language)
-          .queryParam("query", URLEncoder.encode(query, StandardCharsets.UTF_8));
+          .queryParam("query", query);
       
       if (year != null && !year.trim().isEmpty()) {
         builder.queryParam("year", year);
@@ -214,7 +213,7 @@ public class TmdbApiService {
       UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + "/search/tv")
           .queryParam("api_key", apiKey)
           .queryParam("language", language)
-          .queryParam("query", URLEncoder.encode(query, StandardCharsets.UTF_8));
+          .queryParam("query", query);
       
       if (year != null && !year.trim().isEmpty()) {
         builder.queryParam("first_air_date_year", year);
