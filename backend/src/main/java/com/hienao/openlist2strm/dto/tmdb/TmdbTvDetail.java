@@ -114,47 +114,50 @@ public class TmdbTvDetail {
   @JsonProperty("origin_country")
   private List<String> originCountry;
 
-  /**
-   * 季详情
-   */
+  /** 季详情 */
   @Data
   public static class Season {
     private Integer id;
     private String name;
     private String overview;
+
     @JsonProperty("poster_path")
     private String posterPath;
+
     @JsonProperty("season_number")
     private Integer seasonNumber;
+
     @JsonProperty("episode_count")
     private Integer episodeCount;
+
     @JsonProperty("air_date")
     private String airDate;
   }
 
-  /**
-   * 创作者
-   */
+  /** 创作者 */
   @Data
   public static class Creator {
     private Integer id;
     private String name;
+
     @JsonProperty("credit_id")
     private String creditId;
+
     private Integer gender;
+
     @JsonProperty("profile_path")
     private String profilePath;
   }
 
-  /**
-   * 网络
-   */
+  /** 网络 */
   @Data
   public static class Network {
     private Integer id;
     private String name;
+
     @JsonProperty("logo_path")
     private String logoPath;
+
     @JsonProperty("origin_country")
     private String originCountry;
   }
@@ -210,10 +213,7 @@ public class TmdbTvDetail {
     if (createdBy == null || createdBy.isEmpty()) {
       return "";
     }
-    return createdBy.stream()
-        .map(Creator::getName)
-        .reduce((a, b) -> a + ", " + b)
-        .orElse("");
+    return createdBy.stream().map(Creator::getName).reduce((a, b) -> a + ", " + b).orElse("");
   }
 
   /**
@@ -225,10 +225,7 @@ public class TmdbTvDetail {
     if (networks == null || networks.isEmpty()) {
       return "";
     }
-    return networks.stream()
-        .map(Network::getName)
-        .reduce((a, b) -> a + ", " + b)
-        .orElse("");
+    return networks.stream().map(Network::getName).reduce((a, b) -> a + ", " + b).orElse("");
   }
 
   /**
@@ -240,8 +237,6 @@ public class TmdbTvDetail {
     if (episodeRunTime == null || episodeRunTime.isEmpty()) {
       return null;
     }
-    return episodeRunTime.stream()
-        .mapToInt(Integer::intValue)
-        .sum() / episodeRunTime.size();
+    return episodeRunTime.stream().mapToInt(Integer::intValue).sum() / episodeRunTime.size();
   }
 }

@@ -27,9 +27,7 @@ public class TmdbSearchResponse {
   @JsonProperty("total_pages")
   private Integer totalPages;
 
-  /**
-   * TMDB 搜索结果项
-   */
+  /** TMDB 搜索结果项 */
   @Data
   public static class TmdbSearchResult {
 

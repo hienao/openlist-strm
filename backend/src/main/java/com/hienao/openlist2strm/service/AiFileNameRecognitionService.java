@@ -19,8 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * AI 文件名识别服务
- * 使用 OpenAI 格式的接口来识别和标准化影视文件名
+ * AI 文件名识别服务 使用 OpenAI 格式的接口来识别和标准化影视文件名
  *
  * @author hienao
  * @since 2024-01-01
@@ -48,7 +47,7 @@ public class AiFileNameRecognitionService {
   public String recognizeFileName(String originalFileName, String directoryPath) {
     try {
       Map<String, Object> aiConfig = systemConfigService.getAiConfig();
-      
+
       // 检查是否启用 AI 识别
       boolean enabled = (Boolean) aiConfig.getOrDefault("enabled", false);
       if (!enabled) {
@@ -60,11 +59,13 @@ public class AiFileNameRecognitionService {
       String baseUrl = (String) aiConfig.get("baseUrl");
       String apiKey = (String) aiConfig.get("apiKey");
       String model = (String) aiConfig.getOrDefault("model", "gpt-3.5-turbo");
-      
-      if (baseUrl == null || baseUrl.trim().isEmpty() || 
-          apiKey == null || apiKey.trim().isEmpty()) {
-        log.warn("AI 识别配置不完整，跳过文件名识别: baseUrl={}, apiKey={}", 
-                baseUrl, apiKey != null ? "***" : null);
+
+      if (baseUrl == null
+          || baseUrl.trim().isEmpty()
+          || apiKey == null
+          || apiKey.trim().isEmpty()) {
+        log.warn(
+            "AI 识别配置不完整，跳过文件名识别: baseUrl={}, apiKey={}", baseUrl, apiKey != null ? "***" : null);
         return null;
       }
 
@@ -73,10 +74,10 @@ public class AiFileNameRecognitionService {
 
       // 构建输入文本
       String inputText = buildInputText(originalFileName, directoryPath);
-      
+
       // 调用 AI 接口
       String recognizedFileName = callAiApi(baseUrl, apiKey, model, aiConfig, inputText);
-      
+
       if (recognizedFileName != null && !recognizedFileName.startsWith("[无法解析]")) {
         log.info("AI 识别成功: {} -> {}", originalFileName, recognizedFileName);
         return recognizedFileName;
@@ -84,16 +85,14 @@ public class AiFileNameRecognitionService {
         log.info("AI 无法识别文件名: {} -> {}", originalFileName, recognizedFileName);
         return null;
       }
-      
+
     } catch (Exception e) {
       log.error("AI 文件名识别失败: {}", originalFileName, e);
       return null;
     }
   }
 
-  /**
-   * 等待 QPM 限制，智能控制请求速度
-   */
+  /** 等待 QPM 限制，智能控制请求速度 */
   private void waitForQpmLimit(Map<String, Object> aiConfig) {
     int qpmLimit = (Integer) aiConfig.getOrDefault("qpmLimit", 60);
     String key = "ai_requests";
@@ -153,62 +152,60 @@ public class AiFileNameRecognitionService {
     log.debug("AI 请求计数: {}/{}, 已用时: {}s", count.get(), qpmLimit, secondsElapsed);
   }
 
-  /**
-   * 构建输入文本
-   */
+  /** 构建输入文本 */
   private String buildInputText(String originalFileName, String directoryPath) {
     StringBuilder input = new StringBuilder();
-    
+
     if (directoryPath != null && !directoryPath.trim().isEmpty()) {
       input.append("目录路径: ").append(directoryPath).append("\n");
     }
-    
+
     input.append("文件名: ").append(originalFileName);
-    
+
     return input.toString();
   }
 
-  /**
-   * 调用 AI API
-   */
-  private String callAiApi(String baseUrl, String apiKey, String model, 
-                          Map<String, Object> aiConfig, String inputText) {
+  /** 调用 AI API */
+  private String callAiApi(
+      String baseUrl, String apiKey, String model, Map<String, Object> aiConfig, String inputText) {
     try {
       // 构建请求 URL
-      String apiUrl = baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
-      
+      String apiUrl =
+          baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
+
       // 构建请求头
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.setBearerAuth(apiKey);
-      
+
       // 构建请求体
       Map<String, Object> requestBody = new HashMap<>();
       requestBody.put("model", model);
       requestBody.put("max_tokens", 300); // 增加 token 数量以适应 JSON 格式
       requestBody.put("temperature", 0.1);
       requestBody.put("response_format", Map.of("type", "json_object")); // 强制 JSON 格式（如果模型支持）
-      
+
       // 构建消息
       Map<String, Object> systemMessage = new HashMap<>();
       systemMessage.put("role", "system");
       systemMessage.put("content", aiConfig.get("prompt"));
-      
+
       Map<String, Object> userMessage = new HashMap<>();
       userMessage.put("role", "user");
       userMessage.put("content", inputText);
-      
-      requestBody.put("messages", new Object[]{systemMessage, userMessage});
-      
+
+      requestBody.put("messages", new Object[] {systemMessage, userMessage});
+
       // 发送请求
       HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-      ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
-      
+      ResponseEntity<String> response =
+          restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
+
       if (!response.getStatusCode().is2xxSuccessful()) {
         log.error("AI API 请求失败，状态码: {}, 响应: {}", response.getStatusCode(), response.getBody());
         return null;
       }
-      
+
       // 解析响应
       JsonNode responseJson = objectMapper.readTree(response.getBody());
       JsonNode choices = responseJson.get("choices");
@@ -230,10 +227,10 @@ public class AiFileNameRecognitionService {
           }
         }
       }
-      
+
       log.warn("AI API 响应格式异常: {}", response.getBody());
       return null;
-      
+
     } catch (Exception e) {
       log.error("调用 AI API 失败", e);
       return null;
@@ -371,8 +368,6 @@ public class AiFileNameRecognitionService {
     return jsonContent;
   }
 
-
-
   /**
    * 验证 AI 配置
    *
@@ -384,7 +379,8 @@ public class AiFileNameRecognitionService {
   public boolean validateAiConfig(String baseUrl, String apiKey, String model) {
     try {
       // 构建请求 URL
-      String apiUrl = baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
+      String apiUrl =
+          baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
 
       // 构建请求头
       HttpHeaders headers = new HttpHeaders();
@@ -406,7 +402,7 @@ public class AiFileNameRecognitionService {
       userMessage.put("role", "user");
       userMessage.put("content", "测试");
 
-      requestBody.put("messages", new Object[]{systemMessage, userMessage});
+      requestBody.put("messages", new Object[] {systemMessage, userMessage});
 
       // 尝试添加 JSON 格式要求（某些模型支持）
       try {
@@ -418,7 +414,8 @@ public class AiFileNameRecognitionService {
 
       // 发送测试请求
       HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-      ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
+      ResponseEntity<String> response =
+          restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
 
       boolean success = response.getStatusCode().is2xxSuccessful();
       if (success) {

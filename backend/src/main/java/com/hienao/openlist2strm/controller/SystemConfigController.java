@@ -78,7 +78,9 @@ public class SystemConfigController {
         // 验证API Key
         if (tmdb.containsKey("apiKey")) {
           String apiKey = (String) tmdb.get("apiKey");
-          if (apiKey != null && !apiKey.trim().isEmpty() && !systemConfigService.validateTmdbApiKey(apiKey)) {
+          if (apiKey != null
+              && !apiKey.trim().isEmpty()
+              && !systemConfigService.validateTmdbApiKey(apiKey)) {
             return ResponseEntity.ok(ApiResponse.error("TMDB API Key格式不正确"));
           }
         }
@@ -95,7 +97,8 @@ public class SystemConfigController {
   /** 测试 AI 配置 */
   @PostMapping("/test-ai-config")
   @Operation(summary = "测试 AI 配置", description = "测试 AI 识别配置是否有效")
-  public ResponseEntity<ApiResponse<String>> testAiConfig(@RequestBody Map<String, Object> testConfig) {
+  public ResponseEntity<ApiResponse<String>> testAiConfig(
+      @RequestBody Map<String, Object> testConfig) {
     try {
       String baseUrl = (String) testConfig.get("baseUrl");
       String apiKey = (String) testConfig.get("apiKey");

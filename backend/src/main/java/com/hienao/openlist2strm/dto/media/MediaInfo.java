@@ -43,9 +43,7 @@ public class MediaInfo {
   /** 解析置信度（0-100） */
   private int confidence;
 
-  /**
-   * 媒体类型枚举
-   */
+  /** 媒体类型枚举 */
   public enum MediaType {
     /** 电影 */
     MOVIE,
@@ -120,21 +118,22 @@ public class MediaInfo {
   public String getFullTitle() {
     StringBuilder sb = new StringBuilder();
     sb.append(getDisplayTitle());
-    
+
     if (hasYear && year != null) {
       sb.append(" (").append(year).append(")");
     }
-    
+
     if (hasSeasonEpisode && getSeasonEpisodeString() != null) {
       sb.append(" ").append(getSeasonEpisodeString());
     }
-    
+
     return sb.toString();
   }
 
   @Override
   public String toString() {
-    return String.format("MediaInfo{type=%s, title='%s', year='%s', season=%d, episode=%d, confidence=%d}",
+    return String.format(
+        "MediaInfo{type=%s, title='%s', year='%s', season=%d, episode=%d, confidence=%d}",
         type, title, year, season, episode, confidence);
   }
 }

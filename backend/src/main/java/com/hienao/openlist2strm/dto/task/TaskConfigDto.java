@@ -49,7 +49,7 @@ public class TaskConfigDto {
   @Size(max = 500, message = "strm路径长度不能超过500个字符") private String strmPath;
 
   /** 上次执行的时间戳 */
-  private LocalDateTime lastExecTime;
+  private Long lastExecTime;
 
   /** 创建时间 */
   private LocalDateTime createdAt;

@@ -248,7 +248,9 @@ public class SignController {
                     examples =
                         @ExampleObject(
                             value =
-                                "{\"code\": 200, \"message\": \"Token有效\", \"data\": {\"valid\": true, \"username\": \"user123\", \"expiresAt\": 1234567890}}"))),
+                                "{\"code\": 200, \"message\": \"Token有效\", \"data\": {\"valid\":"
+                                    + " true, \"username\": \"user123\", \"expiresAt\":"
+                                    + " 1234567890}}"))),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "401",
             description = "Token无效",
@@ -258,7 +260,8 @@ public class SignController {
                     examples =
                         @ExampleObject(
                             value =
-                                "{\"code\": 401, \"message\": \"Token无效\", \"data\": {\"valid\": false}}")))
+                                "{\"code\": 401, \"message\": \"Token无效\", \"data\": {\"valid\":"
+                                    + " false}}")))
       })
   ApiResponse<Map<String, Object>> validate(HttpServletRequest request) {
     String token = jwt.extract(request);

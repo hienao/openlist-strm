@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -238,7 +237,8 @@ public class TaskExecutionService {
             if (needScrap) {
               try {
                 // 构建完整的保存目录路径
-                String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
+                String saveDirectory =
+                    buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
                 // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
                 if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
@@ -246,12 +246,14 @@ public class TaskExecutionService {
                   scrapSkippedCount++;
                 } else {
                   mediaScrapingService.scrapMedia(
-                      file.getName(),
-                      taskConfig.getStrmPath(),
-                      relativePath);
+                      file.getName(), taskConfig.getStrmPath(), relativePath);
                 }
               } catch (Exception scrapException) {
-                log.error("刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
+                log.error(
+                    "刮削文件失败: {}, 错误: {}",
+                    file.getName(),
+                    scrapException.getMessage(),
+                    scrapException);
                 // 刮削失败不影响STRM文件生成，继续处理
               }
             }
@@ -337,8 +339,7 @@ public class TaskExecutionService {
   }
 
   /**
-   * 构建刮削保存目录路径
-   * 复用 MediaScrapingService 中的逻辑
+   * 构建刮削保存目录路径 复用 MediaScrapingService 中的逻辑
    *
    * @param strmDirectory STRM文件目录
    * @param relativePath 相对路径
@@ -365,12 +366,12 @@ public class TaskExecutionService {
     return strmDirectory + "/" + directoryPath;
   }
 
-  /**
-   * 内存优化的文件处理方法
-   * 分批处理文件，避免一次性加载所有文件到内存
-   */
+  /** 内存优化的文件处理方法 分批处理文件，避免一次性加载所有文件到内存 */
   private List<OpenlistApiService.OpenlistFile> processFilesWithMemoryOptimization(
-      OpenlistConfig openlistConfig, TaskConfig taskConfig, boolean isIncrement, boolean needScrap) {
+      OpenlistConfig openlistConfig,
+      TaskConfig taskConfig,
+      boolean isIncrement,
+      boolean needScrap) {
 
     List<OpenlistApiService.OpenlistFile> allFiles = new ArrayList<>();
     int processedCount = 0;
@@ -378,8 +379,15 @@ public class TaskExecutionService {
 
     try {
       // 分批处理目录，每次只处理一个目录的文件
-      processDirectoryBatch(openlistConfig, taskConfig.getPath(), taskConfig,
-          isIncrement, needScrap, allFiles, processedCount, scrapSkippedCount);
+      processDirectoryBatch(
+          openlistConfig,
+          taskConfig.getPath(),
+          taskConfig,
+          isIncrement,
+          needScrap,
+          allFiles,
+          processedCount,
+          scrapSkippedCount);
 
       log.info("文件处理完成 - 处理了 {} 个视频文件", processedCount);
       if (needScrap && scrapSkippedCount > 0) {
@@ -396,12 +404,16 @@ public class TaskExecutionService {
     return allFiles;
   }
 
-  /**
-   * 分批处理目录
-   */
-  private void processDirectoryBatch(OpenlistConfig openlistConfig, String path, TaskConfig taskConfig,
-      boolean isIncrement, boolean needScrap, List<OpenlistApiService.OpenlistFile> allFiles,
-      int processedCount, int scrapSkippedCount) {
+  /** 分批处理目录 */
+  private void processDirectoryBatch(
+      OpenlistConfig openlistConfig,
+      String path,
+      TaskConfig taskConfig,
+      boolean isIncrement,
+      boolean needScrap,
+      List<OpenlistApiService.OpenlistFile> allFiles,
+      int processedCount,
+      int scrapSkippedCount) {
 
     try {
       List<OpenlistApiService.OpenlistFile> files =
@@ -412,15 +424,23 @@ public class TaskExecutionService {
 
         if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
           // 立即处理视频文件，不累积在内存中
-          processVideoFile(file, taskConfig, isIncrement, needScrap, processedCount, scrapSkippedCount);
+          processVideoFile(
+              file, taskConfig, isIncrement, needScrap, processedCount, scrapSkippedCount);
         } else if ("folder".equals(file.getType())) {
           // 递归处理子目录
           String subPath = file.getPath();
           if (subPath == null || subPath.isEmpty()) {
             subPath = path + "/" + file.getName();
           }
-          processDirectoryBatch(openlistConfig, subPath, taskConfig,
-              isIncrement, needScrap, allFiles, processedCount, scrapSkippedCount);
+          processDirectoryBatch(
+              openlistConfig,
+              subPath,
+              taskConfig,
+              isIncrement,
+              needScrap,
+              allFiles,
+              processedCount,
+              scrapSkippedCount);
         }
       }
 
@@ -434,15 +454,19 @@ public class TaskExecutionService {
     }
   }
 
-  /**
-   * 处理单个视频文件
-   */
-  private void processVideoFile(OpenlistApiService.OpenlistFile file, TaskConfig taskConfig,
-      boolean isIncrement, boolean needScrap, int processedCount, int scrapSkippedCount) {
+  /** 处理单个视频文件 */
+  private void processVideoFile(
+      OpenlistApiService.OpenlistFile file,
+      TaskConfig taskConfig,
+      boolean isIncrement,
+      boolean needScrap,
+      int processedCount,
+      int scrapSkippedCount) {
 
     try {
       // 计算相对路径
-      String relativePath = strmFileService.calculateRelativePath(taskConfig.getPath(), file.getPath());
+      String relativePath =
+          strmFileService.calculateRelativePath(taskConfig.getPath(), file.getPath());
 
       // 构建包含sign参数的文件URL
       String fileUrlWithSign = buildFileUrlWithSign(file.getUrl(), file.getSign());
@@ -467,7 +491,8 @@ public class TaskExecutionService {
             mediaScrapingService.scrapMedia(file.getName(), taskConfig.getStrmPath(), relativePath);
           }
         } catch (Exception scrapException) {
-          log.error("刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
+          log.error(
+              "刮削文件失败: {}, 错误: {}", file.getName(), scrapException.getMessage(), scrapException);
         }
       }
 

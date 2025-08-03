@@ -1,11 +1,9 @@
 package com.hienao.openlist2strm.service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * 封面图片下载服务
- * 负责从 TMDB 下载封面图片并保存到指定位置
+ * 封面图片下载服务 负责从 TMDB 下载封面图片并保存到指定位置
  *
  * @author hienao
  * @since 2024-01-01
@@ -120,7 +117,7 @@ public class CoverImageService {
    */
   private void downloadImage(String imageUrl, String saveFilePath) throws IOException {
     Path savePath = Paths.get(saveFilePath);
-    
+
     // 确保目录存在
     Path parentDir = savePath.getParent();
     if (parentDir != null && !Files.exists(parentDir)) {
@@ -130,7 +127,7 @@ public class CoverImageService {
     // 检查是否覆盖现有文件
     Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
     boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-    
+
     if (Files.exists(savePath) && !overwriteExisting) {
       log.info("图片文件已存在且不允许覆盖，跳过: {}", saveFilePath);
       return;
@@ -144,8 +141,8 @@ public class CoverImageService {
       HttpEntity<String> entity = new HttpEntity<>(headers);
 
       // 下载图片
-      ResponseEntity<byte[]> response = restTemplate.exchange(
-          imageUrl, HttpMethod.GET, entity, byte[].class);
+      ResponseEntity<byte[]> response =
+          restTemplate.exchange(imageUrl, HttpMethod.GET, entity, byte[].class);
 
       if (!response.getStatusCode().is2xxSuccessful()) {
         throw new IOException("HTTP请求失败，状态码: " + response.getStatusCode());
@@ -158,7 +155,7 @@ public class CoverImageService {
 
       // 保存图片
       Files.write(savePath, imageData);
-      
+
       log.debug("图片下载完成: {} -> {}", imageUrl, saveFilePath);
 
     } catch (Exception e) {
@@ -203,9 +200,7 @@ public class CoverImageService {
     }
 
     // 移除或替换不合法字符
-    return fileName.replaceAll("[\\\\/:*?\"<>|]", "_")
-                   .replaceAll("\\s+", "_")
-                   .trim();
+    return fileName.replaceAll("[\\\\/:*?\"<>|]", "_").replaceAll("\\s+", "_").trim();
   }
 
   /**
@@ -221,7 +216,7 @@ public class CoverImageService {
     }
 
     Path savePath = Paths.get(saveFilePath);
-    
+
     // 如果文件不存在，需要下载
     if (!Files.exists(savePath)) {
       return true;
@@ -230,7 +225,7 @@ public class CoverImageService {
     // 检查配置是否允许覆盖
     Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
     boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-    
+
     return overwriteExisting;
   }
 
@@ -242,7 +237,8 @@ public class CoverImageService {
    * @param saveDirectory 保存目录
    * @param fileName 文件名前缀
    */
-  public void downloadImages(String posterUrl, String backdropUrl, String saveDirectory, String fileName) {
+  public void downloadImages(
+      String posterUrl, String backdropUrl, String saveDirectory, String fileName) {
     Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
     boolean downloadPoster = (Boolean) scrapingConfig.getOrDefault("downloadPoster", true);
     boolean downloadBackdrop = (Boolean) scrapingConfig.getOrDefault("downloadBackdrop", false);

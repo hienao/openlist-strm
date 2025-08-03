@@ -93,47 +93,44 @@ public class TmdbMovieDetail {
   @JsonProperty("imdb_id")
   private String imdbId;
 
-  /**
-   * 类型
-   */
+  /** 类型 */
   @Data
   public static class Genre {
     private Integer id;
     private String name;
   }
 
-  /**
-   * 制作公司
-   */
+  /** 制作公司 */
   @Data
   public static class ProductionCompany {
     private Integer id;
     private String name;
+
     @JsonProperty("logo_path")
     private String logoPath;
+
     @JsonProperty("origin_country")
     private String originCountry;
   }
 
-  /**
-   * 制作国家
-   */
+  /** 制作国家 */
   @Data
   public static class ProductionCountry {
     @JsonProperty("iso_3166_1")
     private String iso31661;
+
     private String name;
   }
 
-  /**
-   * 语言
-   */
+  /** 语言 */
   @Data
   public static class SpokenLanguage {
     @JsonProperty("english_name")
     private String englishName;
+
     @JsonProperty("iso_639_1")
     private String iso6391;
+
     private String name;
   }
 
@@ -158,10 +155,7 @@ public class TmdbMovieDetail {
     if (genres == null || genres.isEmpty()) {
       return "";
     }
-    return genres.stream()
-        .map(Genre::getName)
-        .reduce((a, b) -> a + ", " + b)
-        .orElse("");
+    return genres.stream().map(Genre::getName).reduce((a, b) -> a + ", " + b).orElse("");
   }
 
   /**

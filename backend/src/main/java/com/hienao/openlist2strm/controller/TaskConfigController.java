@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -179,13 +178,13 @@ public class TaskConfigController {
 
   /** 更新最后执行时间请求体 */
   public static class UpdateLastExecTimeRequest {
-    private LocalDateTime lastExecTime;
+    private Long lastExecTime;
 
-    public LocalDateTime getLastExecTime() {
+    public Long getLastExecTime() {
       return lastExecTime;
     }
 
-    public void setLastExecTime(LocalDateTime lastExecTime) {
+    public void setLastExecTime(Long lastExecTime) {
       this.lastExecTime = lastExecTime;
     }
   }
