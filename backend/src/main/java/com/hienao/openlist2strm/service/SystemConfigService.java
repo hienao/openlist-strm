@@ -166,7 +166,6 @@ public class SystemConfigService {
     scrapConfig.put("generateNfo", true); // 是否生成NFO文件
     scrapConfig.put("downloadPoster", true); // 是否下载海报
     scrapConfig.put("downloadBackdrop", false); // 是否下载背景图
-    scrapConfig.put("overwriteExisting", false); // 是否覆盖已存在的文件
     scrapConfig.put("nfoFormat", "kodi"); // NFO格式：kodi, jellyfin, emby
     defaultConfig.put("scraping", scrapConfig);
 

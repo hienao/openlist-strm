@@ -54,25 +54,34 @@ public class MediaScrapingService {
 
       // 验证文件名是否符合 TMDB 刮削规则
       MediaFileParser.ValidationResult validation = MediaFileParser.validateForTmdbScraping(fileName);
+      String fileNameToUse = fileName;
+      
       if (!validation.isValid()) {
-        log.info("文件名不符合 TMDB 刮削规则，跳过刮削: {} - {}", fileName, validation.getReason());
-        return;
-      }
-
-      // 尝试使用 AI 识别文件名
-      String recognizedFileName = aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
-      String fileNameToUse = recognizedFileName != null ? recognizedFileName : fileName;
-
-      if (recognizedFileName != null) {
-        log.info("使用 AI 识别的文件名进行刮削: {} -> {}", fileName, recognizedFileName);
-
-        // 重新验证 AI 识别后的文件名
-        MediaFileParser.ValidationResult aiValidation = MediaFileParser.validateForTmdbScraping(recognizedFileName);
-        if (!aiValidation.isValid()) {
-          log.warn("AI 识别的文件名仍不符合规则，使用原文件名: {} - {}", recognizedFileName, aiValidation.getReason());
-          fileNameToUse = fileName;
+        // 检查是否启用AI识别
+        boolean aiRecognitionEnabled = (Boolean) scrapingConfig.getOrDefault("aiRecognitionEnabled", false);
+        
+        if (aiRecognitionEnabled) {
+          // 如果启用AI识别，尝试使用AI识别文件名
+          String recognizedFileName = aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
+          if (recognizedFileName != null) {
+            MediaFileParser.ValidationResult aiValidation = MediaFileParser.validateForTmdbScraping(recognizedFileName);
+            if (aiValidation.isValid()) {
+              fileNameToUse = recognizedFileName;
+              log.info("使用 AI 识别的文件名进行刮削: {} -> {}", fileName, recognizedFileName);
+            } else {
+              log.info("文件名不符合 TMDB 刮削规则且AI识别失败，使用原文件名尝试刮削: {}", fileName);
+            }
+          } else {
+            log.info("文件名不符合 TMDB 刮削规则且AI识别失败，使用原文件名尝试刮削: {}", fileName);
+          }
+        } else {
+          // 如果AI识别未启用，使用原文件名尝试刮削
+          log.info("文件名不符合 TMDB 刮削规则但AI识别未启用，使用原文件名尝试刮削: {}", fileName);
         }
-      }
+      } else {
+         // 文件名符合规则，直接使用原文件名
+         log.debug("文件名符合 TMDB 刮削规则，使用原文件名: {}", fileName);
+       }
 
       // 解析文件名
       MediaInfo mediaInfo = MediaFileParser.parseFileName(fileNameToUse);
@@ -87,10 +96,9 @@ public class MediaScrapingService {
       String saveDirectory = buildSaveDirectory(strmDirectory, relativePath);
       String baseFileName = coverImageService.getStandardizedFileName(fileName);
 
-      // 检查是否已刮削
-      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-      if (!overwriteExisting && isAlreadyScraped(saveDirectory, baseFileName, mediaInfo)) {
-        log.info("文件已刮削且未启用覆盖模式，跳过: {}", fileName);
+      // 检查是否已刮削（增量模式下跳过已刮削的文件）
+      if (isAlreadyScraped(saveDirectory, baseFileName, mediaInfo)) {
+        log.info("文件已刮削，跳过: {}", fileName);
         return;
       }
 
@@ -428,12 +436,6 @@ public class MediaScrapingService {
       }
 
       Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
-      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-
-      if (overwriteExisting) {
-        // 如果启用覆盖模式，总是返回 false 以重新刮削
-        return false;
-      }
 
       File[] files = directory.listFiles();
       if (files == null || files.length == 0) {

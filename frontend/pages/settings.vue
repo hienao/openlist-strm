@@ -157,18 +157,6 @@
                     下载背景图片
                   </label>
                 </div>
-
-                <div class="flex items-center">
-                  <input
-                    id="overwriteExisting"
-                    v-model="scrapingConfig.overwriteExisting"
-                    type="checkbox"
-                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label for="overwriteExisting" class="ml-2 block text-sm text-gray-900">
-                    覆盖已存在的文件
-                  </label>
-                </div>
               </div>
             </div>
           </div>
@@ -333,8 +321,7 @@ const scrapingConfig = ref({
   enabled: true,
   generateNfo: true,
   downloadPoster: true,
-  downloadBackdrop: false,
-  overwriteExisting: false
+  downloadBackdrop: false
 })
 const aiConfig = ref({
   enabled: false,
@@ -392,8 +379,7 @@ const loadCurrentSettings = async () => {
           enabled: config.scraping.enabled !== false,
           generateNfo: config.scraping.generateNfo !== false,
           downloadPoster: config.scraping.downloadPoster !== false,
-          downloadBackdrop: config.scraping.downloadBackdrop === true,
-          overwriteExisting: config.scraping.overwriteExisting === true
+          downloadBackdrop: config.scraping.downloadBackdrop === true
         }
         console.log('已加载刮削配置')
       }
@@ -448,8 +434,7 @@ const saveSettings = async () => {
         enabled: scrapingConfig.value.enabled,
         generateNfo: scrapingConfig.value.generateNfo,
         downloadPoster: scrapingConfig.value.downloadPoster,
-        downloadBackdrop: scrapingConfig.value.downloadBackdrop,
-        overwriteExisting: scrapingConfig.value.overwriteExisting
+        downloadBackdrop: scrapingConfig.value.downloadBackdrop
       },
       ai: {
         enabled: aiConfig.value.enabled,

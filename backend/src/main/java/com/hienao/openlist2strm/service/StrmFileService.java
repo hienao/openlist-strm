@@ -306,6 +306,7 @@ public class StrmFileService {
 
   /**
    * 清理孤立的STRM文件（源文件已不存在的STRM文件） 用于增量执行时清理已删除源文件对应的STRM文件
+   * 同时删除对应的刮削文件（NFO文件、海报、背景图等）
    *
    * @param strmBasePath STRM基础路径
    * @param existingFiles 当前存在的源文件列表
@@ -345,9 +346,14 @@ public class StrmFileService {
               strmFile -> {
                 if (!expectedStrmFiles.contains(strmFile)) {
                   try {
+                    // 删除STRM文件
                     Files.delete(strmFile);
                     log.info("删除孤立的STRM文件: {}", strmFile);
                     cleanedCount.incrementAndGet();
+                    
+                    // 删除对应的刮削文件
+                    cleanOrphanedScrapingFiles(strmFile);
+                    
                   } catch (IOException e) {
                     log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
                   }
@@ -401,6 +407,78 @@ public class StrmFileService {
     }
 
     return expectedPaths;
+  }
+
+  /**
+   * 清理孤立STRM文件对应的刮削文件
+   *
+   * @param strmFile STRM文件路径
+   */
+  private void cleanOrphanedScrapingFiles(Path strmFile) {
+    try {
+      String strmFileName = strmFile.getFileName().toString();
+      String baseFileName = strmFileName.substring(0, strmFileName.lastIndexOf(".strm"));
+      Path parentDir = strmFile.getParent();
+      
+      // 删除NFO文件
+      Path nfoFile = parentDir.resolve(baseFileName + ".nfo");
+      if (Files.exists(nfoFile)) {
+        Files.delete(nfoFile);
+        log.info("删除孤立的NFO文件: {}", nfoFile);
+      }
+      
+      // 删除电影相关的刮削文件
+      Path moviePoster = parentDir.resolve(baseFileName + "-poster.jpg");
+      if (Files.exists(moviePoster)) {
+        Files.delete(moviePoster);
+        log.info("删除孤立的电影海报文件: {}", moviePoster);
+      }
+      
+      Path movieBackdrop = parentDir.resolve(baseFileName + "-fanart.jpg");
+      if (Files.exists(movieBackdrop)) {
+        Files.delete(movieBackdrop);
+        log.info("删除孤立的电影背景图文件: {}", movieBackdrop);
+      }
+      
+      // 删除电视剧相关的刮削文件
+      Path episodeThumb = parentDir.resolve(baseFileName + "-thumb.jpg");
+      if (Files.exists(episodeThumb)) {
+        Files.delete(episodeThumb);
+        log.info("删除孤立的剧集缩略图文件: {}", episodeThumb);
+      }
+      
+      // 检查是否需要删除电视剧公共文件（当目录中没有其他视频文件时）
+      boolean hasOtherVideoFiles = Files.list(parentDir)
+          .anyMatch(path -> {
+            String fileName = path.getFileName().toString().toLowerCase();
+            return !fileName.equals(strmFileName.toLowerCase()) && 
+                   (fileName.endsWith(".strm") || isVideoFileWithDefaultExtensions(fileName));
+          });
+      
+      if (!hasOtherVideoFiles) {
+        // 删除电视剧公共文件
+        Path tvShowNfo = parentDir.resolve("tvshow.nfo");
+        if (Files.exists(tvShowNfo)) {
+          Files.delete(tvShowNfo);
+          log.info("删除孤立的电视剧NFO文件: {}", tvShowNfo);
+        }
+        
+        Path tvShowPoster = parentDir.resolve("poster.jpg");
+        if (Files.exists(tvShowPoster)) {
+          Files.delete(tvShowPoster);
+          log.info("删除孤立的电视剧海报文件: {}", tvShowPoster);
+        }
+        
+        Path tvShowFanart = parentDir.resolve("fanart.jpg");
+        if (Files.exists(tvShowFanart)) {
+          Files.delete(tvShowFanart);
+          log.info("删除孤立的电视剧背景图文件: {}", tvShowFanart);
+        }
+      }
+      
+    } catch (Exception e) {
+      log.warn("清理孤立刮削文件失败: {}, 错误: {}", strmFile, e.getMessage());
+    }
   }
 
   /**
