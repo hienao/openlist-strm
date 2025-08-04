@@ -17,6 +17,10 @@
       "labels": ["maintenance", "chore", "refactor"]
     },
     {
+      "title": "## 🔄 CI/CD",
+      "labels": ["ci", "cd", "workflow"]
+    },
+    {
       "title": "## 🔒 Security",
       "labels": ["security"]
     },
@@ -53,52 +57,53 @@
   },
   "template": "${{CHANGELOG}}",
   "pr_template": "- ${{TITLE}} (#${{NUMBER}}) @${{AUTHOR}}",
-  "empty_template": "- No changes",
+  "commit_template": "- ${{TITLE}} (${{SHA}})",
+  "empty_template": "## 📝 Changes\n\nNo significant changes in this release.",
   "label_extractor": [
     {
-      "pattern": "(feat|feature)\\b",
+      "pattern": "^feat(\\([^)]+\\))?:",
       "target": "feature",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(fix|bug)\\b",
+      "pattern": "^fix(\\([^)]+\\))?:",
       "target": "bug",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(doc|docs)\\b",
+      "pattern": "^docs?(\\([^)]+\\))?:",
       "target": "documentation",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(chore|maintenance)\\b",
+      "pattern": "^(chore|refactor)(\\([^)]+\\))?:",
       "target": "maintenance",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(perf|performance)\\b",
+      "pattern": "^perf(\\([^)]+\\))?:",
       "target": "performance",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(style|ui|ux)\\b",
+      "pattern": "^style(\\([^)]+\\))?:",
       "target": "style",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(test|tests)\\b",
+      "pattern": "^test(\\([^)]+\\))?:",
       "target": "test",
-      "flags": "gu"
+      "flags": "gm"
     },
     {
-      "pattern": "(deps|dependencies)\\b",
-      "target": "dependencies",
-      "flags": "gu"
+      "pattern": "^ci(\\([^)]+\\))?:",
+      "target": "ci",
+      "flags": "gm"
     },
     {
-      "pattern": "(security|sec)\\b",
+      "pattern": "^security(\\([^)]+\\))?:",
       "target": "security",
-      "flags": "gu"
+      "flags": "gm"
     }
   ],
   "duplicate_filter": {
@@ -110,9 +115,9 @@
     "pattern": "(closes|fixes|resolves)\\s*#([0-9]+)",
     "on_property": "body"
   },
-  "max_tags_to_fetch": 200,
-  "max_pull_requests": 200,
-  "max_back_track_time_days": 365,
+  "max_tags_to_fetch": 50,
+  "max_pull_requests": 100,
+  "max_back_track_time_days": 90,
   "exclude_merge_branches": [
     "Owner/qa"
   ],

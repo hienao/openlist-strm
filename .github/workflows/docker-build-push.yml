@@ -113,17 +113,41 @@ jobs:
         configuration: ".github/release-changelog-config.json"
         ignorePreReleases: true
         fetchViaCommits: true
+        commitMode: true
+        fetchReviewers: false
+        fetchReleaseInformation: true
+        includeOpen: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Debug Changelog Output
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
+      run: |
+        echo "Generated changelog:"
+        echo "${{ steps.github_release.outputs.changelog }}"
+        echo "Changelog length: ${#changelog}"
+        if [ -z "${{ steps.github_release.outputs.changelog }}" ]; then
+          echo "⚠️ Warning: Changelog is empty!"
+        fi
 
     - name: Create GitHub Release
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # 检查changelog是否为空，如果为空则使用默认内容
+        CHANGELOG="${{ steps.github_release.outputs.changelog }}"
+        if [ -z "$CHANGELOG" ] || [ "$CHANGELOG" = "- No changes" ]; then
+          CHANGELOG="## 📝 Changes
+
+        This release includes various improvements and bug fixes.
+
+        For detailed changes, please check the commit history between tags."
+        fi
+
         gh release create "${{ github.ref_name }}" \
           --title "Release ${{ github.ref_name }}" \
-          --notes "${{ steps.github_release.outputs.changelog }}" \
+          --notes "$CHANGELOG" \
           --latest \
           "openlist-strm-${{ github.ref_name }}-source.zip"
 
