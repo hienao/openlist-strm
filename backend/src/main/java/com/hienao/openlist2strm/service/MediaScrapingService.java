@@ -89,7 +89,7 @@ public class MediaScrapingService {
       MediaInfo mediaInfo = MediaFileParser.parseFileName(fileNameToUse);
       log.debug("解析媒体信息: {}", mediaInfo);
 
-      if (mediaInfo.getConfidence() < 50) {
+      if (mediaInfo.getConfidence() < 70) {
         log.warn("媒体信息解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), fileNameToUse);
         return;
       }
@@ -460,7 +460,7 @@ public class MediaScrapingService {
 
           // 解析文件名以确定媒体类型
           MediaInfo mediaInfo = MediaFileParser.parseFileName(file.getName());
-          if (mediaInfo.getConfidence() >= 50) {
+          if (mediaInfo.getConfidence() >= 70) {
             String baseFileName = coverImageService.getStandardizedFileName(file.getName());
 
             if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
