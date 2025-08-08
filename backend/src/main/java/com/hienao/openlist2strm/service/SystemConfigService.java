@@ -78,6 +78,10 @@ public class SystemConfigService {
             log.info("系统配置中缺少scraping字段，添加默认配置");
             needSave = true;
           }
+          if (!config.containsKey("scrapingRegex")) {
+           log.info("系统配置中缺少scrapingRegex字段，添加默认配置");
+           needSave = true;
+          }
         }
       }
 
@@ -181,6 +185,28 @@ public class SystemConfigService {
     aiConfig.put("prompt", getDefaultAiPrompt()); // 默认提示词
     defaultConfig.put("ai", aiConfig);
 
+    // 正则刮削配置
+   Map<String, Object> scrapingRegexConfig = new HashMap<>();
+   scrapingRegexConfig.put(
+       "movieRegexps",
+       List.of(
+           "^(?<title>.+?)[. _]((?<year>19\\d{2}|20\\d{2}))",
+           "^(?<title>.+?)[. _]\\[(?<year>19\\d{2}|20\\d{2})\\]",
+           "^(?<title>.+?)[. _]\\((?<year>19\\d{2}|20\\d{2})\\)"));
+   scrapingRegexConfig.put(
+       "tvDirRegexps",
+       List.of(
+           "^(?<title>.+?)[. _]Season[. _](?<season>\\d{1,2})",
+           "^(?<title>.+?)[. _]S(?<season>\\d{1,2})",
+           "^(?<title>.+)[. _](?<year>19\\d{2}|20\\d{2})"));
+   scrapingRegexConfig.put(
+       "tvFileRegexps",
+       List.of(
+           "[._ ]S(?<season>\\d{1,2})E(?<episode>\\d{1,3})",
+           "[._ ](?<season>\\d{1,2})x(?<episode>\\d{1,3})",
+           "[._ ]Episode[._ ](?<episode>\\d{1,3})"));
+   defaultConfig.put("scrapingRegex", scrapingRegexConfig);
+
     return defaultConfig;
   }
 
@@ -216,6 +242,17 @@ public class SystemConfigService {
     Map<String, Object> systemConfig = getSystemConfig();
     return (Map<String, Object>) systemConfig.getOrDefault("ai", new HashMap<>());
   }
+
+ /**
+  * 获取刮削正则配置
+  *
+  * @return 刮削正则配置Map
+  */
+ @SuppressWarnings("unchecked")
+ public Map<String, Object> getScrapingRegexConfig() {
+   Map<String, Object> systemConfig = getSystemConfig();
+   return (Map<String, Object>) systemConfig.getOrDefault("scrapingRegex", new HashMap<>());
+ }
 
   /**
    * 获取默认AI提示词

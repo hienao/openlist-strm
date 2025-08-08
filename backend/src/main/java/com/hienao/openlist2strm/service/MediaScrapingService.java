@@ -6,7 +6,9 @@ import com.hienao.openlist2strm.dto.tmdb.TmdbSearchResponse;
 import com.hienao.openlist2strm.dto.tmdb.TmdbTvDetail;
 import com.hienao.openlist2strm.util.MediaFileParser;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -50,49 +52,50 @@ public class MediaScrapingService {
         return;
       }
 
-      // 验证文件名是否符合 TMDB 刮削规则
-      MediaFileParser.ValidationResult validation =
-          MediaFileParser.validateForTmdbScraping(fileName);
-      String fileNameToUse = fileName;
+     // 获取刮削正则配置
+     Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
+     @SuppressWarnings("unchecked")
+     List<String> movieRegexps =
+         (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
+     @SuppressWarnings("unchecked")
+     List<String> tvDirRegexps =
+         (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
+     @SuppressWarnings("unchecked")
+     List<String> tvFileRegexps =
+         (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
 
-      if (!validation.isValid()) {
-        // 检查是否启用AI识别 - 修复：从AI配置中获取enabled状态
-        Map<String, Object> aiConfig = systemConfigService.getAiConfig();
-        boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
+     // 提取目录路径
+     String directoryPath = extractDirectoryPath(relativePath);
 
-        if (aiRecognitionEnabled) {
-          // 如果启用AI识别，尝试使用AI识别文件名
-          String recognizedFileName =
-              aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
-          if (recognizedFileName != null) {
-            MediaFileParser.ValidationResult aiValidation =
-                MediaFileParser.validateForTmdbScraping(recognizedFileName);
-            if (aiValidation.isValid()) {
-              fileNameToUse = recognizedFileName;
-              log.info("使用 AI 识别的文件名进行刮削: {} -> {}", fileName, recognizedFileName);
-            } else {
-              log.info("文件名不符合 TMDB 刮削规则且AI识别失败，使用原文件名尝试刮削: {}", fileName);
-            }
-          } else {
-            log.info("文件名不符合 TMDB 刮削规则且AI识别失败，使用原文件名尝试刮削: {}", fileName);
-          }
-        } else {
-          // 如果AI识别未启用，使用原文件名尝试刮削
-          log.info("文件名不符合 TMDB 刮削规则但AI识别未启用，使用原文件名尝试刮削: {}", fileName);
-        }
-      } else {
-        // 文件名符合规则，直接使用原文件名
-        log.debug("文件名符合 TMDB 刮削规则，使用原文件名: {}", fileName);
-      }
+     // 解析文件名
+     MediaInfo mediaInfo =
+         MediaFileParser.parse(fileName, directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
+     log.debug("正则解析媒体信息: {}", mediaInfo);
 
-      // 解析文件名
-      MediaInfo mediaInfo = MediaFileParser.parseFileName(fileNameToUse);
-      log.debug("解析媒体信息: {}", mediaInfo);
+     // 如果正则解析置信度低，尝试使用AI
+     if (mediaInfo.getConfidence() < 70) {
+       log.info("正则解析置信度低 ({}%)，尝试使用 AI 识别: {}", mediaInfo.getConfidence(), fileName);
+       Map<String, Object> aiConfig = systemConfigService.getAiConfig();
+       boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
 
-      if (mediaInfo.getConfidence() < 70) {
-        log.warn("媒体信息解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), fileNameToUse);
-        return;
-      }
+       if (aiRecognitionEnabled) {
+         String recognizedFileName =
+             aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
+         if (recognizedFileName != null) {
+           // 使用AI识别结果重新解析
+           mediaInfo =
+               MediaFileParser.parse(
+                   recognizedFileName, directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
+           log.info("使用 AI 识别结果重新解析: {}", mediaInfo);
+         }
+       }
+     }
+
+     if (mediaInfo.getConfidence() < 70) {
+       log.warn(
+           "最终解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), mediaInfo.getOriginalFileName());
+       return;
+     }
 
       // 构建保存目录
       String saveDirectory = buildSaveDirectory(strmDirectory, relativePath);
@@ -287,6 +290,26 @@ public class MediaScrapingService {
     return Paths.get(strmDirectory, relativePath).toString();
   }
 
+ /**
+  * 从相对路径中提取目录部分
+  *
+  * @param relativePath 文件的相对路径
+  * @return 文件所在的目录路径
+  */
+ private String extractDirectoryPath(String relativePath) {
+   if (relativePath == null || relativePath.isEmpty()) {
+     return "";
+   }
+   try {
+     Path path = Paths.get(relativePath);
+     Path parent = path.getParent();
+     return parent == null ? "" : parent.toString();
+   } catch (Exception e) {
+     log.warn("无法从相对路径中提取目录: {}", relativePath, e);
+     return "";
+   }
+ }
+
   /** 检查是否应该执行刮削 */
   public boolean shouldScrap(String fileName) {
     // 检查是否为视频文件
@@ -437,58 +460,74 @@ public class MediaScrapingService {
    * @param directoryPath 目录路径
    * @return 是否已完全刮削
    */
-  public boolean isDirectoryFullyScraped(String directoryPath) {
-    try {
-      File directory = new File(directoryPath);
-      if (!directory.exists() || !directory.isDirectory()) {
-        return false;
-      }
+ public boolean isDirectoryFullyScraped(String directoryPath) {
+   try {
+     File directory = new File(directoryPath);
+     if (!directory.exists() || !directory.isDirectory()) {
+       return false;
+     }
 
-      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+     // 获取刮削正则配置
+     Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
+     @SuppressWarnings("unchecked")
+     List<String> movieRegexps =
+         (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
+     @SuppressWarnings("unchecked")
+     List<String> tvDirRegexps =
+         (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
+     @SuppressWarnings("unchecked")
+     List<String> tvFileRegexps =
+         (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
 
-      File[] files = directory.listFiles();
-      if (files == null || files.length == 0) {
-        return false;
-      }
+     File[] files = directory.listFiles();
+     if (files == null || files.length == 0) {
+       return false;
+     }
 
-      boolean hasVideoFiles = false;
-      boolean allVideoFilesScraped = true;
+     boolean hasVideoFiles = false;
+     boolean allVideoFilesScraped = true;
 
-      for (File file : files) {
-        if (file.isFile() && MediaFileParser.isVideoFile(file.getName())) {
-          hasVideoFiles = true;
+     for (File file : files) {
+       if (file.isFile() && MediaFileParser.isVideoFile(file.getName())) {
+         hasVideoFiles = true;
 
-          // 解析文件名以确定媒体类型
-          MediaInfo mediaInfo = MediaFileParser.parseFileName(file.getName());
-          if (mediaInfo.getConfidence() >= 70) {
-            String baseFileName = coverImageService.getStandardizedFileName(file.getName());
+         // 使用新的解析器
+         MediaInfo mediaInfo =
+             MediaFileParser.parse(
+                 file.getName(), directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
 
-            if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
-              allVideoFilesScraped = false;
-              break;
-            }
-          }
-        }
-      }
+         if (mediaInfo.getConfidence() >= 70) {
+           String baseFileName = coverImageService.getStandardizedFileName(file.getName());
+           if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
+             allVideoFilesScraped = false;
+             break;
+           }
+         } else {
+           // 如果任何一个文件解析失败，则认为目录没有完全刮削
+           allVideoFilesScraped = false;
+           break;
+         }
+       }
+     }
 
-      boolean result = hasVideoFiles && allVideoFilesScraped;
-      if (result) {
-        log.debug("目录已完全刮削: {}", directoryPath);
-      } else {
-        log.debug(
-            "目录需要刮削: {} (hasVideoFiles: {}, allScraped: {})",
-            directoryPath,
-            hasVideoFiles,
-            allVideoFilesScraped);
-      }
+     boolean result = hasVideoFiles && allVideoFilesScraped;
+     if (result) {
+       log.debug("目录已完全刮削: {}", directoryPath);
+     } else {
+       log.debug(
+           "目录需要刮削: {} (hasVideoFiles: {}, allScraped: {})",
+           directoryPath,
+           hasVideoFiles,
+           allVideoFilesScraped);
+     }
 
-      return result;
+     return result;
 
-    } catch (Exception e) {
-      log.warn("检查目录刮削状态时出错: {}", directoryPath, e);
-      return false;
-    }
-  }
+   } catch (Exception e) {
+     log.warn("检查目录刮削状态时出错: {}", directoryPath, e);
+     return false;
+   }
+ }
 
   /** 获取刮削统计信息 */
   public Map<String, Object> getScrapingStats() {
