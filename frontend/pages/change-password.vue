@@ -155,7 +155,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { authenticatedApiCall } from '~/utils/api.js'
-import { definePageMeta, navigateTo, useCookie, useHead } from '#imports'
 
 // 页面元数据
 definePageMeta({

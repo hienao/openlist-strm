@@ -299,7 +299,6 @@
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
-import { useNuxtApp, definePageMeta, navigateTo, useHead } from '#app'
 
 // 获取router实例和认证store
 const { $router } = useNuxtApp()

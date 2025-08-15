@@ -377,7 +377,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '~/components/AppHeader.vue'
 import { authenticatedApiCall } from '~/utils/api.js'
-import { useCookie } from '#app'
 
 const router = useRouter()
 const tokenCookie = useCookie('token')

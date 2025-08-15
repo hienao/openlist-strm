@@ -39,7 +39,7 @@
   }
 
   .card-header {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl p-6 -m-6 mb-6;
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl p-6 -mx-6 -mt-6 mb-6;
   }
 
   .glass-card {
@@ -75,7 +75,7 @@
   }
 
   .modal-content {
-    @apply bg-white rounded-2xl shadow-2xl border border-white/20 max-w-2xl w-full mx-4;
+    @apply bg-white rounded-2xl shadow-2xl border border-white/20 max-w-2xl w-full mx-4 p-6;
   }
 }
 

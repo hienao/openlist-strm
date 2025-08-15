@@ -363,7 +363,6 @@ import { ref, onMounted } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
-import { definePageMeta, navigateTo, useFetch } from '#imports'
 
 // 页面元数据
 definePageMeta({

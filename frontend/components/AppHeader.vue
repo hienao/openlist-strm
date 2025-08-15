@@ -223,7 +223,6 @@
 import { defineProps, defineEmits, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
-import { useCookie } from '#imports'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
