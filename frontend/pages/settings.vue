@@ -208,6 +208,36 @@
                     下载背景图片
                   </label>
                 </div>
+
+                <div class="flex items-center p-4 bg-gray-50 rounded-xl">
+                   <input
+                     id="keepSubtitleFiles"
+                     v-model="scrapingConfig.keepSubtitleFiles"
+                     type="checkbox"
+                     class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                   />
+                   <div class="ml-3">
+                     <label for="keepSubtitleFiles" class="block text-sm font-semibold text-gray-900">
+                       保留字幕文件
+                     </label>
+                     <p class="text-xs text-gray-500 mt-1">复制媒体文件同级目录的.srt、.ass字幕文件到STRM目录</p>
+                   </div>
+                 </div>
+
+                <div class="flex items-center p-4 bg-gray-50 rounded-xl">
+                   <input
+                     id="useExistingScrapingInfo"
+                     v-model="scrapingConfig.useExistingScrapingInfo"
+                     type="checkbox"
+                     class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                   />
+                   <div class="ml-3">
+                     <label for="useExistingScrapingInfo" class="block text-sm font-semibold text-gray-900">
+                       优先使用已存在的刮削信息
+                     </label>
+                     <p class="text-xs text-gray-500 mt-1">复制媒体文件同级目录的NFO文件和刮削图片，跳过后续刮削操作</p>
+                   </div>
+                 </div>
               </div>
             </div>
           </div>
@@ -396,7 +426,9 @@ const scrapingConfig = ref({
   enabled: true,
   generateNfo: true,
   downloadPoster: true,
-  downloadBackdrop: false
+  downloadBackdrop: false,
+  keepSubtitleFiles: false,
+  useExistingScrapingInfo: false
 })
 const aiConfig = ref({
   enabled: false,
@@ -456,7 +488,9 @@ const loadCurrentSettings = async () => {
           enabled: config.scraping.enabled !== false,
           generateNfo: config.scraping.generateNfo !== false,
           downloadPoster: config.scraping.downloadPoster !== false,
-          downloadBackdrop: config.scraping.downloadBackdrop === true
+          downloadBackdrop: config.scraping.downloadBackdrop === true,
+          keepSubtitleFiles: config.scraping.keepSubtitleFiles === true,
+          useExistingScrapingInfo: config.scraping.useExistingScrapingInfo === true
         }
         console.log('已加载刮削配置')
       }
@@ -513,7 +547,9 @@ const saveSettings = async () => {
         enabled: scrapingConfig.value.enabled,
         generateNfo: scrapingConfig.value.generateNfo,
         downloadPoster: scrapingConfig.value.downloadPoster,
-        downloadBackdrop: scrapingConfig.value.downloadBackdrop
+        downloadBackdrop: scrapingConfig.value.downloadBackdrop,
+        keepSubtitleFiles: scrapingConfig.value.keepSubtitleFiles,
+        useExistingScrapingInfo: scrapingConfig.value.useExistingScrapingInfo
       },
       ai: {
         enabled: aiConfig.value.enabled,

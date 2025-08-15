@@ -173,6 +173,8 @@ public class SystemConfigService {
     scrapConfig.put("downloadPoster", true); // 是否下载海报
     scrapConfig.put("downloadBackdrop", false); // 是否下载背景图
     scrapConfig.put("nfoFormat", "kodi"); // NFO格式：kodi, jellyfin, emby
+    scrapConfig.put("keepSubtitleFiles", false); // 是否保留字幕文件
+    scrapConfig.put("useExistingScrapingInfo", false); // 是否优先使用已存在的刮削信息
     defaultConfig.put("scraping", scrapConfig);
 
     // AI 识别配置
