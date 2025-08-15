@@ -462,7 +462,7 @@ const validateOpenListConfig = async (baseUrl, token) => {
     const apiUrl = baseUrl.endsWith('/') ? baseUrl + 'api/me' : baseUrl + '/api/me'
 
     // 直接使用 $fetch 调用 OpenList API，避免触发全局 401 处理逻辑
-    const response = await useFetch(apiUrl, {
+    const response = await $fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
