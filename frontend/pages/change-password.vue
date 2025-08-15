@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen">
     <!-- 导航栏 -->
     <AppHeader
       title="修改密码"
@@ -13,93 +13,122 @@
     />
 
     <!-- 主要内容 -->
-    <main class="max-w-2xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">修改密码</h2>
-          
+    <main class="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div class="animate-fade-in">
+        <!-- 页面标题 -->
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+          </div>
+          <h1 class="text-3xl font-bold gradient-text mb-2">修改密码</h1>
+          <p class="text-gray-600">为您的账户设置新密码</p>
+        </div>
+
+        <!-- 修改密码表单 -->
+        <div class="glass-card">
           <form @submit.prevent="handleChangePassword" class="space-y-6">
             <div>
-              <label for="currentPassword" class="block text-sm font-medium text-gray-700">
+              <label for="currentPassword" class="block text-sm font-semibold text-gray-700 mb-2">
                 当前密码
               </label>
-              <input
-                id="currentPassword"
-                v-model="form.currentPassword"
-                name="currentPassword"
-                type="password"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入当前密码"
-                :disabled="loading"
-              />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                  </svg>
+                </div>
+                <input
+                  id="currentPassword"
+                  v-model="form.currentPassword"
+                  name="currentPassword"
+                  type="password"
+                  required
+                  class="input-field pl-10"
+                  placeholder="请输入当前密码"
+                  :disabled="loading"
+                />
+              </div>
             </div>
 
             <div>
-              <label for="newPassword" class="block text-sm font-medium text-gray-700">
+              <label for="newPassword" class="block text-sm font-semibold text-gray-700 mb-2">
                 新密码
               </label>
-              <input
-                id="newPassword"
-                v-model="form.newPassword"
-                name="newPassword"
-                type="password"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入新密码（至少6个字符）"
-                :disabled="loading"
-              />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                  </svg>
+                </div>
+                <input
+                  id="newPassword"
+                  v-model="form.newPassword"
+                  name="newPassword"
+                  type="password"
+                  required
+                  class="input-field pl-10"
+                  placeholder="请输入新密码（至少6个字符）"
+                  :disabled="loading"
+                />
+              </div>
             </div>
 
             <div>
-              <label for="confirmPassword" class="block text-sm font-medium text-gray-700">
+              <label for="confirmPassword" class="block text-sm font-semibold text-gray-700 mb-2">
                 确认新密码
               </label>
-              <input
-                id="confirmPassword"
-                v-model="form.confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请再次输入新密码"
-                :disabled="loading"
-              />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+                <input
+                  id="confirmPassword"
+                  v-model="form.confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  class="input-field pl-10"
+                  placeholder="请再次输入新密码"
+                  :disabled="loading"
+                />
+              </div>
             </div>
 
             <!-- 错误信息显示 -->
-            <div v-if="error" class="rounded-md bg-red-50 p-4">
-              <div class="flex">
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-red-800">
-                    修改失败
-                  </h3>
-                  <div class="mt-2 text-sm text-red-700">
-                    {{ error }}
-                  </div>
+            <div v-if="error" class="bg-red-50 border border-red-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-red-800">修改失败</h3>
+                  <p class="text-sm text-red-700 mt-1">{{ error }}</p>
                 </div>
               </div>
             </div>
 
             <!-- 成功信息显示 -->
-            <div v-if="success" class="rounded-md bg-green-50 p-4">
-              <div class="flex">
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-green-800">
-                    修改成功
-                  </h3>
-                  <div class="mt-2 text-sm text-green-700">
-                    密码已成功修改，正在返回首页...
-                  </div>
+            <div v-if="success" class="bg-green-50 border border-green-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-green-800">修改成功</h3>
+                  <p class="text-sm text-green-700 mt-1">密码已成功修改，正在返回首页...</p>
                 </div>
               </div>
             </div>
 
-            <div class="flex justify-end space-x-4">
+            <div class="flex justify-end space-x-4 pt-4">
               <button
                 type="button"
                 @click="goBack"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="btn-secondary"
                 :disabled="loading"
               >
                 取消
@@ -107,16 +136,13 @@
               <button
                 type="submit"
                 :disabled="loading"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="btn-primary"
               >
-                <span v-if="loading" class="inline-flex items-center">
-                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  修改中...
-                </span>
-                <span v-else>确认修改</span>
+                <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ loading ? '修改中...' : '确认修改' }}
               </button>
             </div>
           </form>

@@ -17,235 +17,279 @@
 -->
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <!-- 登录页面 -->
-      <div v-if="!showRegister">
-        <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            登录到您的账户
-          </h2>
-          <p class="mt-2 text-center text-sm text-gray-600">
-            OpenList2Strm 用户登录
-          </p>
-        </div>
-      
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label for="username" class="sr-only">用户名</label>
-            <input
-              id="username"
-              v-model="form.username"
-              name="username"
-              type="text"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="用户名"
-              :disabled="loading"
-            />
+      <div v-if="!showRegister" class="animate-fade-in">
+        <!-- Logo和标题 -->
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
           </div>
-          <div>
-            <label for="password" class="sr-only">密码</label>
-            <input
-              id="password"
-              v-model="form.password"
-              name="password"
-              type="password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="密码"
-              :disabled="loading"
-            />
-          </div>
+          <h2 class="text-3xl font-bold gradient-text mb-2">欢迎回来</h2>
+          <p class="text-gray-600">登录到您的 OpenList2Strm 账户</p>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input
-              id="remember-me"
-              v-model="form.rememberMe"
-              name="remember-me"
-              type="checkbox"
-              class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-            />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-              记住我
-            </label>
-          </div>
-        </div>
-
-        <!-- 错误信息显示 -->
-        <div v-if="error" class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">
-                登录失败
-              </h3>
-              <div class="mt-2 text-sm text-red-700">
-                {{ error }}
+        <!-- 登录表单 -->
+        <div class="glass-card">
+          <form @submit.prevent="handleLogin" class="space-y-6">
+            <div class="space-y-4">
+              <div>
+                <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="username"
+                    v-model="form.username"
+                    name="username"
+                    type="text"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请输入用户名"
+                    :disabled="loading"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 成功信息显示 -->
-        <div v-if="success" class="rounded-md bg-green-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-green-800">
-                登录成功
-              </h3>
-              <div class="mt-2 text-sm text-green-700">
-                正在跳转到首页...
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            {{ loading ? '登录中...' : '登录' }}
-          </button>
-        </div>
-
-      </form>
-      </div>
-      
-      <!-- 注册页面 -->
-      <div v-else>
-        <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            创建新账户
-          </h2>
-          <p class="mt-2 text-center text-sm text-gray-600">
-            用户不存在，请先注册
-          </p>
-        </div>
-        
-        <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
-          <div class="space-y-4">
-            <div>
-              <label for="reg-username" class="block text-sm font-medium text-gray-700">用户名</label>
-              <input
-                id="reg-username"
-                v-model="registerForm.username"
-                name="username"
-                type="text"
-                required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入用户名"
-                :disabled="registerLoading"
-              />
-            </div>
-            
-            <div>
-              <label for="reg-email" class="block text-sm font-medium text-gray-700">邮箱</label>
-              <input
-                id="reg-email"
-                v-model="registerForm.email"
-                name="email"
-                type="email"
-                required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入邮箱地址"
-                :disabled="registerLoading"
-              />
-            </div>
-            
-            <div>
-              <label for="reg-password" class="block text-sm font-medium text-gray-700">密码</label>
-              <input
-                id="reg-password"
-                v-model="registerForm.password"
-                name="password"
-                type="password"
-                required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请输入密码"
-                :disabled="registerLoading"
-              />
-            </div>
-            
-            <div>
-              <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700">确认密码</label>
-              <input
-                id="reg-confirm-password"
-                v-model="registerForm.confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="请再次输入密码"
-                :disabled="registerLoading"
-              />
-            </div>
-          </div>
-
-          <!-- 注册错误信息显示 -->
-          <div v-if="registerError" class="rounded-md bg-red-50 p-4">
-            <div class="flex">
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">
-                  注册失败
-                </h3>
-                <div class="mt-2 text-sm text-red-700">
-                  {{ registerError }}
+              
+              <div>
+                <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">密码</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="password"
+                    v-model="form.password"
+                    name="password"
+                    type="password"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请输入密码"
+                    :disabled="loading"
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 注册成功信息显示 -->
-          <div v-if="registerSuccess" class="rounded-md bg-green-50 p-4">
-            <div class="flex">
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-green-800">
-                  注册成功
-                </h3>
-                <div class="mt-2 text-sm text-green-700">
-                  请使用新账户登录
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <input
+                  id="remember-me"
+                  v-model="form.rememberMe"
+                  name="remember-me"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+                  记住我
+                </label>
+              </div>
+            </div>
+
+            <!-- 错误信息显示 -->
+            <div v-if="error" class="bg-red-50 border border-red-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-red-800">登录失败</h3>
+                  <p class="text-sm text-red-700 mt-1">{{ error }}</p>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              :disabled="registerLoading"
-              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span v-if="registerLoading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-                <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <!-- 成功信息显示 -->
+            <div v-if="success" class="bg-green-50 border border-green-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-green-800">登录成功</h3>
+                  <p class="text-sm text-green-700 mt-1">正在跳转到首页...</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                :disabled="loading"
+                class="w-full btn-primary justify-center"
+              >
+                <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-              </span>
-              {{ registerLoading ? '注册中...' : '注册' }}
-            </button>
+                {{ loading ? '登录中...' : '登录' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- 注册页面 -->
+      <div v-else class="animate-fade-in">
+        <!-- Logo和标题 -->
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+            </svg>
           </div>
-          
-          <div class="text-center">
-            <button 
-              type="button"
-              @click="showRegister = false; clearForms()"
-              class="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-            >
-              返回登录
-            </button>
-          </div>
-        </form>
+          <h2 class="text-3xl font-bold gradient-text mb-2">创建账户</h2>
+          <p class="text-gray-600">用户不存在，请先注册</p>
+        </div>
+        
+        <!-- 注册表单 -->
+        <div class="glass-card">
+          <form @submit.prevent="handleRegister" class="space-y-6">
+            <div class="space-y-4">
+              <div>
+                <label for="reg-username" class="block text-sm font-semibold text-gray-700 mb-2">用户名</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="reg-username"
+                    v-model="registerForm.username"
+                    name="username"
+                    type="text"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请输入用户名"
+                    :disabled="registerLoading"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label for="reg-email" class="block text-sm font-semibold text-gray-700 mb-2">邮箱</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="reg-email"
+                    v-model="registerForm.email"
+                    name="email"
+                    type="email"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请输入邮箱地址"
+                    :disabled="registerLoading"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label for="reg-password" class="block text-sm font-semibold text-gray-700 mb-2">密码</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="reg-password"
+                    v-model="registerForm.password"
+                    name="password"
+                    type="password"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请输入密码"
+                    :disabled="registerLoading"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label for="reg-confirm-password" class="block text-sm font-semibold text-gray-700 mb-2">确认密码</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                  </div>
+                  <input
+                    id="reg-confirm-password"
+                    v-model="registerForm.confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    class="input-field pl-10"
+                    placeholder="请再次输入密码"
+                    :disabled="registerLoading"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 注册错误信息显示 -->
+            <div v-if="registerError" class="bg-red-50 border border-red-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-red-800">注册失败</h3>
+                  <p class="text-sm text-red-700 mt-1">{{ registerError }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 注册成功信息显示 -->
+            <div v-if="registerSuccess" class="bg-green-50 border border-green-200 rounded-xl p-4 animate-slide-up">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <div>
+                  <h3 class="text-sm font-semibold text-green-800">注册成功</h3>
+                  <p class="text-sm text-green-700 mt-1">请使用新账户登录</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                :disabled="registerLoading"
+                class="w-full btn-success justify-center"
+              >
+                <svg v-if="registerLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ registerLoading ? '注册中...' : '注册' }}
+              </button>
+            </div>
+            
+            <div class="text-center">
+              <button 
+                type="button"
+                @click="showRegister = false; clearForms()"
+                class="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                返回登录
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>

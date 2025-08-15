@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -245,8 +246,15 @@ public class TaskExecutionService {
                   log.debug("目录已完全刮削，跳过: {}", saveDirectory);
                   scrapSkippedCount++;
                 } else {
+                  // 过滤出当前视频文件所在目录的文件
+                  String currentDirectory = file.getPath().substring(0, file.getPath().lastIndexOf('/') + 1);
+                  List<OpenlistApiService.OpenlistFile> currentDirFiles = allFiles.stream()
+                      .filter(f -> f.getPath().startsWith(currentDirectory) && 
+                               f.getPath().substring(currentDirectory.length()).indexOf('/') == -1)
+                      .collect(java.util.stream.Collectors.toList());
+                  
                   mediaScrapingService.scrapMedia(
-                      file.getName(), taskConfig.getStrmPath(), relativePath);
+                      openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, currentDirFiles);
                 }
               } catch (Exception scrapException) {
                 log.error(
@@ -425,7 +433,7 @@ public class TaskExecutionService {
         if ("file".equals(file.getType()) && strmFileService.isVideoFile(file.getName())) {
           // 立即处理视频文件，不累积在内存中
           processVideoFile(
-              file, taskConfig, isIncrement, needScrap, processedCount, scrapSkippedCount);
+              openlistConfig, file, taskConfig, isIncrement, needScrap, files, processedCount, scrapSkippedCount);
         } else if ("folder".equals(file.getType())) {
           // 递归处理子目录
           String subPath = file.getPath();
@@ -456,10 +464,12 @@ public class TaskExecutionService {
 
   /** 处理单个视频文件 */
   private void processVideoFile(
+      OpenlistConfig openlistConfig,
       OpenlistApiService.OpenlistFile file,
       TaskConfig taskConfig,
       boolean isIncrement,
       boolean needScrap,
+      List<OpenlistApiService.OpenlistFile> directoryFiles,
       int processedCount,
       int scrapSkippedCount) {
 
@@ -488,7 +498,7 @@ public class TaskExecutionService {
             log.debug("目录已完全刮削，跳过: {}", saveDirectory);
             scrapSkippedCount++;
           } else {
-            mediaScrapingService.scrapMedia(file.getName(), taskConfig.getStrmPath(), relativePath);
+            mediaScrapingService.scrapMedia(openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, directoryFiles);
           }
         } catch (Exception scrapException) {
           log.error(

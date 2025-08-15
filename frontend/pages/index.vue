@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen">
     <!-- 导航栏 -->
     <AppHeader
       title="OpenList2Strm"
@@ -29,162 +29,227 @@
     />
 
     <!-- 主要内容 -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <!-- 配置管理标题和添加按钮 -->
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">OpenList 配置管理</h2>
-          <button 
-            @click="showAddModal = true"
-            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            添加配置
-          </button>
-        </div>
-
-        <!-- 配置列表 -->
-        <div v-if="loading" class="flex justify-center items-center py-12">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <p class="ml-3 text-gray-600">加载中...</p>
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <!-- 页面标题和统计 -->
+      <div class="mb-8 animate-fade-in">
+        <div class="text-center mb-8">
+          <h1 class="text-4xl font-bold gradient-text mb-4">OpenList 配置管理</h1>
+          <p class="text-gray-600 text-lg">管理您的 OpenList 配置，轻松生成 STRM 文件</p>
         </div>
         
-        <div v-else-if="configs.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">暂无配置</h3>
-          <p class="mt-1 text-sm text-gray-500">点击上方按钮添加您的第一个 OpenList 配置</p>
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="glass-card text-center">
+            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">{{ configs.length }}</h3>
+            <p class="text-gray-600">总配置数</p>
+          </div>
+          
+          <div class="glass-card text-center">
+            <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">{{ configs.filter(c => c.isActive).length }}</h3>
+            <p class="text-gray-600">启用配置</p>
+          </div>
+          
+          <div class="glass-card text-center">
+            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">{{ configs.filter(c => !c.isActive).length }}</h3>
+            <p class="text-gray-600">禁用配置</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 配置列表 -->
+      <div class="animate-slide-up">
+        <!-- 加载状态 -->
+        <div v-if="loading" class="flex justify-center items-center py-20">
+          <div class="text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            <p class="mt-4 text-gray-600 text-lg">加载配置中...</p>
+          </div>
+        </div>
+        
+        <!-- 空状态 -->
+        <div v-else-if="configs.length === 0" class="text-center py-20">
+          <div class="glass-card max-w-md mx-auto">
+            <div class="w-20 h-20 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">暂无配置</h3>
+            <p class="text-gray-600 mb-6">点击下方按钮添加您的第一个 OpenList 配置</p>
+            <button 
+              @click="showAddModal = true"
+              class="btn-primary"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              添加配置
+            </button>
+          </div>
         </div>
 
         <!-- 配置卡片网格 -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <div v-for="config in configs" :key="config.id" 
-               class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 cursor-pointer" 
+               class="card group cursor-pointer transform hover:scale-105 transition-all duration-300" 
                @click="goToTaskManagement(config)">
             <!-- 卡片头部 -->
-            <div class="p-6 border-b border-gray-100">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <div class="flex-shrink-0">
-                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                      </svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-medium text-gray-900">{{ config.username }}</h3>
-                    <p class="text-sm text-gray-500">{{ formatDate(config.createdAt) }}</p>
-                  </div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <span class="text-white font-bold text-lg">
+                    {{ config.username.charAt(0).toUpperCase() }}
+                  </span>
                 </div>
-                <span :class="config.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
-                      class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                  {{ config.isActive ? '启用' : '禁用' }}
-                </span>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ config.username }}</h3>
+                  <p class="text-sm text-gray-500">{{ formatDate(config.createdAt) }}</p>
+                </div>
               </div>
+              <span :class="config.isActive ? 'status-active' : 'status-inactive'" 
+                    class="status-badge">
+                {{ config.isActive ? '启用' : '禁用' }}
+              </span>
             </div>
             
-            <!-- 卡片内容 -->
-            <div class="p-6 space-y-4">
-              <div>
+            <!-- 配置信息 -->
+            <div class="space-y-3 mb-6">
+              <div class="bg-gray-50 rounded-lg p-3">
                 <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base URL</label>
-                <p class="mt-1 text-sm text-gray-900 break-all">{{ config.baseUrl }}</p>
+                <p class="mt-1 text-sm text-gray-900 break-all font-mono">{{ config.baseUrl }}</p>
               </div>
               
-              <div>
-                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base Path</label>
-                <p class="mt-1 text-sm text-gray-900">{{ config.basePath || '/' }}</p>
-              </div>
-              
-              <div>
-                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</label>
-                <p class="mt-1 text-sm text-gray-900">{{ formatDate(config.createdAt) }}</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base Path</label>
+                  <p class="mt-1 text-sm text-gray-900 font-mono">{{ config.basePath || '/' }}</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ formatDate(config.createdAt) }}</p>
+                </div>
               </div>
             </div>
             
-            <!-- 卡片操作按钮 -->
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
-              <button @click.stop="editConfig(config)" 
-                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                编辑
-              </button>
+            <!-- 操作按钮 -->
+            <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+              <div class="flex space-x-2">
+                <button @click.stop="editConfig(config)" 
+                        class="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title="编辑配置">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                </button>
+                
+                <button @click.stop="toggleConfigStatus(config)" 
+                        :class="config.isActive ? 'text-red-600 hover:text-red-700 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'"
+                        class="p-2 rounded-lg transition-all duration-200"
+                        :title="config.isActive ? '禁用配置' : '启用配置'">
+                  <svg v-if="config.isActive" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                  </svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </button>
+                
+                <button @click.stop="deleteConfig(config)" 
+                        class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        title="删除配置">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
               
-              <button @click.stop="toggleConfigStatus(config)" 
-                      :class="config.isActive ? 'text-red-700 bg-red-100 hover:bg-red-200 focus:ring-red-500' : 'text-green-700 bg-green-100 hover:bg-green-200 focus:ring-green-500'"
-                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors">
-                <svg v-if="config.isActive" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+              <div class="flex items-center text-gray-400 group-hover:text-blue-600 transition-colors duration-200">
+                <span class="text-sm mr-2">管理任务</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <svg v-else class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                {{ config.isActive ? '禁用' : '启用' }}
-              </button>
-              
-              <button @click.stop="deleteConfig(config)" 
-                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                </svg>
-                删除
-              </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </main>
 
+    <!-- 浮动添加按钮 -->
+    <button 
+      @click="showAddModal = true"
+      class="floating-action"
+      title="添加配置"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+    </button>
+
     <!-- 添加配置模态框 -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">添加 OpenList 配置</h3>
-            <button @click="closeAddModal" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
+    <div v-if="showAddModal" class="modal-overlay animate-fade-in" @click="closeAddModal">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-content animate-scale-in" @click.stop>
+          <div class="card-header">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-semibold">添加 OpenList 配置</h3>
+              <button @click="closeAddModal" class="text-white/80 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           
-          <form @submit.prevent="addConfig" class="space-y-4">
+          <form @submit.prevent="addConfig" class="space-y-6">
             <div>
-              <label for="baseUrl" class="block text-sm font-medium text-gray-700">Base URL</label>
+              <label for="baseUrl" class="block text-sm font-semibold text-gray-700 mb-2">Base URL</label>
               <input
                 id="baseUrl"
                 v-model="configForm.baseUrl"
                 type="url"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="input-field"
                 placeholder="https://openlist.example.com"
                 :disabled="formLoading"
               />
             </div>
             
             <div>
-              <label for="token" class="block text-sm font-medium text-gray-700">Token</label>
+              <label for="token" class="block text-sm font-semibold text-gray-700 mb-2">Token</label>
               <input
                 id="token"
                 v-model="configForm.token"
                 type="password"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="input-field"
                 placeholder="您的 OpenList Token"
                 :disabled="formLoading"
               />
             </div>
             
-            <div v-if="formError" class="rounded-md bg-red-50 p-4">
-              <div class="flex">
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-red-800">{{ formError }}</h3>
-                </div>
+            <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-red-700 font-medium">{{ formError }}</p>
               </div>
             </div>
             
@@ -192,17 +257,20 @@
               <button
                 type="button"
                 @click="closeAddModal"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                class="btn-secondary"
                 :disabled="formLoading"
               >
                 取消
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                class="btn-primary"
                 :disabled="formLoading"
               >
-                <span v-if="formLoading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                <svg v-if="formLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 {{ formLoading ? '验证中...' : '添加' }}
               </button>
             </div>
@@ -212,50 +280,53 @@
     </div>
 
     <!-- 编辑配置模态框 -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">编辑 OpenList 配置</h3>
-            <button @click="closeEditModal" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
+    <div v-if="showEditModal" class="modal-overlay animate-fade-in" @click="closeEditModal">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-content animate-scale-in" @click.stop>
+          <div class="card-header">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-semibold">编辑 OpenList 配置</h3>
+              <button @click="closeEditModal" class="text-white/80 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           
-          <form @submit.prevent="updateConfig" class="space-y-4">
+          <form @submit.prevent="updateConfig" class="space-y-6">
             <div>
-              <label for="editBaseUrl" class="block text-sm font-medium text-gray-700">Base URL</label>
+              <label for="editBaseUrl" class="block text-sm font-semibold text-gray-700 mb-2">Base URL</label>
               <input
                 id="editBaseUrl"
                 v-model="configForm.baseUrl"
                 type="url"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="input-field"
                 placeholder="https://openlist.example.com"
                 :disabled="formLoading"
               />
             </div>
             
             <div>
-              <label for="editToken" class="block text-sm font-medium text-gray-700">Token</label>
+              <label for="editToken" class="block text-sm font-semibold text-gray-700 mb-2">Token</label>
               <input
                 id="editToken"
                 v-model="configForm.token"
                 type="password"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="input-field"
                 placeholder="您的 OpenList Token"
                 :disabled="formLoading"
               />
             </div>
             
-            <div v-if="formError" class="rounded-md bg-red-50 p-4">
-              <div class="flex">
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-red-800">{{ formError }}</h3>
-                </div>
+            <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-red-700 font-medium">{{ formError }}</p>
               </div>
             </div>
             
@@ -263,17 +334,20 @@
               <button
                 type="button"
                 @click="closeEditModal"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                class="btn-secondary"
                 :disabled="formLoading"
               >
                 取消
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                class="btn-primary"
                 :disabled="formLoading"
               >
-                <span v-if="formLoading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                <svg v-if="formLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 {{ formLoading ? '验证中...' : '更新' }}
               </button>
             </div>

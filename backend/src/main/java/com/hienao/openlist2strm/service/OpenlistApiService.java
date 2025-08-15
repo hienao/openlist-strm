@@ -289,9 +289,93 @@ public class OpenlistApiService {
 
       return files;
 
-    } catch (Exception e) {
-      log.error("调用OpenList API失败: {}, 错误: {}", path, e.getMessage(), e);
-      throw new BusinessException("调用OpenList API失败: " + e.getMessage(), e);
-    }
+  } catch (Exception e) {
+    log.error("调用OpenList API失败: {}, 错误: {}", path, e.getMessage(), e);
+    throw new BusinessException("调用OpenList API失败: " + e.getMessage(), e);
   }
+}
+
+/**
+ * 获取文件内容
+ *
+ * @param config OpenList配置
+ * @param filePath 文件路径
+ * @return 文件内容字节数组
+ */
+/**
+ * 检查文件是否存在
+ *
+ * @param config OpenList配置
+ * @param filePath 文件路径
+ * @return 文件是否存在
+ */
+public boolean checkFileExists(OpenlistConfig config, String filePath) {
+  try {
+    // 获取文件所在目录和文件名
+    String dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+    String fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+    
+    // 获取目录内容
+    List<OpenlistFile> files = getDirectoryContents(config, dirPath);
+    
+    // 检查文件是否存在
+    return files.stream()
+        .anyMatch(file -> "file".equals(file.getType()) && fileName.equals(file.getName()));
+        
+  } catch (Exception e) {
+    log.debug("检查文件存在性失败: {}, 错误: {}", filePath, e.getMessage());
+    return false;
+  }
+}
+
+/**
+ * 获取文件内容
+ *
+ * @param config OpenList配置
+ * @param filePath 文件路径
+ * @return 文件内容字节数组
+ */
+public byte[] getFileContent(OpenlistConfig config, String filePath) {
+  try {
+    // 构建文件下载URL
+    String fileUrl = config.getBaseUrl();
+    if (!fileUrl.endsWith("/")) {
+      fileUrl += "/";
+    }
+    fileUrl += "d" + filePath;
+    
+    log.debug("下载文件: {}", fileUrl);
+    
+    // 设置请求头
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("User-Agent", "OpenList-STRM/1.0");
+    if (config.getToken() != null && !config.getToken().isEmpty()) {
+      headers.set("Authorization", config.getToken());
+    }
+    
+    HttpEntity<String> entity = new HttpEntity<>(headers);
+    
+    // 发送GET请求获取文件内容
+    ResponseEntity<byte[]> response = restTemplate.exchange(
+        fileUrl, HttpMethod.GET, entity, byte[].class);
+    
+    if (!response.getStatusCode().is2xxSuccessful()) {
+      log.debug("文件不存在或下载失败: {}, 状态码: {}", filePath, response.getStatusCode());
+      return null;
+    }
+    
+    byte[] content = response.getBody();
+    if (content == null || content.length == 0) {
+      log.debug("文件内容为空: {}", filePath);
+      return null;
+    }
+    
+    log.debug("成功下载文件: {}, 大小: {} bytes", filePath, content.length);
+    return content;
+    
+  } catch (Exception e) {
+    log.debug("下载文件失败: {}, 错误: {}", filePath, e.getMessage());
+    return null;
+  }
+}
 }
