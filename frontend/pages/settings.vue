@@ -320,9 +320,19 @@
                 </div>
 
                 <div>
-                  <label for="aiPrompt" class="block text-sm font-semibold text-gray-700 mb-2">
-                    提示词
-                  </label>
+                  <div class="flex items-center justify-between mb-2">
+                    <label for="aiPrompt" class="block text-sm font-semibold text-gray-700">
+                      提示词
+                    </label>
+                    <button
+                      @click="resetAiPrompt"
+                      type="button"
+                      class="text-xs text-blue-600 hover:text-blue-800 underline"
+                      :disabled="resettingPrompt"
+                    >
+                      {{ resettingPrompt ? '重置中...' : '重置为默认' }}
+                    </button>
+                  </div>
                   <textarea
                     id="aiPrompt"
                     v-model="aiConfig.prompt"
@@ -444,6 +454,7 @@ const showSuccess = ref(false)
 const errorMessage = ref('')
 const testingAi = ref(false)
 const aiTestResult = ref(null)
+const resettingPrompt = ref(false)
 
 // 页面加载时获取当前设置
 onMounted(async () => {
@@ -634,6 +645,37 @@ const testAiConfig = async () => {
     setTimeout(() => {
       aiTestResult.value = null
     }, 3000)
+  }
+}
+
+// 重置 AI 提示词为默认值
+const resetAiPrompt = async () => {
+  resettingPrompt.value = true
+  
+  try {
+    const response = await authenticatedApiCall('/system/default-ai-prompt')
+    
+    if (response && response.code === 200 && response.data) {
+      aiConfig.value.prompt = response.data
+      // 显示成功提示
+      showSuccess.value = true
+      setTimeout(() => {
+        showSuccess.value = false
+      }, 3000)
+    } else {
+      errorMessage.value = response?.message || '获取默认提示词失败'
+      setTimeout(() => {
+        errorMessage.value = ''
+      }, 3000)
+    }
+  } catch (error) {
+    console.error('重置 AI 提示词失败:', error)
+    errorMessage.value = error.data?.message || '重置 AI 提示词失败'
+    setTimeout(() => {
+      errorMessage.value = ''
+    }, 3000)
+  } finally {
+    resettingPrompt.value = false
   }
 }
 

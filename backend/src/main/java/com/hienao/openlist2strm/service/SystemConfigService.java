@@ -261,44 +261,53 @@ public class SystemConfigService {
    *
    * @return 默认提示词
    */
-  private String getDefaultAiPrompt() {
+  public String getDefaultAiPrompt() {
     return """
-    你是一个专业的影视文件名标准化工具。你的任务是将给定的文件名转换为符合 TMDB 匹配规范的标准格式。
+    你是一个专业的影视文件名标准化工具。你的任务是将给定的文件名解析为结构化的媒体信息，以便进行 TMDB 匹配。
 
     输入：文件名或目录路径（可能包含杂乱字符、非标准命名等）
 
-    输出要求：必须返回有效的 JSON 格式，包含以下字段：
+    输出要求：必须返回有效的 JSON 格式，推荐使用新格式（分离字段），但也支持旧格式兼容。
+
+    === 新格式（推荐）===
     {
       "success": true/false,
-      "filename": "处理后的文件名",
-      "reason": "失败原因（仅在 success 为 false 时提供）",
-      "type": "movie/tv/unknown"
+      "title": "媒体标题（不含年份、季集信息）",
+      "year": "年份（字符串格式，如'2010'）",
+      "season": 季数（数字，仅电视剧），
+      "episode": 集数（数字，仅电视剧），
+      "type": "movie/tv/unknown",
+      "reason": "失败原因（仅在 success 为 false 时提供）"
     }
 
-    文件名格式规范：
-
-    电影格式：
-    - 电影名 (年份).扩展名
-    - 电影名 (年份) {tmdb-id}.扩展名
-    示例：Inception (2010).mkv, Interstellar (2014) {tmdb-157336}.mkv
-
-    电视剧格式：
-    - 单文件：剧名_SxxEyy.扩展名
-    - 分季目录：剧名/Season X/剧名_SxxEyy.扩展名
-    示例：Breaking Bad_S01E03.mkv, Game of Thrones/Season 1/S01E02.mkv
+    === 旧格式（兼容）===
+    {
+      "success": true/false,
+      "filename": "标准化文件名",
+      "type": "movie/tv/unknown",
+      "reason": "失败原因（仅在 success 为 false 时提供）"
+    }
 
     处理规则：
-    1. 移除无关符号（如 []、多余 - 或 _），但保留必要分隔符（如 S01E02）
-    2. 缺少年份但可推断时补充（如目录名含年份）
-    3. 若无法提取关键信息，设置 success 为 false 并说明原因
+    1. 优先使用新格式，将标题、年份、季集信息分离
+    2. 标题应该是纯净的媒体名称，不包含年份、季集、画质等信息
+    3. 移除无关符号和标记（如 []、画质标记、编码信息等）
+    4. 缺少年份但可推断时补充（如目录名含年份）
+    5. 若无法提取关键信息，设置 success 为 false 并说明原因
 
     示例输入输出：
 
     输入：[电影] 盗梦空间.2010.1080p.BluRay.x264.mkv
-    输出：{"success": true, "filename": "盗梦空间 (2010).mkv", "type": "movie"}
+    输出：{"success": true, "title": "盗梦空间", "year": "2010", "type": "movie"}
 
     输入：TV Shows/The Big Bang Theory/Season 3/03 - The Gothowitz Deviation.mp4
-    输出：{"success": true, "filename": "The Big Bang Theory_S03E03.mp4", "type": "tv"}
+    输出：{"success": true, "title": "The Big Bang Theory", "year": "2007", "season": 3, "episode": 3, "type": "tv"}
+
+    输入：Breaking Bad S05E14 Ozymandias 1080p.mkv
+    输出：{"success": true, "title": "Breaking Bad", "year": "2008", "season": 5, "episode": 14, "type": "tv"}
+
+    输入：Inception.2010.mkv
+    输出：{"success": true, "title": "Inception", "year": "2010", "type": "movie"}
 
     输入：S01E05.mkv
     输出：{"success": false, "reason": "缺少剧名信息", "type": "tv"}
@@ -310,6 +319,8 @@ public class SystemConfigService {
     - 必须返回有效的 JSON 格式
     - 不要添加任何 JSON 之外的文字
     - 确保 JSON 格式正确，可以被解析
+    - 优先使用新格式，标题字段不应包含年份和季集信息
+    - 年份字段为字符串格式，季集字段为数字格式
     """;
   }
 
