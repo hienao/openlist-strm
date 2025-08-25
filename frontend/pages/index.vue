@@ -359,7 +359,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
@@ -371,7 +371,10 @@ definePageMeta({
 
 // 响应式数据和认证store
 const authStore = useAuthStore()
-const userInfo = ref(null)
+// 从 authStore 获取用户信息
+const userInfo = computed(() => {
+  return authStore.getUserInfo || { username: '用户' }
+})
 const loginTime = ref('')
 const configs = ref([])
 const loading = ref(false)
@@ -385,15 +388,7 @@ const configForm = ref({
 const formLoading = ref(false)
 const formError = ref('')
 
-// 获取用户信息
-const getUserInfo = () => {
-  // 从认证store获取用户信息
-  if (authStore.isAuthenticated) {
-    userInfo.value = authStore.getUserInfo || { username: '用户' }
-    loginTime.value = new Date().toLocaleString('zh-CN')
-    console.log('首页加载，当前token:', authStore.getToken)
-  }
-}
+
 
 // 退出登录
 const logout = async () => {
@@ -663,11 +658,10 @@ const goToTaskManagement = (config) => {
   navigateTo(`/task-management/${config.id}`)
 }
 
-// 组件挂载时获取用户信息和配置列表
+// 组件挂载时初始化认证状态和获取配置列表
 onMounted(() => {
   // 初始化认证状态
   authStore.restoreAuth()
-  getUserInfo()
   getConfigs()
 })
 </script>

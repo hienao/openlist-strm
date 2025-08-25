@@ -18,11 +18,15 @@
 
 package com.hienao.openlist2strm.service;
 
+import com.hienao.openlist2strm.dto.FrontendLogRequest;
 import jakarta.annotation.PostConstruct;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -249,5 +253,71 @@ public class LogService {
   public void cleanOldLogs(int daysToKeep) {
     // 实现日志清理逻辑
     log.info("清理 {} 天前的日志文件", daysToKeep);
+  }
+
+  /** 处理前端日志 */
+  public void processFrontendLogs(FrontendLogRequest request) {
+    if (request == null || request.getLogs() == null || request.getLogs().isEmpty()) {
+      log.warn("接收到空的前端日志请求");
+      return;
+    }
+
+    Path frontendLogFile = getLogFilePath("frontend");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+    try {
+      // 确保日志目录存在
+      Files.createDirectories(frontendLogFile.getParent());
+
+      // 格式化日志条目并写入文件
+      List<String> logLines = new ArrayList<>();
+      for (FrontendLogRequest.LogEntry entry : request.getLogs()) {
+        String timestamp = LocalDateTime.now().format(formatter);
+        if (entry.getTimestamp() != null) {
+          timestamp = LocalDateTime.ofEpochSecond(
+              entry.getTimestamp() / 1000,
+              (int) ((entry.getTimestamp() % 1000) * 1000000),
+              java.time.ZoneOffset.systemDefault().getRules().getOffset(java.time.Instant.now())
+          ).format(formatter);
+        }
+
+        StringBuilder logLine = new StringBuilder();
+        logLine.append(timestamp)
+            .append(" [FRONTEND]");
+
+        // 添加日志级别
+        if (entry.getLevel() != null) {
+          logLine.append(" ").append(entry.getLevel().toUpperCase());
+        }
+
+        // 添加用户信息
+        if (entry.getUserId() != null) {
+          logLine.append(" [User:").append(entry.getUserId()).append("]");
+        }
+
+        // 添加页面URL
+        if (entry.getUrl() != null) {
+          logLine.append(" [URL:").append(entry.getUrl()).append("]");
+        }
+
+        // 添加消息
+        logLine.append(" - ").append(entry.getMessage());
+
+        // 添加额外数据
+        if (entry.getExtra() != null) {
+          logLine.append(" [Extra:").append(entry.getExtra().toString()).append("]");
+        }
+
+        logLines.add(logLine.toString());
+      }
+
+      // 写入文件
+      Files.write(frontendLogFile, logLines, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+      log.debug("成功写入 {} 条前端日志到文件: {}", logLines.size(), frontendLogFile);
+
+    } catch (Exception e) {
+      log.error("写入前端日志失败: {}", frontendLogFile, e);
+      throw new RuntimeException("写入前端日志失败", e);
+    }
   }
 }

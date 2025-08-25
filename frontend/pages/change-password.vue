@@ -153,19 +153,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { authenticatedApiCall } from '~/utils/api.js'
+import { useAuthStore } from '~/stores/auth.js'
 
 // 页面元数据
 definePageMeta({
   middleware: 'auth'
 })
 
+// 获取认证store
+const authStore = useAuthStore()
+
 // 响应式数据
 const loading = ref(false)
 const error = ref('')
 const success = ref(false)
-const userInfo = ref(null)
+const userInfo = computed(() => {
+  const storeUserInfo = authStore.getUserInfo
+  return storeUserInfo && storeUserInfo.username ? storeUserInfo : { username: '用户' }
+})
 
 const form = reactive({
   currentPassword: '',
@@ -290,18 +297,7 @@ const logout = async () => {
   }
 }
 
-// 获取用户信息
-const getUserInfo = () => {
-  const savedUserInfo = useCookie('userInfo')
 
-  if (savedUserInfo.value) {
-    userInfo.value = savedUserInfo.value
-  } else {
-    userInfo.value = {
-      username: '用户'
-    }
-  }
-}
 
 // 打开设置页面
 const openSettings = () => {
@@ -313,9 +309,10 @@ const openLogs = () => {
   navigateTo('/logs')
 }
 
-// 组件挂载时获取用户信息
+// 组件挂载时初始化认证状态
 onMounted(() => {
-  getUserInfo()
+  // 确保认证状态已初始化
+  authStore.restoreAuth()
 })
 
 // 页面标题
