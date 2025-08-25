@@ -75,7 +75,16 @@ public class MediaInfo {
     if (query == null || query.isEmpty()) {
       return originalFileName;
     }
-    return query;
+    
+    // 清理搜索查询，移除可能的季集信息（作为保险措施）
+    // 移除常见的季集格式：S01E01, S1E1, Season 1 Episode 1等
+    query = query.replaceAll("(?i)_?S\\d{1,2}E\\d{1,2}.*$", "")  // S01E01格式
+                 .replaceAll("(?i)_?Season\\s*\\d+\\s*Episode\\s*\\d+.*$", "")  // Season X Episode Y格式
+                 .replaceAll("(?i)_?第\\d+季第\\d+集.*$", "")  // 中文季集格式
+                 .replaceAll("_+$", "")  // 移除末尾的下划线
+                 .trim();
+    
+    return query.isEmpty() ? originalFileName : query;
   }
 
   /**

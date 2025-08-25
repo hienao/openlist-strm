@@ -2,6 +2,7 @@ package com.hienao.openlist2strm.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hienao.openlist2strm.dto.media.AiRecognitionResult;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class AiFileNameRecognitionService {
    * @param directoryPath 目录路径（可选，用于提供上下文）
    * @return 识别后的标准化文件名，如果识别失败或不可用则返回 null
    */
-  public String recognizeFileName(String originalFileName, String directoryPath) {
+  public AiRecognitionResult recognizeFileName(String originalFileName, String directoryPath) {
     try {
       Map<String, Object> aiConfig = systemConfigService.getAiConfig();
 
@@ -76,14 +77,14 @@ public class AiFileNameRecognitionService {
       String inputText = buildInputText(originalFileName, directoryPath);
 
       // 调用 AI 接口
-      String recognizedFileName = callAiApi(baseUrl, apiKey, model, aiConfig, inputText);
+      AiRecognitionResult result = callAiApi(baseUrl, apiKey, model, aiConfig, inputText);
 
-      if (recognizedFileName != null && !recognizedFileName.startsWith("[无法解析]")) {
-        log.info("AI 识别成功: {} -> {}", originalFileName, recognizedFileName);
-        return recognizedFileName;
+      if (result != null && result.isSuccess()) {
+        log.info("AI 识别成功: {} -> {}", originalFileName, result);
+        return result;
       } else {
-        log.info("AI 无法识别文件名: {} -> {}", originalFileName, recognizedFileName);
-        return null;
+        log.info("AI 无法识别文件名: {} -> {}", originalFileName, result != null ? result.getReason() : "未知错误");
+        return result;
       }
 
     } catch (Exception e) {
@@ -166,7 +167,7 @@ public class AiFileNameRecognitionService {
   }
 
   /** 调用 AI API */
-  private String callAiApi(
+  private AiRecognitionResult callAiApi(
       String baseUrl, String apiKey, String model, Map<String, Object> aiConfig, String inputText) {
     try {
       // 构建请求 URL
@@ -220,7 +221,7 @@ public class AiFileNameRecognitionService {
             log.debug("AI API 原始响应: {}", result);
 
             // 解析 JSON 响应
-            String parsedResult = parseJsonResponse(result);
+            AiRecognitionResult parsedResult = parseJsonResponse(result);
             log.debug("AI API 解析后响应: {}", parsedResult);
 
             return parsedResult;
@@ -241,9 +242,9 @@ public class AiFileNameRecognitionService {
    * 解析 AI 的 JSON 响应
    *
    * @param rawResponse AI 的原始响应
-   * @return 解析后的文件名，如果失败则返回 null
+   * @return 解析后的AiRecognitionResult对象，如果失败则返回 null
    */
-  private String parseJsonResponse(String rawResponse) {
+  private AiRecognitionResult parseJsonResponse(String rawResponse) {
     if (rawResponse == null || rawResponse.trim().isEmpty()) {
       log.warn("AI 响应为空");
       return null;
@@ -270,25 +271,59 @@ public class AiFileNameRecognitionService {
       }
 
       boolean success = successNode.asBoolean();
+      AiRecognitionResult result = new AiRecognitionResult().setSuccess(success);
+
+      // 提取type字段
+      JsonNode typeNode = jsonNode.get("type");
+      if (typeNode != null && !typeNode.isNull()) {
+        result.setType(typeNode.asText());
+      }
 
       if (success) {
-        // 成功情况，提取文件名
-        JsonNode filenameNode = jsonNode.get("filename");
-        if (filenameNode != null && !filenameNode.isNull()) {
-          String filename = filenameNode.asText().trim();
-          if (!filename.isEmpty()) {
-            log.debug("成功解析 JSON 响应，文件名: {}", filename);
-            return filename;
+        // 成功情况，检查是新格式还是旧格式
+        JsonNode titleNode = jsonNode.get("title");
+        if (titleNode != null && !titleNode.isNull() && !titleNode.asText().trim().isEmpty()) {
+          // 新格式：分离字段
+          result.setTitle(titleNode.asText().trim());
+          
+          JsonNode yearNode = jsonNode.get("year");
+          if (yearNode != null && !yearNode.isNull()) {
+            result.setYear(yearNode.asText().trim());
           }
+          
+          JsonNode seasonNode = jsonNode.get("season");
+          if (seasonNode != null && !seasonNode.isNull()) {
+            result.setSeason(seasonNode.asInt());
+          }
+          
+          JsonNode episodeNode = jsonNode.get("episode");
+          if (episodeNode != null && !episodeNode.isNull()) {
+            result.setEpisode(episodeNode.asInt());
+          }
+          
+          log.debug("成功解析 JSON 响应（新格式）: {}", result);
+          return result;
+        } else {
+          // 旧格式：filename字段
+          JsonNode filenameNode = jsonNode.get("filename");
+          if (filenameNode != null && !filenameNode.isNull()) {
+            String filename = filenameNode.asText().trim();
+            if (!filename.isEmpty()) {
+              result.setFilename(filename);
+              log.debug("成功解析 JSON 响应（旧格式）: {}", result);
+              return result;
+            }
+          }
+          log.warn("JSON 响应标记成功但缺少有效的title或filename字段，跳过处理: {}", jsonContent);
+          return null;
         }
-        log.warn("JSON 响应标记成功但缺少有效文件名，跳过处理: {}", jsonContent);
-        return null;
       } else {
         // 失败情况，提取失败原因
         JsonNode reasonNode = jsonNode.get("reason");
         String reason = reasonNode != null ? reasonNode.asText() : "未知原因";
+        result.setReason(reason);
         log.info("AI 无法解析文件名: {}", reason);
-        return "[无法解析] 原因：" + reason;
+        return result;
       }
 
     } catch (Exception e) {

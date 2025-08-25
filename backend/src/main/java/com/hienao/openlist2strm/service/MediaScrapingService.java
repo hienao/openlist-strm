@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.service;
 
+import com.hienao.openlist2strm.dto.media.AiRecognitionResult;
 import com.hienao.openlist2strm.dto.media.MediaInfo;
 import com.hienao.openlist2strm.dto.tmdb.TmdbMovieDetail;
 import com.hienao.openlist2strm.dto.tmdb.TmdbSearchResponse;
@@ -114,14 +115,22 @@ public class MediaScrapingService {
        boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
 
        if (aiRecognitionEnabled) {
-         String recognizedFileName =
+         AiRecognitionResult aiResult =
              aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
-         if (recognizedFileName != null) {
-           // 使用AI识别结果重新解析
-           mediaInfo =
-               MediaFileParser.parse(
-                   recognizedFileName, directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
-           log.info("使用 AI 识别结果重新解析: {}", mediaInfo);
+         if (aiResult != null && aiResult.isSuccess()) {
+           if (aiResult.isNewFormat()) {
+             // 新格式：直接从AI结果构建MediaInfo
+             mediaInfo = aiResult.toMediaInfo(fileName, directoryPath);
+             log.info("使用 AI 识别结果（新格式）重新解析: {}", mediaInfo);
+           } else if (aiResult.isLegacyFormat()) {
+             // 旧格式：使用filename字段重新解析
+             mediaInfo =
+                 MediaFileParser.parse(
+                     aiResult.getFilename(), directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
+             log.info("使用 AI 识别结果（旧格式）重新解析: {}", mediaInfo);
+           }
+         } else if (aiResult != null && !aiResult.isSuccess()) {
+           log.info("AI 无法识别文件名: {}, 原因: {}", fileName, aiResult.getReason());
          }
        }
      }
