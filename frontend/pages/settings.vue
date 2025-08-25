@@ -413,14 +413,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '~/components/AppHeader.vue'
 import { authenticatedApiCall } from '~/utils/api.js'
+import { useAuthStore } from '~/stores/auth.js'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const tokenCookie = useCookie('token')
-const userInfoCookie = useCookie('userInfo')
+
+// 从 authStore 获取用户信息
+const userInfo = computed(() => {
+  return authStore.getUserInfo || { username: '用户' }
+})
 
 // 响应式数据
 const availableExtensions = ref([])
@@ -691,8 +697,7 @@ const goBack = () => {
 
 // 处理退出登录
 const handleLogout = () => {
-  tokenCookie.value = null
-  userInfoCookie.value = null
+  authStore.clearAuth()
   router.push('/login')
 }
 

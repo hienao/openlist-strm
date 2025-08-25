@@ -223,10 +223,14 @@
 import { defineProps, defineEmits, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
+import { useAuthStore } from '~/stores/auth.js'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const appVersion = computed(() => config.public.appVersion || 'dev')
+
+// 获取认证store
+const authStore = useAuthStore()
 
 // 移动端菜单状态
 const showMobileMenu = ref(false)
@@ -247,40 +251,28 @@ const props = defineProps({
   }
 })
 
-// 内部用户信息状态
-const internalUserInfo = ref({})
-
 // 计算显示的用户信息
 const displayUserInfo = computed(() => {
-  // 如果传入了 userInfo prop，使用它；否则使用内部状态
+  // 如果传入了 userInfo prop，使用它；否则从authStore获取
   if (props.userInfo && Object.keys(props.userInfo).length > 0) {
     return props.userInfo
   }
-  return internalUserInfo.value
+  
+  // 从authStore获取用户信息
+  const storeUserInfo = authStore.getUserInfo
+  if (storeUserInfo && storeUserInfo.username) {
+    return storeUserInfo
+  }
+  
+  // 如果都没有，返回默认值
+  return { username: '用户' }
 })
 
-// 页面加载时获取用户信息（如果没有传入 userInfo prop）
+// 页面加载时初始化认证状态
 onMounted(() => {
-  if (!props.userInfo || Object.keys(props.userInfo).length === 0) {
-    loadUserInfo()
-  }
+  // 确保认证状态已初始化
+  authStore.restoreAuth()
 })
-
-// 从 cookie 获取用户信息
-const loadUserInfo = () => {
-  try {
-    const userInfoCookie = useCookie('userInfo')
-    if (userInfoCookie.value) {
-      internalUserInfo.value = userInfoCookie.value
-    } else {
-      // 如果没有用户信息，设置默认值
-      internalUserInfo.value = { username: '用户' }
-    }
-  } catch (error) {
-    console.error('获取用户信息失败:', error)
-    internalUserInfo.value = { username: '用户' }
-  }
-}
 
 // 定义 emits
 const emit = defineEmits(['logout', 'changePassword', 'goBack', 'openSettings', 'openLogs'])

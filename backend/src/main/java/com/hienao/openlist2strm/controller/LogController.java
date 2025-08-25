@@ -19,6 +19,7 @@
 package com.hienao.openlist2strm.controller;
 
 import com.hienao.openlist2strm.dto.ApiResponse;
+import com.hienao.openlist2strm.dto.FrontendLogRequest;
 import com.hienao.openlist2strm.service.LogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -144,6 +145,35 @@ public class LogController {
     } catch (Exception e) {
       log.error("获取日志统计失败", e);
       return ApiResponse.error(500, "获取日志统计失败: " + e.getMessage());
+    }
+  }
+
+  @Operation(summary = "接收前端日志", description = "接收前端发送的日志数据（无需认证）")
+  @ApiResponses(
+      value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "接收成功",
+            content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "请求数据无效"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "500",
+            description = "服务器内部错误")
+      })
+  @PostMapping("/frontend")
+  public ApiResponse<String> receiveFrontendLogs(
+      @Parameter(description = "前端日志数据") @RequestBody FrontendLogRequest request) {
+    try {
+      logService.processFrontendLogs(request);
+      return ApiResponse.success("日志接收成功");
+    } catch (IllegalArgumentException e) {
+      log.warn("接收前端日志失败，参数错误: {}", e.getMessage());
+      return ApiResponse.error(400, e.getMessage());
+    } catch (Exception e) {
+      log.error("接收前端日志失败", e);
+      return ApiResponse.error(500, "接收前端日志失败: " + e.getMessage());
     }
   }
 }

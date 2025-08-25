@@ -234,14 +234,21 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall } from '~/utils/api.js'
+import { useAuthStore } from '~/stores/auth.js'
 
 // 页面元数据 - 日志页面无需认证，API接口已配置为公开访问
 definePageMeta({
   // 移除认证中间件，日志页面和API接口都是公开访问
 })
 
+// 获取认证store
+const authStore = useAuthStore()
+
 // 响应式数据
-const userInfo = ref(null)
+const userInfo = computed(() => {
+  const storeUserInfo = authStore.getUserInfo
+  return storeUserInfo && storeUserInfo.username ? storeUserInfo : { username: '用户' }
+})
 const selectedLogType = ref('backend')
 const logLines = ref([])
 const loading = ref(false)
@@ -271,15 +278,7 @@ const warningCount = computed(() => {
   ).length
 })
 
-// 获取用户信息
-const getUserInfo = () => {
-  const savedUserInfo = useCookie('userInfo')
-  if (savedUserInfo.value) {
-    userInfo.value = savedUserInfo.value
-  } else {
-    userInfo.value = { username: '用户' }
-  }
-}
+
 
 // 返回上一页
 const goBack = () => {
@@ -492,7 +491,8 @@ const connectWebSocket = () => {
 
 // 组件挂载时初始化
 onMounted(() => {
-  getUserInfo()
+  // 确保认证状态已初始化
+  authStore.restoreAuth()
   loadLogs()
   connectWebSocket()
 })
