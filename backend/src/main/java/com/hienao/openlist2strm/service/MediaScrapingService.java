@@ -120,7 +120,7 @@ public class MediaScrapingService {
          if (aiResult != null && aiResult.isSuccess()) {
            if (aiResult.isNewFormat()) {
              // 新格式：直接从AI结果构建MediaInfo
-             mediaInfo = aiResult.toMediaInfo(fileName, directoryPath);
+             mediaInfo = aiResult.toMediaInfo(fileName);
              log.info("使用 AI 识别结果（新格式）重新解析: {}", mediaInfo);
            } else if (aiResult.isLegacyFormat()) {
              // 旧格式：使用filename字段重新解析
