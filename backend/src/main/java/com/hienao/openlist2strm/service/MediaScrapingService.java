@@ -667,15 +667,18 @@ public class MediaScrapingService {
      try {
        String baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
        
-       // 处理目录路径，避免StringIndexOutOfBoundsException
+       // 处理目录路径，使用完整的relativePath作为基础路径
        String dirPath;
        int lastSlashIndex = relativePath.lastIndexOf('/');
        if (lastSlashIndex >= 0) {
+         // 使用完整的目录路径，包含OpenList的路径前缀
          dirPath = relativePath.substring(0, lastSlashIndex + 1);
        } else {
-         // 文件在根目录，没有子目录
-         dirPath = "";
+         // 文件在根目录，使用根路径
+         dirPath = "/";
        }
+       
+       log.debug("[DEBUG] 构建文件路径 - relativePath: {}, dirPath: {}", relativePath, dirPath);
        
        boolean foundScrapingInfo = false;
        
@@ -696,18 +699,17 @@ public class MediaScrapingService {
            
            // 检查是否是NFO文件：只要后缀是.nfo就复制
            if (fileName_lower.endsWith(".nfo")) {
-             String nfoRelativePath = dirPath + file.getName();
-             log.debug("准备复制NFO文件: {} (dirPath: {}, fileName: {})", nfoRelativePath, dirPath, file.getName());
+             log.debug("准备复制NFO文件: {} (使用OpenlistFile对象)", file.getName());
              
-             byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, nfoRelativePath);
+             byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, file);
              if (nfoContent != null && nfoContent.length > 0) {
                Path targetNfoFile = Paths.get(saveDirectory, file.getName());
                Files.createDirectories(targetNfoFile.getParent());
                Files.write(targetNfoFile, nfoContent);
-               log.info("已复制NFO文件: {} -> {} (大小: {} bytes)", nfoRelativePath, targetNfoFile, nfoContent.length);
+               log.info("已复制NFO文件: {} -> {} (大小: {} bytes)", file.getName(), targetNfoFile, nfoContent.length);
                foundScrapingInfo = true;
              } else {
-               log.debug("NFO文件内容为空: {}", nfoRelativePath);
+               log.debug("NFO文件内容为空: {}", file.getName());
              }
            }
          }
@@ -730,10 +732,9 @@ public class MediaScrapingService {
            }
            
            if (isImageFile) {
-             String imageRelativePath = dirPath + file.getName();
-             log.debug("准备复制图片文件: {} (dirPath: {}, fileName: {})", imageRelativePath, dirPath, file.getName());
+             log.debug("准备复制图片文件: {} (使用OpenlistFile对象)", file.getName());
              
-             byte[] imageContent = openlistApiService.getFileContent(openlistConfig, imageRelativePath);
+             byte[] imageContent = openlistApiService.getFileContent(openlistConfig, file);
              if (imageContent != null && imageContent.length > 0) {
                // 检查文件内容是否真的是图片（简单检查前几个字节）
                String contentType = detectFileType(imageContent);
@@ -742,10 +743,10 @@ public class MediaScrapingService {
                Path targetImageFile = Paths.get(saveDirectory, file.getName());
                Files.createDirectories(targetImageFile.getParent());
                Files.write(targetImageFile, imageContent);
-               log.info("已复制刮削图片: {} -> {} (大小: {} bytes, 类型: {})", imageRelativePath, targetImageFile, imageContent.length, contentType);
+               log.info("已复制刮削图片: {} -> {} (大小: {} bytes, 类型: {})", file.getName(), targetImageFile, imageContent.length, contentType);
                foundScrapingInfo = true;
              } else {
-               log.debug("刮削图片内容为空: {}", imageRelativePath);
+               log.debug("刮削图片内容为空: {}", file.getName());
              }
            }
          }

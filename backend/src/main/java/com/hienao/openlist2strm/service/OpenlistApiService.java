@@ -329,7 +329,73 @@ public boolean checkFileExists(OpenlistConfig config, String filePath) {
 }
 
 /**
- * 获取文件内容
+ * 获取文件内容（使用OpenlistFile对象，包含sign参数）
+ *
+ * @param config OpenList配置
+ * @param file OpenlistFile对象
+ * @return 文件内容字节数组
+ */
+public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
+  try {
+    // 使用OpenlistFile中的url字段，已包含sign参数
+    String fileUrl = file.getUrl();
+    if (file.getSign() != null && !file.getSign().isEmpty()) {
+      fileUrl += "?sign=" + file.getSign();
+    }
+    
+    log.info("[DEBUG] 下载文件请求 - 文件名: {}, 完整URL: {}", file.getName(), fileUrl);
+    
+    // 设置请求头
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("User-Agent", "OpenList-STRM/1.0");
+    if (config.getToken() != null && !config.getToken().isEmpty()) {
+      headers.set("Authorization", config.getToken());
+      log.debug("[DEBUG] 使用认证Token: {}...", config.getToken().substring(0, Math.min(10, config.getToken().length())));
+    }
+    
+    HttpEntity<String> entity = new HttpEntity<>(headers);
+    
+    // 发送GET请求获取文件内容
+    ResponseEntity<byte[]> response = restTemplate.exchange(
+        fileUrl, HttpMethod.GET, entity, byte[].class);
+    
+    log.info("[DEBUG] 文件下载响应 - 状态码: {}, Content-Type: {}", 
+        response.getStatusCode(), 
+        response.getHeaders().getContentType());
+    
+    if (!response.getStatusCode().is2xxSuccessful()) {
+      log.warn("文件下载失败: {}, 状态码: {}, URL: {}", file.getName(), response.getStatusCode(), fileUrl);
+      return null;
+    }
+    
+    byte[] content = response.getBody();
+    if (content == null || content.length == 0) {
+      log.warn("文件内容为空: {}, URL: {}", file.getName(), fileUrl);
+      return null;
+    }
+    
+    // 检测文件内容类型（前几个字节）
+    String contentPreview = "";
+    if (content.length > 0) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < Math.min(20, content.length); i++) {
+        sb.append(String.format("%02X ", content[i] & 0xFF));
+      }
+      contentPreview = sb.toString().trim();
+    }
+    
+    log.info("[DEBUG] 文件下载成功 - 文件名: {}, 大小: {} bytes, 前20字节: {}", 
+        file.getName(), content.length, contentPreview);
+    return content;
+    
+  } catch (Exception e) {
+    log.error("下载文件异常: {}, 错误: {}", file.getName(), e.getMessage(), e);
+    return null;
+  }
+}
+
+/**
+ * 获取文件内容（使用文件路径）
  *
  * @param config OpenList配置
  * @param filePath 文件路径
