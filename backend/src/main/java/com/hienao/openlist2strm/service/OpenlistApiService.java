@@ -344,13 +344,14 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
     }
     fileUrl += "d" + filePath;
     
-    log.debug("下载文件: {}", fileUrl);
+    log.info("[DEBUG] 下载文件请求 - 文件路径: {}, 完整URL: {}", filePath, fileUrl);
     
     // 设置请求头
     HttpHeaders headers = new HttpHeaders();
     headers.set("User-Agent", "OpenList-STRM/1.0");
     if (config.getToken() != null && !config.getToken().isEmpty()) {
       headers.set("Authorization", config.getToken());
+      log.debug("[DEBUG] 使用认证Token: {}...", config.getToken().substring(0, Math.min(10, config.getToken().length())));
     }
     
     HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -359,22 +360,37 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
     ResponseEntity<byte[]> response = restTemplate.exchange(
         fileUrl, HttpMethod.GET, entity, byte[].class);
     
+    log.info("[DEBUG] 文件下载响应 - 状态码: {}, Content-Type: {}", 
+        response.getStatusCode(), 
+        response.getHeaders().getContentType());
+    
     if (!response.getStatusCode().is2xxSuccessful()) {
-      log.debug("文件不存在或下载失败: {}, 状态码: {}", filePath, response.getStatusCode());
+      log.warn("文件下载失败: {}, 状态码: {}, URL: {}", filePath, response.getStatusCode(), fileUrl);
       return null;
     }
     
     byte[] content = response.getBody();
     if (content == null || content.length == 0) {
-      log.debug("文件内容为空: {}", filePath);
+      log.warn("文件内容为空: {}, URL: {}", filePath, fileUrl);
       return null;
     }
     
-    log.debug("成功下载文件: {}, 大小: {} bytes", filePath, content.length);
+    // 检测文件内容类型（前几个字节）
+    String contentPreview = "";
+    if (content.length > 0) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < Math.min(20, content.length); i++) {
+        sb.append(String.format("%02X ", content[i] & 0xFF));
+      }
+      contentPreview = sb.toString().trim();
+    }
+    
+    log.info("[DEBUG] 文件下载成功 - 路径: {}, 大小: {} bytes, 前20字节: {}", 
+        filePath, content.length, contentPreview);
     return content;
     
   } catch (Exception e) {
-    log.debug("下载文件失败: {}, 错误: {}", filePath, e.getMessage());
+    log.error("下载文件异常: {}, 错误: {}", filePath, e.getMessage(), e);
     return null;
   }
 }
