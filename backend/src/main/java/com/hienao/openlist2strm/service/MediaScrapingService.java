@@ -697,13 +697,14 @@ public class MediaScrapingService {
            // 检查是否是NFO文件：只要后缀是.nfo就复制
            if (fileName_lower.endsWith(".nfo")) {
              String nfoRelativePath = dirPath + file.getName();
+             log.debug("准备复制NFO文件: {} (dirPath: {}, fileName: {})", nfoRelativePath, dirPath, file.getName());
              
              byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, nfoRelativePath);
              if (nfoContent != null && nfoContent.length > 0) {
                Path targetNfoFile = Paths.get(saveDirectory, file.getName());
                Files.createDirectories(targetNfoFile.getParent());
                Files.write(targetNfoFile, nfoContent);
-               log.info("已复制NFO文件: {} -> {}", nfoRelativePath, targetNfoFile);
+               log.info("已复制NFO文件: {} -> {} (大小: {} bytes)", nfoRelativePath, targetNfoFile, nfoContent.length);
                foundScrapingInfo = true;
              } else {
                log.debug("NFO文件内容为空: {}", nfoRelativePath);
@@ -730,13 +731,18 @@ public class MediaScrapingService {
            
            if (isImageFile) {
              String imageRelativePath = dirPath + file.getName();
+             log.debug("准备复制图片文件: {} (dirPath: {}, fileName: {})", imageRelativePath, dirPath, file.getName());
              
              byte[] imageContent = openlistApiService.getFileContent(openlistConfig, imageRelativePath);
              if (imageContent != null && imageContent.length > 0) {
+               // 检查文件内容是否真的是图片（简单检查前几个字节）
+               String contentType = detectFileType(imageContent);
+               log.debug("图片文件内容类型检测: {} -> {}", file.getName(), contentType);
+               
                Path targetImageFile = Paths.get(saveDirectory, file.getName());
                Files.createDirectories(targetImageFile.getParent());
                Files.write(targetImageFile, imageContent);
-               log.info("已复制刮削图片: {} -> {}", imageRelativePath, targetImageFile);
+               log.info("已复制刮削图片: {} -> {} (大小: {} bytes, 类型: {})", imageRelativePath, targetImageFile, imageContent.length, contentType);
                foundScrapingInfo = true;
              } else {
                log.debug("刮削图片内容为空: {}", imageRelativePath);
@@ -753,5 +759,62 @@ public class MediaScrapingService {
       log.warn("复制已存在刮削信息失败: {}", fileName, e);
       return false;
     }
+  }
+
+  /**
+   * 检测文件内容类型（基于文件头）
+   *
+   * @param content 文件内容字节数组
+   * @return 文件类型描述
+   */
+  private String detectFileType(byte[] content) {
+    if (content == null || content.length < 4) {
+      return "UNKNOWN";
+    }
+
+    // 检查常见的文件头
+    // JPEG: FF D8 FF
+    if (content.length >= 3 && (content[0] & 0xFF) == 0xFF && (content[1] & 0xFF) == 0xD8 && (content[2] & 0xFF) == 0xFF) {
+      return "JPEG";
+    }
+
+    // PNG: 89 50 4E 47
+    if (content.length >= 4 && (content[0] & 0xFF) == 0x89 && (content[1] & 0xFF) == 0x50 && (content[2] & 0xFF) == 0x4E && (content[3] & 0xFF) == 0x47) {
+      return "PNG";
+    }
+
+    // GIF: 47 49 46 38
+    if (content.length >= 4 && (content[0] & 0xFF) == 0x47 && (content[1] & 0xFF) == 0x49 && (content[2] & 0xFF) == 0x46 && (content[3] & 0xFF) == 0x38) {
+      return "GIF";
+    }
+
+    // WebP: 52 49 46 46 (RIFF) + WebP signature
+    if (content.length >= 12 && (content[0] & 0xFF) == 0x52 && (content[1] & 0xFF) == 0x49 && (content[2] & 0xFF) == 0x46 && (content[3] & 0xFF) == 0x46) {
+      if ((content[8] & 0xFF) == 0x57 && (content[9] & 0xFF) == 0x45 && (content[10] & 0xFF) == 0x42 && (content[11] & 0xFF) == 0x50) {
+        return "WEBP";
+      }
+    }
+
+    // 检查是否是XML/NFO文件（以 < 开头）
+    if ((content[0] & 0xFF) == 0x3C) {
+      return "XML/NFO";
+    }
+
+    // 检查是否是文本文件（前100个字节都是可打印字符）
+    boolean isText = true;
+    int checkLength = Math.min(content.length, 100);
+    for (int i = 0; i < checkLength; i++) {
+      int b = content[i] & 0xFF;
+      if (b < 32 && b != 9 && b != 10 && b != 13) { // 不是制表符、换行符、回车符的控制字符
+        isText = false;
+        break;
+      }
+    }
+
+    if (isText) {
+      return "TEXT";
+    }
+
+    return "BINARY";
   }
 }
