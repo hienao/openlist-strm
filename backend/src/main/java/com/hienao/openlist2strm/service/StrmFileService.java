@@ -476,6 +476,15 @@ public class StrmFileService {
           Files.delete(tvShowFanart);
           log.info("删除孤立的电视剧背景图文件: {}", tvShowFanart);
         }
+        
+        // 清理目录中多余的图片文件和NFO文件
+        cleanExtraScrapingFiles(parentDir);
+        
+        // 检查目录是否为空，如果为空则删除目录
+        if (isDirectoryEmpty(parentDir)) {
+          Files.delete(parentDir);
+          log.info("删除空目录: {}", parentDir);
+        }
       }
 
     } catch (Exception e) {
@@ -508,6 +517,50 @@ public class StrmFileService {
               });
     } catch (IOException e) {
       log.warn("清理空目录失败: {}, 错误: {}", rootPath, e.getMessage());
+    }
+  }
+  
+  /**
+   * 清理目录中多余的图片文件和NFO文件
+   *
+   * @param directory 目录路径
+   */
+  private void cleanExtraScrapingFiles(Path directory) {
+    try {
+      Files.list(directory)
+          .filter(Files::isRegularFile)
+          .filter(path -> {
+            String fileName = path.getFileName().toString().toLowerCase();
+            // 清理图片文件和NFO文件
+            return fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") 
+                || fileName.endsWith(".png") || fileName.endsWith(".nfo")
+                || fileName.endsWith(".xml");
+          })
+          .forEach(file -> {
+            try {
+              Files.delete(file);
+              log.info("删除多余的刮削文件: {}", file);
+            } catch (IOException e) {
+              log.warn("删除多余刮削文件失败: {}, 错误: {}", file, e.getMessage());
+            }
+          });
+    } catch (IOException e) {
+      log.warn("清理多余刮削文件失败: {}, 错误: {}", directory, e.getMessage());
+    }
+  }
+  
+  /**
+   * 检查目录是否为空
+   *
+   * @param directory 目录路径
+   * @return 是否为空
+   */
+  private boolean isDirectoryEmpty(Path directory) {
+    try {
+      return Files.list(directory).findAny().isEmpty();
+    } catch (IOException e) {
+      log.warn("检查目录是否为空失败: {}, 错误: {}", directory, e.getMessage());
+      return false;
     }
   }
 }
