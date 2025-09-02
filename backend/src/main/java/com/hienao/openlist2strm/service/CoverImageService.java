@@ -124,13 +124,17 @@ public class CoverImageService {
       Files.createDirectories(parentDir);
     }
 
-    // 检查是否覆盖现有文件
-    Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
-    boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-
-    if (Files.exists(savePath) && !overwriteExisting) {
-      log.info("图片文件已存在且不允许覆盖，跳过: {}", saveFilePath);
-      return;
+    // 检查同名文件是否已存在
+    if (Files.exists(savePath)) {
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
+      
+      if (!overwriteExisting) {
+        log.info("检测到同名图片文件已存在，跳过下载: {}", saveFilePath);
+        return;
+      } else {
+        log.info("同名图片文件已存在，但允许覆盖，继续下载: {}", saveFilePath);
+      }
     }
 
     try {

@@ -275,13 +275,17 @@ public class NfoGeneratorService {
       Files.createDirectories(parentDir);
     }
 
-    // 检查是否覆盖现有文件
-    Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
-    boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-
-    if (Files.exists(path) && !overwriteExisting) {
-      log.info("NFO文件已存在且不允许覆盖，跳过: {}", nfoFilePath);
-      return;
+    // 检查同名NFO文件是否已存在
+    if (Files.exists(path)) {
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
+      
+      if (!overwriteExisting) {
+        log.info("检测到同名NFO文件已存在，跳过生成: {}", nfoFilePath);
+        return;
+      } else {
+        log.info("同名NFO文件已存在，但允许覆盖，继续生成: {}", nfoFilePath);
+      }
     }
 
     // 写入文件

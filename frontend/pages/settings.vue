@@ -238,6 +238,21 @@
                      <p class="text-xs text-gray-500 mt-1">复制媒体文件同级目录的NFO文件和刮削图片，跳过后续刮削操作</p>
                    </div>
                  </div>
+
+                <div class="flex items-center p-4 bg-gray-50 rounded-xl">
+                   <input
+                     id="overwriteExisting"
+                     v-model="scrapingConfig.overwriteExisting"
+                     type="checkbox"
+                     class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                   />
+                   <div class="ml-3">
+                     <label for="overwriteExisting" class="block text-sm font-semibold text-gray-900">
+                        覆盖已存在的刮削内容
+                      </label>
+                     <p class="text-xs text-gray-500 mt-1">当NFO文件和图片已存在时，是否覆盖重新下载</p>
+                   </div>
+                 </div>
               </div>
             </div>
           </div>
@@ -444,7 +459,8 @@ const scrapingConfig = ref({
   downloadPoster: true,
   downloadBackdrop: false,
   keepSubtitleFiles: false,
-  useExistingScrapingInfo: false
+  useExistingScrapingInfo: false,
+  overwriteExisting: false
 })
 const aiConfig = ref({
   enabled: false,
@@ -566,7 +582,8 @@ const saveSettings = async () => {
         downloadPoster: scrapingConfig.value.downloadPoster,
         downloadBackdrop: scrapingConfig.value.downloadBackdrop,
         keepSubtitleFiles: scrapingConfig.value.keepSubtitleFiles,
-        useExistingScrapingInfo: scrapingConfig.value.useExistingScrapingInfo
+        useExistingScrapingInfo: scrapingConfig.value.useExistingScrapingInfo,
+        overwriteExisting: scrapingConfig.value.overwriteExisting
       },
       ai: {
         enabled: aiConfig.value.enabled,
