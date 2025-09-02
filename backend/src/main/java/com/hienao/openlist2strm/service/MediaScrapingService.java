@@ -141,8 +141,8 @@ public class MediaScrapingService {
        return;
      }
 
-      // 获取标准化文件名
-      String baseFileName = coverImageService.getStandardizedFileName(fileName);
+      // 获取与STRM文件一致的baseFileName（只移除扩展名，不进行标准化处理）
+      String baseFileName = getStrmCompatibleBaseFileName(fileName);
 
       // 检查是否已刮削（增量模式下跳过已刮削的文件）
       if (isAlreadyScraped(saveDirectory, baseFileName, mediaInfo)) {
@@ -817,5 +817,25 @@ public class MediaScrapingService {
     }
 
     return "BINARY";
+  }
+
+  /**
+   * 获取与STRM文件一致的baseFileName
+   * 只移除扩展名，不进行标准化处理，确保与STRM文件命名一致
+   *
+   * @param fileName 原始文件名
+   * @return 与STRM文件一致的baseFileName
+   */
+  private String getStrmCompatibleBaseFileName(String fileName) {
+    if (fileName == null || fileName.isEmpty()) {
+      return "unknown";
+    }
+
+    // 只移除扩展名，保持与StrmFileService.processFileName()中的逻辑一致
+    int lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+      return fileName.substring(0, lastDotIndex);
+    }
+    return fileName;
   }
 }

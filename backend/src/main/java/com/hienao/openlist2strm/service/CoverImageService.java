@@ -199,8 +199,8 @@ public class CoverImageService {
       return "unknown";
     }
 
-    // 移除或替换不合法字符
-    return fileName.replaceAll("[\\\\/:*?\"<>|]", "_").replaceAll("\\s+", "_").trim();
+    // 移除或替换不合法字符，移除空格而不是替换为下划线
+    return fileName.replaceAll("[\\\\/:*?\"<>|]", "_").replaceAll("\\s+", "").trim();
   }
 
   /**
