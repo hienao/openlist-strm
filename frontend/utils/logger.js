@@ -3,7 +3,7 @@
  * 收集console日志并发送到后端
  */
 
-import { authenticatedApiCall } from '~/utils/api.js'
+import { authenticatedApiCall, apiCall } from '~/utils/api.js'
 
 class Logger {
   constructor() {
@@ -75,8 +75,9 @@ class Logger {
         const data = JSON.stringify({ logs: enrichedLogs })
         navigator.sendBeacon('/api/logs/frontend', data)
       } else {
-        // 异步发送
-        await authenticatedApiCall('/logs/frontend', {
+        // 异步发送 - 使用apiCall而不是authenticatedApiCall，因为日志API不需要认证
+        // 修正API路径为'/api/logs/frontend'
+        await apiCall('/api/logs/frontend', {
           method: 'POST',
           body: { logs: enrichedLogs }
         })
