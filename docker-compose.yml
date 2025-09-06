@@ -7,7 +7,7 @@ services:
     hostname: app
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      LOG_PATH: /app/data/log
+      LOG_PATH: /app/logs
       DATABASE_PATH: /app/data/config/db
       ALLOWED_ORIGINS: '*'
       ALLOWED_METHODS: '*'
@@ -16,7 +16,7 @@ services:
     ports:
       - "3111:80"  # 外部端口:内部端口，用户可根据需要修改外部端口
     volumes:
-      - ${LOG_PATH_HOST}:/app/data/log
+      - ${LOG_PATH_HOST}:/app/logs
       - ${DATABASE_STORE_HOST}:/app/data
       - ${STRM_PATH_HOST}:/app/backend/strm
     restart: always
