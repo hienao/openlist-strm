@@ -20,7 +20,7 @@ ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
 COPY backend/ ./
 RUN --mount=type=cache,target=$GRADLE_USER_HOME \
-    ./gradlew -i bootJar --stacktrace && \
+    gradle -i bootJar --stacktrace && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
 # Stage 3: Runtime

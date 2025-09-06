@@ -16,7 +16,7 @@ services:
     ports:
       - "3111:80"  # 外部端口:内部端口，用户可根据需要修改外部端口
     volumes:
-      - D:\docker\log:/app/data/log
-      - D:\docker\data:/app/data
-      - D:\docker\strm:/app/backend/strm
+      - ${LOG_PATH_HOST}:/app/data/log
+      - ${DATABASE_STORE_HOST}:/app/data
+      - ${STRM_PATH_HOST}:/app/backend/strm
     restart: always
