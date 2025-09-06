@@ -76,8 +76,8 @@ class Logger {
         navigator.sendBeacon('/api/logs/frontend', data)
       } else {
         // 异步发送 - 使用apiCall而不是authenticatedApiCall，因为日志API不需要认证
-        // 修正API路径为'/api/logs/frontend'
-        await apiCall('/api/logs/frontend', {
+        // API路径为'/logs/frontend'
+        await apiCall('/logs/frontend', {
           method: 'POST',
           body: { logs: enrichedLogs }
         })

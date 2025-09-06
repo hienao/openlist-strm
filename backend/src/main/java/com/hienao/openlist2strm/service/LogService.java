@@ -25,7 +25,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -272,14 +274,11 @@ public class LogService {
       // 格式化日志条目并写入文件
       List<String> logLines = new ArrayList<>();
       for (FrontendLogRequest.LogEntry entry : request.getLogs()) {
-        String timestamp = LocalDateTime.now().format(formatter);
-        if (entry.getTimestamp() != null) {
-          timestamp = LocalDateTime.ofEpochSecond(
-              entry.getTimestamp() / 1000,
-              (int) ((entry.getTimestamp() % 1000) * 1000000),
-              java.time.ZoneOffset.systemDefault().getRules().getOffset(java.time.Instant.now())
-          ).format(formatter);
-        }
+        Instant instant =
+            (entry.getTimestamp() != null)
+                ? Instant.ofEpochMilli(entry.getTimestamp())
+                : Instant.now();
+        String timestamp = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).format(formatter);
 
         StringBuilder logLine = new StringBuilder();
         logLine.append(timestamp)
