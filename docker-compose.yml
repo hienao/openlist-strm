@@ -8,15 +8,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       LOG_PATH: /app/data/log
-      DATABASE_PATH: ${DATABASE_PATH}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      ALLOWED_METHODS: ${ALLOWED_METHODS}
-      ALLOWED_HEADERS: ${ALLOWED_HEADERS}
-      ALLOWED_EXPOSE_HEADERS: ${ALLOWED_EXPOSE_HEADERS}
+      DATABASE_PATH: /app/data/config/db
+      ALLOWED_ORIGINS: '*'
+      ALLOWED_METHODS: '*'
+      ALLOWED_HEADERS: '*'
+      ALLOWED_EXPOSE_HEADERS: '*'
     ports:
       - "3111:80"  # 外部端口:内部端口，用户可根据需要修改外部端口
     volumes:
-      - ${LOG_PATH}:/app/data/log
-      - ${DATABASE_STORE}:/app/data
-      - ./strm:/app/backend/strm
+      - D:\docker\log:/app/data/log
+      - D:\docker\data:/app/data
+      - D:\docker\strm:/app/backend/strm
     restart: always
