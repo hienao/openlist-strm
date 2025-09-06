@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class MediaScrapingService {
   private final SystemConfigService systemConfigService;
   private final AiFileNameRecognitionService aiFileNameRecognitionService;
   private final OpenlistApiService openlistApiService;
+  private final DataReportService dataReportService;
 
   /**
    * 执行媒体刮削
@@ -111,6 +113,13 @@ public class MediaScrapingService {
      // 如果正则解析置信度低，尝试使用AI
      if (mediaInfo.getConfidence() < 70) {
        log.info("正则解析置信度低 ({}%)，尝试使用 AI 识别: {}", mediaInfo.getConfidence(), fileName);
+       
+       // 上报正则匹配失败事件
+       Map<String, Object> regFailProperties = new HashMap<>();
+       regFailProperties.put("file_path", relativePath);
+       regFailProperties.put("file_name", fileName);
+       regFailProperties.put("confidence", mediaInfo.getConfidence());
+       dataReportService.reportEvent("reg_match_fail", regFailProperties);
        Map<String, Object> aiConfig = systemConfigService.getAiConfig();
        boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
 
@@ -131,6 +140,23 @@ public class MediaScrapingService {
            }
          } else if (aiResult != null && !aiResult.isSuccess()) {
            log.info("AI 无法识别文件名: {}, 原因: {}", fileName, aiResult.getReason());
+           
+           // 上报AI识别失败事件
+           Map<String, Object> aiFailProperties = new HashMap<>();
+           aiFailProperties.put("file_path", relativePath);
+           aiFailProperties.put("file_name", fileName);
+           aiFailProperties.put("reason", aiResult.getReason());
+           dataReportService.reportEvent("ai_match_fail", aiFailProperties);
+         } else {
+           // AI服务调用失败或返回null
+           log.warn("AI识别服务调用失败: {}", fileName);
+           
+           // 上报AI识别失败事件
+           Map<String, Object> aiFailProperties = new HashMap<>();
+           aiFailProperties.put("file_path", relativePath);
+           aiFailProperties.put("file_name", fileName);
+           aiFailProperties.put("reason", "AI服务调用失败");
+           dataReportService.reportEvent("ai_match_fail", aiFailProperties);
          }
        }
      }
@@ -157,6 +183,13 @@ public class MediaScrapingService {
         scrapTvShow(mediaInfo, saveDirectory, baseFileName);
       } else {
         log.warn("未知媒体类型，跳过刮削: {}", fileName);
+        
+        // 上报媒体类型匹配失败事件
+        Map<String, Object> mediaTypeFailProperties = new HashMap<>();
+        mediaTypeFailProperties.put("file_path", relativePath);
+        mediaTypeFailProperties.put("file_name", fileName);
+        mediaTypeFailProperties.put("media_info", mediaInfo.toString());
+        dataReportService.reportEvent("media_type_match_fail", mediaTypeFailProperties);
       }
 
     } catch (Exception e) {
