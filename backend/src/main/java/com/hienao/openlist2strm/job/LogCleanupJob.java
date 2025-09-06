@@ -27,7 +27,6 @@ public class LogCleanupJob implements Job {
 
   @Autowired private SystemConfigService systemConfigService;
 
-  private static final String LOG_DIR = "./logs";
   private static final String BACKEND_LOG_DIR = "./logs";
   private static final String FRONTEND_LOG_DIR = "./frontend/logs";
 

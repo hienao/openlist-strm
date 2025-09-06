@@ -93,6 +93,7 @@ public class LogConfigService {
    * @param levelStr 日志级别字符串
    * @return Logback Level对象
    */
+  @SuppressWarnings("deprecation")
   private Level parseLogLevel(String levelStr) {
     if (levelStr == null || levelStr.trim().isEmpty()) {
       return Level.INFO;
