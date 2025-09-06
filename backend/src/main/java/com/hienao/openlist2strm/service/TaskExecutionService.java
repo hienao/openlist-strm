@@ -254,7 +254,7 @@ public class TaskExecutionService {
                       .collect(java.util.stream.Collectors.toList());
                   
                   mediaScrapingService.scrapMedia(
-                      openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, currentDirFiles);
+                      openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, currentDirFiles, file.getPath());
                 }
               } catch (Exception scrapException) {
                 log.error(
@@ -498,7 +498,7 @@ public class TaskExecutionService {
             log.debug("目录已完全刮削，跳过: {}", saveDirectory);
             scrapSkippedCount++;
           } else {
-            mediaScrapingService.scrapMedia(openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, directoryFiles);
+            mediaScrapingService.scrapMedia(openlistConfig, file.getName(), taskConfig.getStrmPath(), relativePath, directoryFiles, file.getPath());
           }
         } catch (Exception scrapException) {
           log.error(

@@ -93,7 +93,7 @@ public class DataReportService {
     // 解析镜像名称和版本
     Map<String, String> imageInfo = parseImageAndVersion(getContainerImage());
     properties.put("image", imageInfo.get("image"));
-    properties.put("version", imageInfo.get("version"));
+    properties.put("image_version", imageInfo.get("version"));
 
     // 添加自定义属性（不能覆盖系统属性）
     if (customProperties != null) {

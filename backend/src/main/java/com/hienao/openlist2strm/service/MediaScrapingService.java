@@ -48,7 +48,7 @@ public class MediaScrapingService {
    * @param relativePath 相对路径
    */
   public void scrapMedia(OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath) {
-    scrapMedia(openlistConfig, fileName, strmDirectory, relativePath, null);
+    scrapMedia(openlistConfig, fileName, strmDirectory, relativePath, null, null);
   }
 
   /**
@@ -58,8 +58,9 @@ public class MediaScrapingService {
    * @param strmDirectory STRM文件目录
    * @param relativePath 相对路径
    * @param directoryFiles 目录文件列表（可选，为null时不会调用API获取）
+   * @param fullFilePath 完整的文件路径（用于上报）
    */
-  public void scrapMedia(OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath, List<OpenlistApiService.OpenlistFile> directoryFiles) {
+  public void scrapMedia(OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath, List<OpenlistApiService.OpenlistFile> directoryFiles, String fullFilePath) {
     try {
       log.info("开始刮削媒体文件: {}", fileName);
 
@@ -116,7 +117,7 @@ public class MediaScrapingService {
        
        // 上报正则匹配失败事件
        Map<String, Object> regFailProperties = new HashMap<>();
-       regFailProperties.put("file_path", relativePath);
+       regFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
        regFailProperties.put("file_name", fileName);
        regFailProperties.put("confidence", mediaInfo.getConfidence());
        dataReportService.reportEvent("reg_match_fail", regFailProperties);
@@ -125,7 +126,7 @@ public class MediaScrapingService {
 
        if (aiRecognitionEnabled) {
          AiRecognitionResult aiResult =
-             aiFileNameRecognitionService.recognizeFileName(fileName, relativePath);
+             aiFileNameRecognitionService.recognizeFileName(fileName, fullFilePath != null ? fullFilePath : relativePath);
          if (aiResult != null && aiResult.isSuccess()) {
            if (aiResult.isNewFormat()) {
              // 新格式：直接从AI结果构建MediaInfo
@@ -143,7 +144,7 @@ public class MediaScrapingService {
            
            // 上报AI识别失败事件
            Map<String, Object> aiFailProperties = new HashMap<>();
-           aiFailProperties.put("file_path", relativePath);
+           aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
            aiFailProperties.put("file_name", fileName);
            aiFailProperties.put("reason", aiResult.getReason());
            dataReportService.reportEvent("ai_match_fail", aiFailProperties);
@@ -153,7 +154,7 @@ public class MediaScrapingService {
            
            // 上报AI识别失败事件
            Map<String, Object> aiFailProperties = new HashMap<>();
-           aiFailProperties.put("file_path", relativePath);
+           aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
            aiFailProperties.put("file_name", fileName);
            aiFailProperties.put("reason", "AI服务调用失败");
            dataReportService.reportEvent("ai_match_fail", aiFailProperties);
@@ -186,7 +187,7 @@ public class MediaScrapingService {
         
         // 上报媒体类型匹配失败事件
         Map<String, Object> mediaTypeFailProperties = new HashMap<>();
-        mediaTypeFailProperties.put("file_path", relativePath);
+        mediaTypeFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
         mediaTypeFailProperties.put("file_name", fileName);
         mediaTypeFailProperties.put("media_info", mediaInfo.toString());
         dataReportService.reportEvent("media_type_match_fail", mediaTypeFailProperties);
