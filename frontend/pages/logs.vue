@@ -58,6 +58,22 @@
                   </select>
                 </div>
 
+                <!-- 日志级别筛选 -->
+                <div class="flex items-center space-x-2">
+                  <label class="text-sm font-medium text-gray-700 whitespace-nowrap">日志级别:</label>
+                  <select
+                    v-model="selectedLogLevel"
+                    @change="filterLogsByLevel"
+                    class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 flex-1 sm:flex-initial"
+                  >
+                    <option value="all">全部</option>
+                    <option value="debug">Debug</option>
+                    <option value="info">Info</option>
+                    <option value="warn">Warn</option>
+                    <option value="error">Error</option>
+                  </select>
+                </div>
+
                 <!-- 自动滚动开关 -->
                 <div class="flex items-center space-x-2">
                   <label class="text-sm font-medium text-gray-700 whitespace-nowrap">自动滚动:</label>
@@ -250,7 +266,9 @@ const userInfo = computed(() => {
   return storeUserInfo && storeUserInfo.username ? storeUserInfo : { username: '用户' }
 })
 const selectedLogType = ref('backend')
+const selectedLogLevel = ref('all')
 const logLines = ref([])
+const originalLogLines = ref([]) // 存储原始日志数据
 const loading = ref(false)
 const autoScroll = ref(true)
 const wsConnected = ref(false)
@@ -340,8 +358,37 @@ const getLogLineClass = (line) => {
   return 'text-green-400'
 }
 
+// 获取日志行的级别
+const getLogLevel = (line) => {
+  const lowerLine = line.toLowerCase()
+  if (lowerLine.includes('error') || lowerLine.includes('exception') || lowerLine.includes('failed')) {
+    return 'error'
+  } else if (lowerLine.includes('warn') || lowerLine.includes('warning')) {
+    return 'warn'
+  } else if (lowerLine.includes('info')) {
+    return 'info'
+  } else if (lowerLine.includes('debug')) {
+    return 'debug'
+  }
+  return 'info' // 默认为info级别
+}
+
+// 按日志级别筛选日志
+const filterLogsByLevel = () => {
+  if (selectedLogLevel.value === 'all') {
+    logLines.value = [...originalLogLines.value]
+  } else {
+    logLines.value = originalLogLines.value.filter(line => {
+      const logLevel = getLogLevel(line)
+      return logLevel === selectedLogLevel.value
+    })
+  }
+  scrollToBottom()
+}
+
 // 切换日志类型
 const switchLogType = () => {
+  selectedLogLevel.value = 'all' // 重置筛选级别
   loadLogs()
   connectWebSocket()
 }
@@ -363,6 +410,7 @@ const scrollToBottom = () => {
 // 清空日志显示
 const clearLogs = () => {
   logLines.value = []
+  originalLogLines.value = []
   lastUpdateTime.value = ''
 }
 
@@ -375,7 +423,8 @@ const loadLogs = async () => {
     })
 
     if (response.code === 200) {
-      logLines.value = response.data || []
+      originalLogLines.value = response.data || []
+      filterLogsByLevel() // 应用当前的级别筛选
       lastUpdateTime.value = new Date().toLocaleString('zh-CN')
       scrollToBottom()
     } else {
@@ -463,7 +512,13 @@ const connectWebSocket = () => {
 
     ws.onmessage = (event) => {
       const newLine = event.data
-      logLines.value.push(newLine)
+      originalLogLines.value.push(newLine)
+      
+      // 检查新日志是否符合当前筛选条件
+      if (selectedLogLevel.value === 'all' || getLogLevel(newLine) === selectedLogLevel.value) {
+        logLines.value.push(newLine)
+      }
+      
       lastUpdateTime.value = new Date().toLocaleString('zh-CN')
       scrollToBottom()
     }

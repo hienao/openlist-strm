@@ -29,7 +29,7 @@ class Logger {
    */
   addLog(level, message, extra = {}) {
     const logEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(), // 使用数字时间戳而不是ISO字符串
       level,
       message: typeof message === 'string' ? message : JSON.stringify(message),
       url: process.client ? window.location.href : '',

@@ -32,6 +32,15 @@ public class QuartzSchedulerService {
   private static final String TRIGGER_GROUP = "task-config-trigger-group";
 
   /**
+   * 获取Scheduler实例
+   *
+   * @return Scheduler实例
+   */
+  public Scheduler getScheduler() {
+    return scheduler;
+  }
+
+  /**
    * 添加定时任务
    *
    * @param taskConfig 任务配置

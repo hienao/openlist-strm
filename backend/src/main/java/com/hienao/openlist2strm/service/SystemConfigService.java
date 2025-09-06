@@ -82,6 +82,10 @@ public class SystemConfigService {
            log.info("系统配置中缺少scrapingRegex字段，添加默认配置");
            needSave = true;
           }
+          if (!config.containsKey("log")) {
+            log.info("系统配置中缺少log字段，添加默认配置");
+            needSave = true;
+          }
         }
       }
 
@@ -210,6 +214,12 @@ public class SystemConfigService {
            "[._ ]Episode[._ ](?<episode>\\d{1,3})"));
    defaultConfig.put("scrapingRegex", scrapingRegexConfig);
 
+    // 日志配置
+    Map<String, Object> logConfig = new HashMap<>();
+    logConfig.put("retentionDays", 7); // 默认保留7天
+    logConfig.put("level", "info"); // 默认日志级别为info
+    defaultConfig.put("log", logConfig);
+
     return defaultConfig;
   }
 
@@ -256,6 +266,17 @@ public class SystemConfigService {
    Map<String, Object> systemConfig = getSystemConfig();
    return (Map<String, Object>) systemConfig.getOrDefault("scrapingRegex", new HashMap<>());
  }
+
+  /**
+   * 获取日志配置
+   *
+   * @return 日志配置Map
+   */
+  @SuppressWarnings("unchecked")
+  public Map<String, Object> getLogConfig() {
+    Map<String, Object> systemConfig = getSystemConfig();
+    return (Map<String, Object>) systemConfig.getOrDefault("log", new HashMap<>());
+  }
 
   /**
    * 获取默认AI提示词
