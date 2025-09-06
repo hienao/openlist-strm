@@ -14,8 +14,7 @@ export default defineNuxtPlugin(() => {
     // 记录页面加载信息
     logger.info('页面加载完成', {
       url: window.location.href,
-      referrer: document.referrer,
-      timestamp: new Date().toISOString()
+      referrer: document.referrer
     })
     
     // 监听路由变化
@@ -23,8 +22,7 @@ export default defineNuxtPlugin(() => {
     router.afterEach((to, from) => {
       logger.info(`路由变化: ${from.path} -> ${to.path}`, {
         from: from.path,
-        to: to.path,
-        timestamp: new Date().toISOString()
+        to: to.path
       })
     })
   }
