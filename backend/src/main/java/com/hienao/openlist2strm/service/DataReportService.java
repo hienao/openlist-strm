@@ -89,14 +89,18 @@ public class DataReportService {
 
     // 添加必需的系统属性
     properties.put("distinct_id", getContainerInstanceId());
-    properties.put("image", getContainerImage());
+    
+    // 解析镜像名称和版本
+    Map<String, String> imageInfo = parseImageAndVersion(getContainerImage());
+    properties.put("image", imageInfo.get("image"));
+    properties.put("version", imageInfo.get("version"));
 
     // 添加自定义属性（不能覆盖系统属性）
     if (customProperties != null) {
       for (Map.Entry<String, Object> entry : customProperties.entrySet()) {
         String key = entry.getKey();
         // 防止覆盖系统保留字段
-        if (!"distinct_id".equals(key) && !"image".equals(key)) {
+        if (!"distinct_id".equals(key) && !"image".equals(key) && !"version".equals(key)) {
           properties.put(key, entry.getValue());
         }
       }
@@ -132,6 +136,41 @@ public class DataReportService {
   private String getContainerImage() {
     String image = System.getenv(CONTAINER_IMAGE_ENV);
     return image != null && !image.trim().isEmpty() ? image : DEFAULT_IMAGE;
+  }
+
+  /**
+   * 解析镜像名称和版本
+   *
+   * @param fullImageName 完整的镜像名称（如 openlist-strm:latest）
+   * @return 包含image和version的Map
+   */
+  private Map<String, String> parseImageAndVersion(String fullImageName) {
+    Map<String, String> result = new HashMap<>();
+    
+    if (fullImageName == null || fullImageName.trim().isEmpty()) {
+      result.put("image", "unknown");
+      result.put("version", "latest");
+      return result;
+    }
+    
+    // 查找最后一个冒号的位置
+    int colonIndex = fullImageName.lastIndexOf(':');
+    
+    if (colonIndex == -1) {
+      // 没有版本标签，默认为latest
+      result.put("image", fullImageName.trim());
+      result.put("version", "latest");
+    } else {
+      // 有版本标签，进行拆分
+      String imageName = fullImageName.substring(0, colonIndex).trim();
+      String version = fullImageName.substring(colonIndex + 1).trim();
+      
+      // 处理空字符串情况
+      result.put("image", imageName.isEmpty() ? "unknown" : imageName);
+      result.put("version", version.isEmpty() ? "latest" : version);
+    }
+    
+    return result;
   }
 
   /**
