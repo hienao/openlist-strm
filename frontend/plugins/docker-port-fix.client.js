@@ -3,11 +3,13 @@
  * 通用解决方案：解决容器内80端口映射到外部端口时的重定向问题
  */
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   // 只在客户端运行
   if (import.meta.server) return
 
-  console.log('Docker端口修复插件启动')
+  const logger = await import('~/utils/logger.js').then(m => m.default)
+
+  logger.info('Docker端口修复插件启动')
 
   // 监听页面导航事件，确保URL保持一致性
   const handleNavigation = () => {
@@ -28,7 +30,7 @@ export default defineNuxtPlugin(() => {
             // 修复链接，使用当前的origin
             const correctedHref = href.replace(linkUrl.origin, currentOrigin)
             link.setAttribute('href', correctedHref)
-            console.log('修复链接:', href, '->', correctedHref)
+            logger.info('修复链接:', href, '->', correctedHref)
           }
         } catch (e) {
           // 忽略无效URL
@@ -51,5 +53,5 @@ export default defineNuxtPlugin(() => {
     subtree: true
   })
 
-  console.log('Docker端口修复插件已激活')
+  logger.info('Docker端口修复插件已激活')
 })

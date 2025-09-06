@@ -585,10 +585,10 @@ const loadCurrentSettings = async () => {
       // 加载媒体扩展名配置
       if (config.mediaExtensions && Array.isArray(config.mediaExtensions)) {
         selectedExtensions.value = [...config.mediaExtensions]
-        console.log('已加载配置的媒体扩展名:', config.mediaExtensions)
+        // 已加载配置的媒体扩展名
       } else {
         selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
-        console.log('使用默认媒体扩展名配置')
+        // 使用默认媒体扩展名配置
       }
 
       // 加载 TMDB 配置
@@ -600,7 +600,7 @@ const loadCurrentSettings = async () => {
           proxyHost: config.tmdb.proxyHost || '',
           proxyPort: config.tmdb.proxyPort || ''
         }
-        console.log('已加载 TMDB 配置')
+        // 已加载 TMDB 配置
       }
 
       // 加载刮削配置
@@ -613,7 +613,7 @@ const loadCurrentSettings = async () => {
           keepSubtitleFiles: config.scraping.keepSubtitleFiles === true,
           useExistingScrapingInfo: config.scraping.useExistingScrapingInfo === true
         }
-        console.log('已加载刮削配置')
+        // 已加载刮削配置
       }
 
       // 加载 AI 配置
@@ -626,7 +626,7 @@ const loadCurrentSettings = async () => {
           qpmLimit: config.ai.qpmLimit || 60,
           prompt: config.ai.prompt || ''
         }
-        console.log('已加载 AI 配置')
+        // 已加载 AI 配置
       }
 
       // 加载日志配置
@@ -636,16 +636,16 @@ const loadCurrentSettings = async () => {
           level: config.log.level || 'info',
           reportUsageData: config.log.reportUsageData !== undefined ? config.log.reportUsageData : true
         }
-        console.log('已加载日志配置')
+        // 已加载日志配置
       }
 
     } else {
       // 如果获取失败，使用默认选择
       selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
-      console.log('获取配置失败，使用默认配置')
+      // 获取配置失败，使用默认配置
     }
   } catch (error) {
-    console.error('加载设置失败:', error)
+    // 加载设置失败，使用默认配置
     // 出错时使用默认选择
     selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
   }
@@ -715,7 +715,7 @@ const saveSettings = async () => {
       }, 3000)
     }
   } catch (error) {
-    console.error('保存设置失败:', error)
+    // 保存设置失败
     errorMessage.value = error.data?.message || '保存设置失败'
     setTimeout(() => {
       errorMessage.value = ''
@@ -760,7 +760,7 @@ const testAiConfig = async () => {
       }
     }
   } catch (error) {
-    console.error('测试 AI 配置失败:', error)
+    // 测试 AI 配置失败
     aiTestResult.value = {
       success: false,
       message: error.data?.message || '测试 AI 配置失败'
@@ -795,7 +795,7 @@ const resetAiPrompt = async () => {
       }, 3000)
     }
   } catch (error) {
-    console.error('重置 AI 提示词失败:', error)
+    // 重置 AI 提示词失败
     errorMessage.value = error.data?.message || '重置 AI 提示词失败'
     setTimeout(() => {
       errorMessage.value = ''

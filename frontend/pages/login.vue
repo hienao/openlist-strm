@@ -298,6 +298,7 @@
 <script setup>
 import { ref, reactive, nextTick } from 'vue'
 import { apiCall } from '~/utils/api.js'
+import logger from '~/utils/logger.js'
 import { useAuthStore } from '~/stores/auth.js'
 
 // 获取router实例和认证store
@@ -356,20 +357,20 @@ const handleLogin = async () => {
     })
 
     if (response.code === 200 && response.data?.token) {
-      console.log('登录成功，响应数据:', response.data)
+      logger.info('登录成功，响应数据:', response.data)
 
       // 清除旧的认证信息
-      console.log('清除旧的认证信息...')
+      logger.info('清除旧的认证信息...')
       authStore.clearAuth()
 
       // 登录成功，保存新的认证信息到store
       const token = response.data.token
       const userInfo = response.data.user || { username: form.username }
 
-      console.log('保存新的认证信息到store...')
+      logger.info('保存新的认证信息到store...')
       authStore.setAuth(token, userInfo, form.rememberMe)
 
-      console.log('认证信息已保存:', {
+      logger.info('认证信息已保存:', {
         token: authStore.getToken,
         userInfo: authStore.getUserInfo,
         isAuthenticated: authStore.isAuthenticated
@@ -382,22 +383,22 @@ const handleLogin = async () => {
 
       // 验证认证状态
       if (!authStore.isAuthenticated) {
-        console.error('认证状态无效，登录失败')
+        logger.error('认证状态无效，登录失败')
         success.value = false
         error.value = '登录状态异常，请重试'
         return
       }
 
       // 跳转到首页
-      console.log('准备跳转到首页')
+      logger.info('准备跳转到首页')
       await navigateTo('/', { replace: true })
-      console.log('跳转成功')
+      logger.info('跳转成功')
     } else {
       success.value = false  // 重置成功状态
       error.value = response.message || '登录失败，请检查用户名和密码'
     }
   } catch (err) {
-    console.error('登录错误:', err)
+    logger.error('登录错误:', err)
     success.value = false  // 重置成功状态
 
     if (err.status === 401) {
@@ -482,7 +483,7 @@ const handleRegister = async () => {
       registerError.value = response.message || '注册失败，请重试'
     }
   } catch (err) {
-    console.error('注册错误:', err)
+    logger.error('注册错误:', err)
     
     if (err.status === 409) {
       registerError.value = '用户名或邮箱已存在'

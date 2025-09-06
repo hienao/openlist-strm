@@ -110,6 +110,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { apiCall } from '~/utils/api.js'
+import logger from '~/utils/logger.js'
 
 // 页面元数据
 definePageMeta({
@@ -184,7 +185,7 @@ const handleRegister = async () => {
       error.value = response.message || '注册失败，请稍后重试'
     }
   } catch (err) {
-    console.error('注册错误:', err)
+    logger.error('注册错误:', err)
     
     if (err.status === 409) {
       error.value = '用户已存在'

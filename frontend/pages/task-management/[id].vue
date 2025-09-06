@@ -298,6 +298,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import logger from '~/utils/logger.js'
 import { useRoute, useRouter } from 'vue-router'
 import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 
@@ -341,11 +342,11 @@ const getConfigInfo = async () => {
     if (response.code === 200) {
       configInfo.value = response.data
     } else {
-      console.error('获取配置信息失败:', response.message)
+      logger.error('获取配置信息失败:', response.message)
       await navigateTo('/')
     }
   } catch (error) {
-    console.error('获取配置信息时发生错误:', error)
+    logger.error('获取配置信息时发生错误:', error)
     await navigateTo('/')
   } finally {
     loading.value = false
@@ -364,7 +365,7 @@ const fetchTasks = async () => {
       tasks.value = response.data.filter(task => task.openlistConfigId == configId)
     }
   } catch (error) {
-    console.error('获取任务列表失败:', error)
+    logger.error('获取任务列表失败:', error)
   }
 }
 
@@ -510,7 +511,7 @@ const submitTask = async () => {
       throw new Error(response.message || '操作失败')
     }
   } catch (error) {
-    console.error('提交任务失败:', error)
+    logger.error('提交任务失败:', error)
     alert(error.message || '操作失败')
   } finally {
     submitting.value = false
@@ -534,7 +535,7 @@ const deleteTask = async (taskId) => {
       throw new Error('删除失败')
     }
   } catch (error) {
-    console.error('删除任务失败:', error)
+    logger.error('删除任务失败:', error)
   }
 }
 
@@ -574,7 +575,7 @@ const logout = async () => {
       method: 'POST'
     })
   } catch (error) {
-    console.error('登出失败:', error)
+    logger.error('登出失败:', error)
   } finally {
     // 清除本地token
     const token = useCookie('token')
@@ -629,7 +630,7 @@ const executeTask = async (taskId, isIncremental) => {
       throw new Error(response.message || '提交任务失败')
     }
   } catch (error) {
-    console.error('提交任务失败:', error)
+    logger.error('提交任务失败:', error)
     alert(error.message || '提交任务失败，请稍后重试')
   } finally {
     generatingStrm.value[taskId] = false

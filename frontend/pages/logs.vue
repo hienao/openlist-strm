@@ -67,10 +67,11 @@
                     class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0 flex-1 sm:flex-initial"
                   >
                     <option value="all">全部</option>
-                    <option value="debug">Debug</option>
-                    <option value="info">Info</option>
-                    <option value="warn">Warn</option>
                     <option value="error">Error</option>
+                    <option value="warn">Warn</option>
+                    <option value="info">Info</option>
+                    <option value="debug">Debug</option>
+                    <option value="trace">Trace</option>
                   </select>
                 </div>
 
@@ -251,6 +252,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
+import logger from '~/utils/logger.js'
 
 // 页面元数据 - 日志页面无需认证，API接口已配置为公开访问
 definePageMeta({
@@ -316,7 +318,7 @@ const logout = async () => {
     // 跳转到登录页
     await navigateTo('/login')
   } catch (error) {
-    console.error('登出失败:', error)
+    logger.error('登出失败:', error)
     // 即使失败也清除本地数据
     const token = useCookie('token')
     const userInfoCookie = useCookie('userInfo')
@@ -354,6 +356,8 @@ const getLogLineClass = (line) => {
     return 'text-blue-400'
   } else if (lowerLine.includes('debug')) {
     return 'text-gray-400'
+  } else if (lowerLine.includes('trace')) {
+    return 'text-gray-500'
   }
   return 'text-green-400'
 }
@@ -369,18 +373,32 @@ const getLogLevel = (line) => {
     return 'info'
   } else if (lowerLine.includes('debug')) {
     return 'debug'
+  } else if (lowerLine.includes('trace')) {
+    return 'trace'
   }
   return 'info' // 默认为info级别
 }
 
-// 按日志级别筛选日志
+// 定义日志级别优先级（数值越大优先级越高）
+const LOG_LEVEL_PRIORITY = {
+  'trace': 0,
+  'debug': 1,
+  'info': 2,
+  'warn': 3,
+  'error': 4
+}
+
+// 按日志级别筛选日志（显示选定级别及更高优先级的日志）
 const filterLogsByLevel = () => {
   if (selectedLogLevel.value === 'all') {
     logLines.value = [...originalLogLines.value]
   } else {
+    const selectedPriority = LOG_LEVEL_PRIORITY[selectedLogLevel.value]
     logLines.value = originalLogLines.value.filter(line => {
       const logLevel = getLogLevel(line)
-      return logLevel === selectedLogLevel.value
+      const logPriority = LOG_LEVEL_PRIORITY[logLevel]
+      // 显示选定级别及更高优先级的日志
+      return logPriority >= selectedPriority
     })
   }
   scrollToBottom()
@@ -428,10 +446,10 @@ const loadLogs = async () => {
       lastUpdateTime.value = new Date().toLocaleString('zh-CN')
       scrollToBottom()
     } else {
-      console.error('获取日志失败:', response.message)
+      logger.error('获取日志失败:', response.message)
     }
   } catch (error) {
-    console.error('获取日志错误:', error)
+    logger.error('获取日志错误:', error)
   } finally {
     loading.value = false
   }
@@ -469,7 +487,7 @@ const downloadLogs = async () => {
       alert('下载失败: ' + (errorText || '未知错误'))
     }
   } catch (error) {
-    console.error('下载日志错误:', error)
+    logger.error('下载日志错误:', error)
     alert('下载失败: ' + (error.message || '网络错误'))
   } finally {
     downloading.value = false
@@ -501,13 +519,13 @@ const connectWebSocket = () => {
       wsUrl = `${wsProtocol}//${window.location.host}/ws/logs/${selectedLogType.value}`
     }
 
-    console.log('连接WebSocket:', wsUrl)
+    logger.info('连接WebSocket:', wsUrl)
 
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
       wsConnected.value = true
-      console.log('WebSocket连接已建立')
+      logger.info('WebSocket连接已建立')
     }
 
     ws.onmessage = (event) => {
@@ -525,7 +543,7 @@ const connectWebSocket = () => {
 
     ws.onclose = () => {
       wsConnected.value = false
-      console.log('WebSocket连接已关闭')
+      logger.info('WebSocket连接已关闭')
       // 尝试重连
       setTimeout(() => {
         if (!wsConnected.value) {
@@ -535,11 +553,11 @@ const connectWebSocket = () => {
     }
 
     ws.onerror = (error) => {
-      console.error('WebSocket错误:', error)
+      logger.error('WebSocket错误:', error)
       wsConnected.value = false
     }
   } catch (error) {
-    console.error('WebSocket连接失败:', error)
+    logger.error('WebSocket连接失败:', error)
     wsConnected.value = false
   }
 }

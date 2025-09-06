@@ -343,7 +343,7 @@ public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
       fileUrl += "?sign=" + file.getSign();
     }
     
-    log.info("[DEBUG] 下载文件请求 - 文件名: {}, 完整URL: {}", file.getName(), fileUrl);
+    log.debug("下载文件请求 - 文件名: {}, 完整URL: {}", file.getName(), fileUrl);
     
     // 设置请求头
     HttpHeaders headers = new HttpHeaders();
@@ -359,7 +359,7 @@ public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
     ResponseEntity<byte[]> response = restTemplate.exchange(
         fileUrl, HttpMethod.GET, entity, byte[].class);
     
-    log.info("[DEBUG] 文件下载响应 - 状态码: {}, Content-Type: {}", 
+    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}", 
         response.getStatusCode(), 
         response.getHeaders().getContentType());
     
@@ -384,7 +384,7 @@ public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
       contentPreview = sb.toString().trim();
     }
     
-    log.info("[DEBUG] 文件下载成功 - 文件名: {}, 大小: {} bytes, 前20字节: {}", 
+    log.debug("文件下载成功 - 文件名: {}, 大小: {} bytes, 前20字节: {}", 
         file.getName(), content.length, contentPreview);
     return content;
     
@@ -410,7 +410,7 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
     }
     fileUrl += "d" + filePath;
     
-    log.info("[DEBUG] 下载文件请求 - 文件路径: {}, 完整URL: {}", filePath, fileUrl);
+    log.debug("下载文件请求 - 文件路径: {}, 完整URL: {}", filePath, fileUrl);
     
     // 设置请求头
     HttpHeaders headers = new HttpHeaders();
@@ -426,7 +426,7 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
     ResponseEntity<byte[]> response = restTemplate.exchange(
         fileUrl, HttpMethod.GET, entity, byte[].class);
     
-    log.info("[DEBUG] 文件下载响应 - 状态码: {}, Content-Type: {}", 
+    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}", 
         response.getStatusCode(), 
         response.getHeaders().getContentType());
     
@@ -451,7 +451,7 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
       contentPreview = sb.toString().trim();
     }
     
-    log.info("[DEBUG] 文件下载成功 - 路径: {}, 大小: {} bytes, 前20字节: {}", 
+    log.debug("文件下载成功 - 路径: {}, 大小: {} bytes, 前20字节: {}", 
         filePath, content.length, contentPreview);
     return content;
     

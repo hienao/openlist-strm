@@ -1,9 +1,10 @@
 // 认证中间件 - 保护需要登录的页面
 import { apiCall } from '~/utils/api.js'
 import { shouldRefreshToken, validateTokenWithBackend } from '~/utils/token.js'
+import logger from '~/utils/logger.js'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  console.log('Auth中间件执行:', { to: to.path, from: from?.path })
+  logger.info('Auth中间件执行:', { to: to.path, from: from?.path })
 
   // 获取认证store
   const { useAuthStore } = await import('~/stores/auth.js')
@@ -12,25 +13,25 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // 尝试恢复认证状态
   authStore.restoreAuth()
 
-  console.log('Auth中间件 - 认证状态:', {
+  logger.info('Auth中间件 - 认证状态:', {
     token: authStore.getToken,
     isAuthenticated: authStore.isAuthenticated
   })
 
   // 如果当前页面是登录或注册页面，只检查用户是否存在，不进行token验证
   if (to.path === '/login' || to.path === '/register') {
-    console.log('Auth中间件 - 访问登录/注册页面，执行用户检查')
+    logger.info('Auth中间件 - 访问登录/注册页面，执行用户检查')
     return await handleAuthPages(to)
   }
 
   // 如果没有认证，检查用户是否存在后跳转
   if (!authStore.isAuthenticated) {
-    console.log('Auth中间件 - 未认证，准备跳转')
+    logger.info('Auth中间件 - 未认证，准备跳转')
     const redirectPath = await checkUserAndRedirect()
     return navigateTo(redirectPath)
   }
 
-  console.log('Auth中间件 - 认证验证通过，允许访问页面')
+  logger.info('Auth中间件 - 认证验证通过，允许访问页面')
 
   // 对于重要页面，进行后端验证（可选，避免每次都验证影响性能）
   // 这里可以根据需要启用后端验证
@@ -38,7 +39,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   if (shouldValidateWithBackend) {
     const isBackendValid = await validateTokenWithBackend(token.value)
     if (!isBackendValid) {
-      console.warn('Token后端验证失败，清除token')
+      logger.warn('Token后端验证失败，清除token')
       clearAuthCookies()
       const redirectPath = await checkUserAndRedirect()
       return navigateTo(redirectPath)
@@ -79,7 +80,7 @@ async function handleAuthPages(to) {
       return
     }
   } catch (error) {
-    console.error('检查用户失败:', error)
+    logger.error('检查用户失败:', error)
     // 检查失败时允许访问当前页面
     return
   }
@@ -100,7 +101,7 @@ async function checkUserAndRedirect() {
       return '/register'
     }
   } catch (error) {
-    console.error('检查用户失败:', error)
+    logger.error('检查用户失败:', error)
     // 检查失败时默认跳转到登录页
     return '/login'
   }
@@ -117,10 +118,10 @@ async function refreshTokenInBackground(authStore) {
     if (response.code === 200 && response.data?.token) {
       // 更新token
       authStore.updateToken(response.data.token)
-      console.log('Token已自动刷新')
+      logger.info('Token已自动刷新')
     }
   } catch (error) {
-    console.error('Token刷新失败:', error)
+    logger.error('Token刷新失败:', error)
     // 刷新失败不影响当前页面使用，token仍然有效
   }
 }

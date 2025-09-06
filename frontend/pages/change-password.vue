@@ -156,6 +156,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { authenticatedApiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
+import logger from '~/utils/logger.js'
 
 // 页面元数据
 definePageMeta({
@@ -240,7 +241,7 @@ const handleChangePassword = async () => {
       error.value = response.message || '修改密码失败，请重试'
     }
   } catch (err) {
-    console.error('修改密码错误:', err)
+    logger.error('修改密码错误:', err)
     
     // 优先显示接口返回的message信息
     if (err.data?.message) {
@@ -277,7 +278,7 @@ const logout = async () => {
     
     // 检查响应格式
     if (response.code === 200) {
-      console.log('登出成功:', response.message)
+      logger.info('登出成功:', response.message)
     }
     
     // 清除本地token和用户信息
@@ -287,7 +288,7 @@ const logout = async () => {
     // 跳转到登录页
     await navigateTo('/login')
   } catch (error) {
-    console.error('登出失败:', error)
+    logger.error('登出失败:', error)
     // 即使登出失败也清除本地token
     const token = useCookie('token')
     const userInfoCookie = useCookie('userInfo')

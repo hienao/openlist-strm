@@ -363,6 +363,7 @@ import { ref, onMounted, computed } from 'vue'
 import AppHeader from '~/components/AppHeader.vue'
 import { apiCall, authenticatedApiCall } from '~/utils/api.js'
 import { useAuthStore } from '~/stores/auth.js'
+import logger from '~/utils/logger.js'
 
 // 页面元数据
 definePageMeta({
@@ -400,10 +401,10 @@ const logout = async () => {
 
     // 检查响应格式
     if (response.code === 200) {
-      console.log('登出成功:', response.message)
+      logger.info('登出成功:', response.message)
     }
   } catch (error) {
-    console.error('登出失败:', error)
+    logger.error('登出失败:', error)
   } finally {
     // 无论成功失败都清除本地认证信息
     authStore.clearAuth()
@@ -441,10 +442,10 @@ const getConfigs = async () => {
     if (response.code === 200) {
       configs.value = response.data || []
     } else {
-      console.error('获取配置列表失败:', response.message)
+      logger.error('获取配置列表失败:', response.message)
     }
   } catch (error) {
-    console.error('获取配置列表错误:', error)
+    logger.error('获取配置列表错误:', error)
   } finally {
     loading.value = false
   }
@@ -481,7 +482,7 @@ const validateOpenListConfig = async (baseUrl, token) => {
       throw new Error(response.message || '验证失败')
     }
   } catch (error) {
-    console.error('OpenList配置验证失败:', error)
+    logger.error('OpenList配置验证失败:', error)
     if (error.status === 401) {
       throw new Error('Token无效或已过期')
     } else if (error.status === 403) {
@@ -522,7 +523,7 @@ const addConfig = async () => {
       formError.value = response.message || '添加配置失败'
     }
   } catch (error) {
-    console.error('添加配置错误:', error)
+    logger.error('添加配置错误:', error)
     formError.value = error.message || '添加配置失败'
   } finally {
     formLoading.value = false
@@ -567,7 +568,7 @@ const updateConfig = async () => {
       formError.value = response.message || '更新配置失败'
     }
   } catch (error) {
-    console.error('更新配置错误:', error)
+    logger.error('更新配置错误:', error)
     formError.value = error.message || '更新配置失败'
   } finally {
     formLoading.value = false
@@ -592,7 +593,7 @@ const deleteConfig = async (config) => {
       alert('删除失败: ' + (response.message || '未知错误'))
     }
   } catch (error) {
-    console.error('删除配置错误:', error)
+    logger.error('删除配置错误:', error)
     alert('删除失败: ' + (error.message || '网络错误'))
   }
 }
@@ -619,7 +620,7 @@ const toggleConfigStatus = async (config) => {
       alert(`${action}失败: ` + (response.message || '未知错误'))
     }
   } catch (error) {
-    console.error('切换配置状态错误:', error)
+    logger.error('切换配置状态错误:', error)
     alert(`${action}失败: ` + (error.message || '网络错误'))
   }
 }
