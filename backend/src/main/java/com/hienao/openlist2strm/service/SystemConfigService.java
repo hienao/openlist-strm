@@ -291,6 +291,22 @@ public class SystemConfigService {
   }
 
   /**
+   * 检查是否启用数据上报
+   *
+   * @return 是否启用数据上报
+   */
+  public boolean isDataReportEnabled() {
+    try {
+      Map<String, Object> logConfig = getLogConfig();
+      Object reportUsageData = logConfig.get("reportUsageData");
+      return reportUsageData == null || Boolean.TRUE.equals(reportUsageData);
+    } catch (Exception e) {
+      log.warn("获取数据上报配置失败，默认禁用上报: {}", e.getMessage());
+      return false;
+    }
+  }
+
+  /**
    * 获取默认AI提示词
    *
    * @return 默认提示词

@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.job;
 
+import com.hienao.openlist2strm.service.DataReportService;
 import com.hienao.openlist2strm.service.SystemConfigService;
 import java.io.File;
 import java.nio.file.Files;
@@ -7,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Component;
 public class LogCleanupJob implements Job {
 
   @Autowired private SystemConfigService systemConfigService;
+  @Autowired private DataReportService dataReportService;
 
   private static final String BACKEND_LOG_DIR = "./logs";
   private static final String FRONTEND_LOG_DIR = "./frontend/logs";
@@ -48,6 +51,15 @@ public class LogCleanupJob implements Job {
       cleanupLogDirectory(FRONTEND_LOG_DIR, retentionDays);
 
       log.info("日志清理任务执行完成");
+
+      // 上报应用使用事件
+      try {
+        dataReportService.reportEvent("app_use", new HashMap<>());
+        log.debug("上报应用使用事件成功");
+      } catch (Exception reportException) {
+        log.warn("上报应用使用事件失败，错误: {}", reportException.getMessage());
+        // 不影响主要业务流程，仅记录警告日志
+      }
 
     } catch (Exception e) {
       log.error("日志清理任务执行失败: {}", e.getMessage(), e);

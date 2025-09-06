@@ -18,12 +18,11 @@ import org.springframework.stereotype.Component;
  * @author hienao
  * @since 2024-01-01
  */
-@Slf4j
 @Component
+@Slf4j
 public class TaskConfigJob implements Job {
 
   @Autowired private TaskConfigService taskConfigService;
-
   @Autowired private TaskExecutionService taskExecutionService;
 
   @Override
