@@ -382,7 +382,7 @@
           <!-- 日志配置设置 -->
           <div class="glass-card">
             <div class="card-header">
-              <h3 class="text-xl font-semibold">日志配置设置</h3>
+              <h3 class="text-xl font-semibold">日志同级配置设置</h3>
             </div>
             <div class="space-y-6">
               <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -419,6 +419,26 @@
                     <option value="error">Error</option>
                   </select>
                   <p class="mt-1 text-xs text-gray-500">系统仅保留等于或高于所选级别的日志记录</p>
+                </div>
+              </div>
+
+              <!-- 上报使用数据设置 -->
+              <div class="border-t border-gray-200 pt-6">
+                <div class="flex items-start space-x-3">
+                  <input
+                    id="reportUsageData"
+                    v-model="logConfig.reportUsageData"
+                    type="checkbox"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                  >
+                  <div class="flex-1">
+                    <label for="reportUsageData" class="block text-sm font-semibold text-gray-700">
+                      上报使用数据
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500">
+                      帮助我们改进产品体验。即使勾选此选项，也不会上报任何用户隐私信息，仅收集匿名的功能使用统计数据。
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -535,7 +555,8 @@ const aiConfig = ref({
 })
 const logConfig = ref({
   retentionDays: 7,
-  level: 'info'
+  level: 'info',
+  reportUsageData: true
 })
 const showApiKey = ref(false)
 const saving = ref(false)
@@ -612,7 +633,8 @@ const loadCurrentSettings = async () => {
       if (config.log && typeof config.log === 'object') {
         logConfig.value = {
           retentionDays: config.log.retentionDays || 7,
-          level: config.log.level || 'info'
+          level: config.log.level || 'info',
+          reportUsageData: config.log.reportUsageData !== undefined ? config.log.reportUsageData : true
         }
         console.log('已加载日志配置')
       }
@@ -671,7 +693,8 @@ const saveSettings = async () => {
       },
       log: {
         retentionDays: logConfig.value.retentionDays,
-        level: logConfig.value.level
+        level: logConfig.value.level,
+        reportUsageData: logConfig.value.reportUsageData
       }
     }
 

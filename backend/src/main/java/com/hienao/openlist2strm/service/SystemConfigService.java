@@ -85,6 +85,17 @@ public class SystemConfigService {
           if (!config.containsKey("log")) {
             log.info("系统配置中缺少log字段，添加默认配置");
             needSave = true;
+          } else {
+            // 检查log配置的子字段
+            @SuppressWarnings("unchecked")
+            Map<String, Object> logConfig = (Map<String, Object>) config.get("log");
+            if (logConfig != null) {
+              if (!logConfig.containsKey("reportUsageData")) {
+                log.info("系统配置中缺少log.reportUsageData字段，添加默认配置");
+                logConfig.put("reportUsageData", true);
+                needSave = true;
+              }
+            }
           }
         }
       }
@@ -218,6 +229,7 @@ public class SystemConfigService {
     Map<String, Object> logConfig = new HashMap<>();
     logConfig.put("retentionDays", 7); // 默认保留7天
     logConfig.put("level", "info"); // 默认日志级别为info
+    logConfig.put("reportUsageData", true); // 默认开启使用数据上报
     defaultConfig.put("log", logConfig);
 
     return defaultConfig;
