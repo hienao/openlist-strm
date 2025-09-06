@@ -62,12 +62,37 @@ services:
 docker-compose up -d
 ```
 
-### 从源码构建
+### 源码开发部署
 
+#### 完整重构建 (推荐)
 ```bash
 git clone https://github.com/hienao/openlist-strm.git
 cd openlist-strm
+
+# Linux/macOS
+./dev-docker-rebuild.sh
+
+# Windows
+dev-docker-rebuild.bat
+```
+
+#### 快速启动
+```bash
 docker-compose up -d
+```
+
+**Docker 调试脚本**:
+```bash
+# 全面容器调试和配置 (Linux/macOS/Git Bash)
+./docker-debug.sh
+
+# 功能:
+# - 检查 Docker 守护进程状态
+# - 创建/验证 .env 文件
+# - 创建必要的数据目录
+# - 验证 Flyway 迁移文件
+# - 提供数据库清理选项
+# - 使用 --no-cache 构建镜像
 ```
 
 访问应用：http://localhost:3111
@@ -94,17 +119,80 @@ A: 增量更新只处理变化的文件，速度快；全量更新重新处理�
 **Q: STRM 文件输出到哪里？**
 A: 输出到容器的 `/app/backend/strm` 目录，对应宿主机的 `./strm` 目录。
 
-## 技术栈
+## 技术架构
 
-- **前端**: Nuxt.js 3 + Vue 3 + Tailwind CSS
-- **后端**: Spring Boot 3 + MyBatis + Quartz
-- **数据库**: SQLite
-- **部署**: Docker + Nginx
+### 🏗️ 全栈技术栈
+- **前端**: Nuxt.js 3.17.7 + Vue 3 + Tailwind CSS
+- **后端**: Spring Boot 3.3.9 + MyBatis + Quartz Scheduler
+- **数据库**: SQLite 3.47.1 + Flyway 迁移
+- **构建**: Gradle 8.14.3 + Node.js 20
+- **容器化**: Docker 多阶段构建 + Nginx
+- **认证**: JWT + Spring Security
+
+### 📁 项目结构
+```
+├── frontend/           # Nuxt.js 前端应用
+│   ├── pages/         # 自动路由 Vue 页面
+│   ├── components/    # 可复用 Vue 组件
+│   ├── middleware/    # 路由中间件 (auth, guest)
+│   └── assets/        # 静态资源和 CSS
+├── backend/           # Spring Boot 后端应用
+│   └── src/main/java/com/hienao/openlist2strm/
+│       ├── controller/  # REST API 控制器
+│       ├── service/     # 业务逻辑层
+│       ├── mapper/      # MyBatis 数据访问
+│       ├── entity/      # 数据库实体
+│       ├── job/         # Quartz 定时任务
+│       └── config/      # Spring 配置
+└── docker-compose.yml # 容器编排
+```
+
+### 🔧 核心功能
+- **认证系统**: JWT Token (Cookie 存储) + 中间件保护
+- **任务调度**: Quartz 定时器 (RAM 存储模式)
+- **数据库**: SQLite + Flyway 版本管理
+- **API 设计**: RESTful API + 统一响应格式
+- **容器部署**: 多阶段构建 + 卷映射
 
 ## 开发文档
 
-- 📖 [前端开发文档](frontend-dev.md) - Nuxt.js 前端开发指南
-- 📖 [后端开发文档](backend-dev.md) - Spring Boot 后端开发指南
+### 📖 开发指南
+- [前端开发文档](frontend-dev.md) - Nuxt.js 前端开发指南
+- [后端开发文档](backend-dev.md) - Spring Boot 后端开发指南
+- [CLAUDE.md](CLAUDE.md) - Claude Code 开发助手配置
+
+### ⚡ 快速开发
+
+#### 所有平台支持的原生脚本
+
+**Linux/macOS**:
+```bash
+./dev-start.sh     # 启动开发环境（前后端）
+./dev-logs.sh      # 查看日志 [frontend|backend|both|status|clear]
+./dev-stop.sh      # 停止开发服务
+```
+
+**Windows (Command Prompt/PowerShell)**:
+```cmd
+dev-start.bat      # 启动开发环境（前后端）
+dev-logs.bat       # 查看日志 [frontend|backend|both|status|clear]
+dev-stop.bat       # 停止开发服务
+```
+
+**Windows PowerShell (Direct)**:
+```powershell
+.\dev-start.ps1    # 启动开发环境（前后端）
+.\dev-logs.ps1     # 查看日志 [frontend|backend|both|status|clear]
+.\dev-stop.ps1     # 停止开发服务
+```
+
+**特性说明**:
+- 自动健康检查和启动确认
+- 优雅停止和清理残余进程
+- PID 文件管理 (`.frontend.pid`, `.backend.pid`)
+- 日志文件保存 (`logs/frontend.log`, `logs/backend.log`)
+- 端口：前端 3000，后端 8080
+- Windows 脚本包含 UTF-8 编码支持和依赖检查
 
 ## 📋 更新日志
 

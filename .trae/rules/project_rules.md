@@ -3,17 +3,22 @@
 ## 项目概述
 
 **技术栈**
-- 后端：Java 21 + Spring Boot 3.3.9 + MyBatis + SQLite
-- 前端：Nuxt 3 + Vue 3 + Tailwind CSS + Pinia
-- 构建工具：Gradle (后端) + npm (前端)
-- 容器化：Docker + Docker Compose
+- 后端：Java 21 + Spring Boot 3.3.9 + MyBatis + SQLite 3.47.1 + Flyway
+- 前端：Nuxt.js 3.17.7 + Vue 3 + Tailwind CSS + Composition API
+- 构建工具：Gradle 8.14.3 (后端) + npm + Node.js 20 (前端)
+- 任务调度：Quartz Scheduler (RAM 存储)
+- 容器化：Docker 多阶段构建 + Docker Compose + Nginx
 - 代码质量：Spotless + PMD + Jacoco
+- 认证：JWT (Cookie 存储) + Spring Security
 
 **核心功能**
-- 开放列表到流媒体格式转换
-- 任务配置和调度管理
-- 用户认证和权限控制
-- 日志监控和系统配置
+- OpenList 文件列表转换为 STRM 流媒体文件
+- 基于 Cron 表达式的任务配置和调度管理 (Quartz)
+- JWT Cookie 认证和中间件路由保护
+- 日志管理系统和应用设置
+- AI 刮削功能 (可选) - 媒体元数据获取
+- 匿名数据上报系统 (可配置关闭)
+- 增量和全量更新模式
 
 ## 架构规范
 
@@ -52,8 +57,9 @@
 - `assets/` - 静态资源
 
 **状态管理规则**
-- 必须使用 Pinia 进行状态管理
-- 认证状态必须使用 `useAuthStore`
+- 使用 Nuxt 3 Composables 进行状态管理 (ref, reactive)
+- 认证状态使用 Cookie 管理 (`useCookie('token')`)
+- 使用 `$fetch` 进行 API 调用，携带 Bearer token
 - 禁止在组件中直接操作 localStorage
 
 ## 代码规范
@@ -88,14 +94,17 @@
 - 页面文件：kebab-case (如 `change-password.vue`)
 
 **API调用规范**
-- 必须使用 `utils/api.js` 中的 `apiCall` 或 `authenticatedApiCall`
-- 禁止直接使用 `fetch` 或 `$fetch`
-- API端点必须以 `/` 开头
+- 使用 Nuxt 内置的 `$fetch` 进行 API 调用
+- API 请求必须包含 Authorization header: `Bearer ${token.value}`
+- API端点必须以 `/api` 开头
+- 错误处理必须使用 try-catch 包装
+- 响应格式遵循统一格式: `{code, message, data}`
 
-**状态管理**
-- Store文件必须使用 `defineStore`
-- State必须是函数返回对象
-- Actions中必须处理异步操作
+**组件开发**
+- 使用 Composition API 的 `<script setup>` 语法
+- 受保护页面必须添加 `definePageMeta({ middleware: 'auth' })`
+- 响应式数据使用 `ref()` 和 `reactive()`
+- 生命周期钩子使用 `onMounted()`, `onUnmounted()` 等
 
 ## 文件协调要求
 
@@ -119,12 +128,14 @@
 ### 关键文件关联
 
 **认证相关**
-- `SignController.java` ↔ `stores/auth.js` ↔ `utils/api.js`
-- `JwtAuthenticationFilter.java` ↔ `middleware/auth.js`
+- `AuthController.java` ↔ `pages/login.vue` ↔ `middleware/auth.js`
+- JWT Token Cookie ↔ `useCookie('token')` ↔ API Authorization headers
 
 **配置相关**
-- `SystemConfigService.java` ↔ `pages/settings.vue`
-- `TaskConfigService.java` ↔ `pages/task-management/`
+- `OpenListConfigController.java` ↔ `pages/index.vue`
+- `TaskConfigController.java` ↔ `pages/task-management/[id].vue`
+- `SettingsController.java` ↔ `pages/settings.vue`
+- Quartz Job 配置 ↔ Cron 表达式验证
 
 ## 开发工作流程
 
@@ -150,14 +161,21 @@
 
 ### 代码质量检查
 
+**跨平台开发脚本**
+- Linux/macOS: `./dev-start.sh`, `./dev-logs.sh`, `./dev-stop.sh`
+- Windows: `dev-start.bat`, `dev-logs.bat`, `dev-stop.bat`
+- PowerShell: `dev-start.ps1`, `dev-logs.ps1`, `dev-stop.ps1`
+
 **后端检查**
-- 运行 `./gradlew spotlessCheck` 检查代码格式
-- 运行 `./gradlew pmdMain` 检查代码质量
-- 运行 `./gradlew test` 执行单元测试
+- 代码格式: `./gradlew spotlessApply`
+- 静态分析: `./gradlew pmdMain`
+- 测试覆盖: `./gradlew jacocoTestReport`
+- 单元测试: `./gradlew test`
 
 **前端检查**
-- 运行 `npm run build` 检查构建
-- 检查控制台无错误和警告
+- 构建检查: `npm run build`
+- 开发服务: `npm run dev` (端口 3000)
+- 生产预览: `npm run preview`
 
 ## 禁止操作
 
@@ -191,6 +209,14 @@
 1. **安全性** > 功能性 > 性能 > 可维护性
 2. **数据一致性** > 用户体验 > 开发效率
 3. **向后兼容** > 新功能特性
+4. **隐私保护** > 数据收集 (匿名统计可选)
+
+### 特殊约束
+- **Quartz配置**: 必须使用 RAM 存储模式 (RAMJobStore)
+- **SQLite兼容**: 避免复杂事务和并发写入
+- **跨平台脚本**: 所有脚本必须同时支持 Unix 和 Windows
+- **JWT认证**: Token 存储在 HTTP-only Cookie 中
+- **中间件保护**: 认证页面使用 `auth.js`，访客页面使用 `guest.js`
 
 ### 技术选择
 - 优先使用项目已有的技术栈和库
@@ -207,19 +233,28 @@
 ## 部署和环境
 
 ### Docker配置
-- 生产环境必须使用Docker Compose
-- 开发环境支持本地运行和Docker运行
-- 配置文件通过环境变量注入
-- 数据持久化通过Volume挂载
+- **多阶段构建**: Frontend (Node.js 20) → Backend (Gradle+JDK21) → Runtime (JDK21+Nginx)
+- **生产镜像**: `hienao6/openlist-strm:latest`
+- **开发环境**: 支持本地运行和Docker运行
+- **完整重构建**: `./dev-docker-rebuild.sh` (Linux/macOS) 或 `dev-docker-rebuild.bat` (Windows)
+- **调试脚本**: `./docker-debug.sh` - 容器状态检查和环境验证
+- **卷映射**:
+  - `./config:/app/data/config` - SQLite 数据库和配置
+  - `./logs:/app/data/log` - 应用日志
+  - `./strm:/app/backend/strm` - STRM 文件输出
 
 ### 环境变量
-- 数据库路径：`DATABASE_PATH`
-- 日志路径：`LOG_PATH`
-- CORS配置：`ALLOWED_ORIGINS`
-- API基础路径：前端使用 `/api`
+- **数据库**: `DATABASE_PATH` (默认: `/app/data/config/db/openlist2strm.db`)
+- **日志**: `LOG_PATH` (默认: `/app/data/log`)
+- **STRM输出**: `STRM_PATH` (默认: `/app/backend/strm`)
+- **CORS**: 开发环境支持通配符 (`*`)
+- **Spring Profile**: `SPRING_PROFILES_ACTIVE` (dev/prod)
+- **服务端口**: `SERVER_PORT` (默认: 8080)
+- **日志级别**: `LOG_LEVEL` (默认: INFO)
 
 ### 端口配置
-- 后端开发：8080
-- 前端开发：3000
-- 生产环境：3111（外部访问）
-- 内部通信：80（容器内）
+- **后端开发**: 8080 (Spring Boot)
+- **前端开发**: 3000 (Nuxt dev server)
+- **生产环境**: 3111 (外部访问 Docker 容器)
+- **容器内部**: 80 (Nginx 代理)
+- **健康检查**: 自动端口检测和服务状态确认

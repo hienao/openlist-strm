@@ -68,18 +68,37 @@ gradle bootRun
 
 ### 一键启动（推荐）
 
-在项目根目录使用开发脚本：
+在项目根目录使用跨平台开发脚本：
 
+**Linux/macOS**:
 ```bash
-# 启动前后端开发服务
-./dev-start.sh
-
-# 查看后端日志
-./dev-logs.sh backend
-
-# 停止开发服务
-./dev-stop.sh
+./dev-start.sh         # 启动前后端开发服务
+./dev-logs.sh backend  # 查看后端日志
+./dev-stop.sh          # 停止开发服务
 ```
+
+**Windows (Command Prompt/PowerShell)**:
+```cmd
+dev-start.bat          # 启动前后端开发服务
+dev-logs.bat backend   # 查看后端日志
+dev-stop.bat           # 停止开发服务
+```
+
+**Windows PowerShell (Direct)**:
+```powershell
+.\dev-start.ps1        # 启动前后端开发服务
+.\dev-logs.ps1 backend # 查看后端日志
+.\dev-stop.ps1         # 停止开发服务
+```
+
+**开发脚本特性**:
+- 自动依赖检查 (Java/Node.js)
+- 健康检查和启动确认
+- 优雅停止和清理残余进程
+- PID 文件管理 (`.backend.pid`)
+- 日志文件保存 (`logs/backend.log`)
+- 服务运行在端口 8080
+- 可以在 Java 不可用时仅运行前端
 
 ## 核心架构
 
@@ -360,11 +379,17 @@ public interface UserMapper {
 </mapper>
 ```
 
-### 数据库迁移
+### 数据库迁移 (Flyway)
 
 1. 在 `src/main/resources/db/migration/` 下创建新的迁移文件
-2. 使用版本号命名：`V1_0_5__add_user_table.sql`
+2. 使用版本号命名：`V{version}__{description}.sql`
 3. 编写 SQL 迁移脚本
+4. 重启应用后自动应用迁移
+
+**迁移文件命名规则**:
+- `V1_0_0__init_schema.sql` - 初始化数据库结构
+- `V1_0_1__add_user_management.sql` - 添加用户管理
+- `V1_0_2__update_task_config.sql` - 更新任务配置
 
 ```sql
 -- V1_0_5__add_user_table.sql
@@ -416,16 +441,32 @@ public class GlobalExceptionHandler {
 
 ### Docker 构建
 
+**后端构建阶段**:
 ```dockerfile
-# 后端构建阶段
 FROM gradle:8.14.3-jdk21 AS backend-builder
 WORKDIR /app/backend
+
+# 复制构建文件和依赖配置
 COPY backend/build.gradle.kts backend/settings.gradle.kts ./
 COPY backend/gradle gradle
+
+# 预先下载依赖以利用 Docker 缓存
 RUN gradle dependencies --no-daemon
+
+# 复制源代码并构建
 COPY backend/ ./
 RUN gradle bootJar --no-daemon
 ```
+
+**多阶段构建流程**:
+1. **后端构建**: Gradle 8.14.3 + JDK 21 构建 Spring Boot JAR
+2. **前端构建**: Node.js 20 Alpine 构建 Nuxt.js 静态文件
+3. **运行时**: Liberica JDK 21 Alpine + Nginx 提供服务
+
+**缓存优化**:
+- 将依赖下载与源代码复制分层
+- 利用 Docker 层缓存加速构建
+- 使用 --no-daemon 减少内存占用
 
 ### 环境配置
 
@@ -587,9 +628,147 @@ public class HealthController {
 - XML 映射文件路径配置正确
 - 实体类字段与数据库列名映射
 
+## 开发工具和资源
+
+### 推荐 IDE 配置
+
+**IntelliJ IDEA Ultimate/Community**:
+- Spring Boot 支持
+- Gradle 集成
+- MyBatis 插件
+- Database Tools (SQLite 支持)
+- Git 集成
+- JPA Buddy (可选)
+
+**VS Code**:
+- Java Extension Pack
+- Spring Boot Extension Pack
+- Gradle Extension
+- SQLite Viewer
+
+**Eclipse**:
+- Spring Tools Suite (STS)
+- MyBatis Generator 插件
+- Gradle Buildship
+
+### 代码质量工具
+
+**Gradle 插件**:
+```kotlin
+// build.gradle.kts
+plugins {
+    id("com.diffplug.spotless") version "6.25.0"  // 代码格式化
+    id("pmd")                                     // 静态代码分析
+    id("jacoco")                                  // 测试覆盖率
+    id("org.sonarqube") version "4.4.1.3373"     // 代码质量检查
+}
+```
+
+**代码质量命令**:
+```bash
+# 代码格式化
+./gradlew spotlessApply
+
+# 静态分析
+./gradlew pmdMain
+
+# 测试覆盖率报告
+./gradlew jacocoTestReport
+
+# 构建质量报告
+./gradlew build jacocoTestReport
+```
+
+### 环境配置
+
+**application.yml 配置示例**:
+```yaml
+# 开发环境配置
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:sqlite:${DATABASE_PATH:./data/openlist2strm.db}
+    driver-class-name: org.sqlite.JDBC
+    
+  # Flyway 迁移配置
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# 服务器配置
+server:
+  port: ${SERVER_PORT:8080}
+  
+# 日志配置
+logging:
+  level:
+    com.hienao.openlist2strm: ${LOG_LEVEL:INFO}
+    org.springframework.security: DEBUG
+  file:
+    name: ${LOG_PATH:logs/application.log}
+    
+# Quartz 配置
+spring.quartz:
+  job-store-type: memory  # 使用内存存储
+  properties:
+    org.quartz.jobStore.class: org.quartz.simpl.RAMJobStore
+```
+
+### 调试和性能监控
+
+**Spring Boot Actuator 端点**:
+```yaml
+# application.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: when-authorized
+```
+
+**JVM 参数调优**:
+```bash
+# 开发环境 JVM 参数
+export JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"
+
+# 生产环境 JVM 参数
+export JAVA_OPTS="-Xmx1024m -Xms512m -XX:+UseG1GC -XX:+UseStringDeduplication"
+```
+
+**数据库监控**:
+```java
+// 自定义健康检查
+@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
+    @Override
+    public Health health() {
+        // 检查数据库连接状态
+        return Health.up().withDetail("database", "SQLite OK").build();
+    }
+}
+```
+
 ## 相关链接
 
+### 官方文档
 - [Spring Boot 官方文档](https://spring.io/projects/spring-boot)
 - [MyBatis 官方文档](https://mybatis.org/mybatis-3/)
 - [Quartz 官方文档](http://www.quartz-scheduler.org/)
+- [Flyway 官方文档](https://flywaydb.org/)
+- [SQLite 官方文档](https://sqlite.org/)
+
+### 项目文档
 - [前端开发文档](frontend-dev.md)
+- [CLAUDE.md - AI 开发助手配置](CLAUDE.md)
+
+### 社区资源
+- [Spring Boot GitHub](https://github.com/spring-projects/spring-boot)
+- [MyBatis GitHub](https://github.com/mybatis/mybatis-3)
+- [Quartz GitHub](https://github.com/quartz-scheduler/quartz)

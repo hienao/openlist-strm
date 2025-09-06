@@ -68,18 +68,36 @@ npm run preview
 
 ### 一键启动（推荐）
 
-在项目根目录使用开发脚本：
+在项目根目录使用跨平台开发脚本：
 
+**Linux/macOS**:
 ```bash
-# 启动前后端开发服务
-./dev-start.sh
-
-# 查看前端日志
-./dev-logs.sh frontend
-
-# 停止开发服务
-./dev-stop.sh
+./dev-start.sh          # 启动前后端开发服务
+./dev-logs.sh frontend  # 查看前端日志
+./dev-stop.sh           # 停止开发服务
 ```
+
+**Windows (Command Prompt/PowerShell)**:
+```cmd
+dev-start.bat           # 启动前后端开发服务
+dev-logs.bat frontend   # 查看前端日志
+dev-stop.bat            # 停止开发服务
+```
+
+**Windows PowerShell (Direct)**:
+```powershell
+.\dev-start.ps1         # 启动前后端开发服务
+.\dev-logs.ps1 frontend # 查看前端日志
+.\dev-stop.ps1          # 停止开发服务
+```
+
+**开发脚本特性**:
+- 自动健康检查和启动确认
+- 优雅停止和清理残余进程
+- PID 文件管理 (`.frontend.pid`, `.backend.pid`)
+- 日志文件保存 (`logs/frontend.log`, `logs/backend.log`)
+- 服务运行在端口 3000 (前端) 和 8080 (后端)
+- Windows 脚本包含 UTF-8 编码支持
 
 ## 核心功能
 
@@ -308,10 +326,17 @@ npm run preview
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
+# 配置 npm 镜像源以提升构建速度
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 ```
+
+**多阶段构建流程**:
+1. **前端阶段**: Node.js 20 Alpine，构建 Nuxt.js 静态文件
+2. **后端阶段**: Gradle 8.14.3 + JDK 21，构建 Spring Boot JAR
+3. **运行时阶段**: Liberica JDK 21 Alpine + Nginx，同时服务前后端
 
 ## 调试和测试
 
@@ -342,9 +367,88 @@ RUN npm run build
 - 优化图片和静态资源
 - 使用 SSR/SSG 提升首屏加载速度
 
+## 开发工具和资源
+
+### 推荐 IDE 配置
+
+**VS Code 扩展**:
+- Vue Language Features (Volar)
+- TypeScript Vue Plugin (Volar) 
+- Tailwind CSS IntelliSense
+- Auto Rename Tag
+- Bracket Pair Colorizer
+- GitLens
+
+**WebStorm/IntelliJ IDEA**:
+- Vue.js 插件
+- Tailwind CSS 插件
+- Node.js 插件
+
+### 代码质量工具
+
+```json
+// package.json scripts 示例
+{
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
+  }
+}
+```
+
+### 环境配置文件
+
+**.env 配置示例**:
+```env
+# 开发环境配置
+NUXT_PUBLIC_API_BASE=http://localhost:8080
+NUXT_JWT_SECRET_KEY=your-jwt-secret-key
+```
+
+### 部署配置
+
+**Nuxt 配置 (nuxt.config.ts)**:
+```typescript
+export default defineNuxtConfig({
+  // SSR/SPA 配置
+  ssr: true,
+  
+  // 静态生成配置
+  nitro: {
+    preset: 'static'
+  },
+  
+  // 路由配置
+  router: {
+    base: '/'
+  },
+  
+  // CSS 框架
+  css: ['~/assets/css/main.css'],
+  
+  // 模块配置
+  modules: [
+    '@nuxtjs/tailwindcss'
+  ]
+})
+```
+
 ## 相关链接
 
+### 官方文档
 - [Nuxt.js 官方文档](https://nuxt.com/)
 - [Vue 3 官方文档](https://vuejs.org/)
 - [Tailwind CSS 文档](https://tailwindcss.com/)
+
+### 项目文档
 - [后端开发文档](backend-dev.md)
+- [CLAUDE.md - AI 开发助手配置](CLAUDE.md)
+
+### 社区资源
+- [Nuxt.js GitHub](https://github.com/nuxt/nuxt)
+- [Vue.js GitHub](https://github.com/vuejs/core)
+- [Tailwind CSS GitHub](https://github.com/tailwindlabs/tailwindcss)
