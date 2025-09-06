@@ -11,6 +11,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +22,23 @@ public class SignService {
 
   private static final String USER_INFO_FILE = "./data/config/userInfo.json";
   private static final String PWD_KEY = "pwd";
+  private static final String CONTAINER_INSTANCE_ID_KEY = "containerInstanceId";
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  /**
+   * 容器启动时检查并生成容器实例ID
+   *
+   * @author hienao
+   * @since 2024-01-01
+   */
+  @PostConstruct
+  public void initializeContainerInstanceId() {
+    try {
+      ensureContainerInstanceId();
+    } catch (Exception e) {
+      log.error("初始化容器实例ID失败", e);
+    }
+  }
 
   public void signUp(SignUpDto signUpDto) {
     File userFile = new File(USER_INFO_FILE);
@@ -106,6 +124,72 @@ public class SignService {
   public boolean checkUserExists() {
     File userFile = new File(USER_INFO_FILE);
     return userFile.exists();
+  }
+
+  /**
+   * 确保容器实例ID存在，如果不存在则生成一个
+   *
+   * @author hienao
+   * @since 2024-01-01
+   */
+  public void ensureContainerInstanceId() {
+    File userFile = new File(USER_INFO_FILE);
+    
+    try {
+      Map<String, String> userInfo;
+      
+      if (userFile.exists()) {
+        // 读取现有配置
+        userInfo = objectMapper.readValue(userFile, Map.class);
+      } else {
+        // 创建新配置
+        userFile.getParentFile().mkdirs();
+        userInfo = new HashMap<>();
+      }
+      
+      // 检查是否存在容器实例ID
+      if (!userInfo.containsKey(CONTAINER_INSTANCE_ID_KEY) || 
+          userInfo.get(CONTAINER_INSTANCE_ID_KEY) == null || 
+          userInfo.get(CONTAINER_INSTANCE_ID_KEY).trim().isEmpty()) {
+        
+        // 生成新的容器实例ID
+        String containerInstanceId = UUID.randomUUID().toString();
+        userInfo.put(CONTAINER_INSTANCE_ID_KEY, containerInstanceId);
+        
+        // 保存到文件
+        objectMapper.writeValue(userFile, userInfo);
+        log.info("生成新的容器实例ID: {}", containerInstanceId);
+      } else {
+        log.info("容器实例ID已存在: {}", userInfo.get(CONTAINER_INSTANCE_ID_KEY));
+      }
+      
+    } catch (IOException e) {
+      log.error("处理容器实例ID失败", e);
+      throw new BusinessException("初始化容器实例ID失败", e);
+    }
+  }
+
+  /**
+   * 获取容器实例ID
+   *
+   * @return 容器实例ID
+   * @author hienao
+   * @since 2024-01-01
+   */
+  public String getContainerInstanceId() {
+    File userFile = new File(USER_INFO_FILE);
+    
+    if (!userFile.exists()) {
+      return null;
+    }
+    
+    try {
+      Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
+      return userInfo.get(CONTAINER_INSTANCE_ID_KEY);
+    } catch (IOException e) {
+      log.error("读取容器实例ID失败", e);
+      return null;
+    }
   }
 
   private String md5Hash(String input) {
