@@ -1,8 +1,10 @@
 package com.hienao.openlist2strm.config;
 
+import com.hienao.openlist2strm.service.DataReportService;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -19,9 +21,11 @@ public class ApplicationStartupLogger {
   private String logPath;
 
   private final Environment environment;
+  private final DataReportService dataReportService;
 
-  public ApplicationStartupLogger(Environment environment) {
+  public ApplicationStartupLogger(Environment environment, DataReportService dataReportService) {
     this.environment = environment;
+    this.dataReportService = dataReportService;
   }
 
   @EventListener(ApplicationReadyEvent.class)
@@ -97,6 +101,15 @@ public class ApplicationStartupLogger {
     log.info("=".repeat(60));
     log.info("✅ 应用已就绪，可以开始处理请求");
     log.info("=".repeat(60));
+
+    // 上报应用启动事件
+    try {
+      dataReportService.reportEvent("app_use", new HashMap<>());
+      log.debug("应用启动事件上报成功");
+    } catch (Exception reportException) {
+      log.warn("应用启动事件上报失败，错误: {}", reportException.getMessage());
+      // 不影响应用启动流程，仅记录警告日志
+    }
   }
 
   private void logEnvVar(String name) {
