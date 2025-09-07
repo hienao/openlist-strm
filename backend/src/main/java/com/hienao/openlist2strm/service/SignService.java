@@ -41,12 +41,12 @@ public class SignService {
   }
 
   public void signUp(SignUpDto signUpDto) {
-    File userFile = new File(USER_INFO_FILE);
-
-    // 如果用户文件已存在，直接报错
-    if (userFile.exists()) {
+    // 检查用户是否已存在（检查文件中的用户名和密码字段）
+    if (checkUserExists()) {
       throw new BusinessException("用户已存在，不允许重复注册");
     }
+
+    File userFile = new File(USER_INFO_FILE);
 
     try {
       // 创建目录（如果不存在）
@@ -67,53 +67,37 @@ public class SignService {
   }
 
   public String signIn(SignInDto signInDto) {
-    File userFile = new File(USER_INFO_FILE);
+    Map<String, String> userInfo = readUserInfoOrThrow();
+    String storedUsername = userInfo.get("username");
+    String storedPassword = userInfo.get(PWD_KEY);
 
-    if (!userFile.exists()) {
-      throw new BusinessException("用户不存在");
+    if (!signInDto.getUsername().equals(storedUsername)) {
+      throw new BusinessException("用户名错误");
     }
 
-    try {
-      Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
-      String storedUsername = userInfo.get("username");
-      String storedPassword = userInfo.get(PWD_KEY);
-
-      if (!signInDto.getUsername().equals(storedUsername)) {
-        throw new BusinessException("用户名错误");
-      }
-
-      if (!md5Hash(signInDto.getPassword()).equals(storedPassword)) {
-        throw new BusinessException("密码错误");
-      }
-
-      log.info("用户登录成功: {}", signInDto.getUsername());
-      return storedUsername;
-    } catch (IOException e) {
-      log.error("读取用户信息失败", e);
-      throw new BusinessException("登录失败", e);
+    if (!md5Hash(signInDto.getPassword()).equals(storedPassword)) {
+      throw new BusinessException("密码错误");
     }
+
+    log.info("用户登录成功: {}", signInDto.getUsername());
+    return storedUsername;
   }
 
   public void changePassword(ChangePasswordDto changePasswordDto) {
-    File userFile = new File(USER_INFO_FILE);
+    Map<String, String> userInfo = readUserInfoOrThrow();
+    String storedPassword = userInfo.get(PWD_KEY);
 
-    if (!userFile.exists()) {
-      throw new BusinessException("用户不存在");
+    // 验证旧密码
+    if (!md5Hash(changePasswordDto.getOldPassword()).equals(storedPassword)) {
+      throw new BusinessException("旧密码错误");
     }
 
+    // 更新密码
+    userInfo.put(PWD_KEY, md5Hash(changePasswordDto.getNewPassword()));
+    
     try {
-      Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
-      String storedPassword = userInfo.get(PWD_KEY);
-
-      // 验证旧密码
-      if (!md5Hash(changePasswordDto.getOldPassword()).equals(storedPassword)) {
-        throw new BusinessException("旧密码错误");
-      }
-
-      // 更新密码
-      userInfo.put(PWD_KEY, md5Hash(changePasswordDto.getNewPassword()));
+      File userFile = new File(USER_INFO_FILE);
       objectMapper.writeValue(userFile, userInfo);
-
       log.info("密码修改成功");
     } catch (IOException e) {
       log.error("修改密码失败", e);
@@ -204,6 +188,29 @@ public class SignService {
     } catch (IOException e) {
       log.error("读取容器实例ID失败", e);
       return null;
+    }
+  }
+
+  /**
+   * 读取用户信息，如果用户不存在则抛出异常
+   *
+   * @return 用户信息Map
+   * @throws BusinessException 用户不存在时抛出
+   * @author hienao
+   * @since 2024-01-01
+   */
+  private Map<String, String> readUserInfoOrThrow() {
+    File userFile = new File(USER_INFO_FILE);
+
+    if (!userFile.exists()) {
+      throw new BusinessException("用户不存在");
+    }
+
+    try {
+      return objectMapper.readValue(userFile, Map.class);
+    } catch (IOException e) {
+      log.error("读取用户信息失败", e);
+      throw new BusinessException("读取用户信息失败", e);
     }
   }
 
