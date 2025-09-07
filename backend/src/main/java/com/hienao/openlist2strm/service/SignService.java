@@ -123,7 +123,22 @@ public class SignService {
 
   public boolean checkUserExists() {
     File userFile = new File(USER_INFO_FILE);
-    return userFile.exists();
+    if (!userFile.exists()) {
+      return false;
+    }
+    
+    try {
+      Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
+      String username = userInfo.get("username");
+      String password = userInfo.get("pwd");
+      
+      // 检查用户名和密码字段是否都存在且不为空
+      return username != null && !username.trim().isEmpty() && 
+             password != null && !password.trim().isEmpty();
+    } catch (IOException e) {
+      log.error("读取用户信息失败", e);
+      return false;
+    }
   }
 
   /**

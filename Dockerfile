@@ -25,6 +25,8 @@ RUN --mount=type=cache,target=$GRADLE_USER_HOME \
 
 # Stage 3: Runtime
 FROM bellsoft/liberica-openjdk-alpine:21 AS runner
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
 WORKDIR $WORKDIR
 
