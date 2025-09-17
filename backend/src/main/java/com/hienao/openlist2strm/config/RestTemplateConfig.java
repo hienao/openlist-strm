@@ -3,8 +3,17 @@ package com.hienao.openlist2strm.config;
 import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * RestTemplate配置类
@@ -30,6 +39,31 @@ public class RestTemplateConfig {
     // 设置读取超时时间（毫秒）
     factory.setReadTimeout((int) Duration.ofSeconds(60).toMillis());
 
-    return new RestTemplate(factory);
+    // 启用重定向跟随
+    factory.setOutputStreaming(false);
+
+    RestTemplate restTemplate = new RestTemplate(factory);
+    
+    // 添加拦截器
+    restTemplate.setInterceptors(getInterceptors());
+
+    return restTemplate;
+  }
+
+  /**
+   * 获取拦截器列表
+   *
+   * @return 拦截器列表
+   */
+  private List<ClientHttpRequestInterceptor> getInterceptors() {
+    List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+    
+    // 添加用户代理拦截器
+    interceptors.add((request, body, execution) -> {
+      request.getHeaders().set("User-Agent", "OpenList-STRM/1.0");
+      return execution.execute(request, body);
+    });
+    
+    return interceptors;
   }
 }

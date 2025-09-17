@@ -296,13 +296,6 @@ public class OpenlistApiService {
 }
 
 /**
- * 获取文件内容
- *
- * @param config OpenList配置
- * @param filePath 文件路径
- * @return 文件内容字节数组
- */
-/**
  * 检查文件是否存在
  *
  * @param config OpenList配置
@@ -359,9 +352,61 @@ public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
     ResponseEntity<byte[]> response = restTemplate.exchange(
         fileUrl, HttpMethod.GET, entity, byte[].class);
     
-    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}", 
+    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}, Headers: {}", 
         response.getStatusCode(), 
-        response.getHeaders().getContentType());
+        response.getHeaders().getContentType(),
+        response.getHeaders());
+    
+    // 特殊处理302状态码
+    if (response.getStatusCode().value() == 302) {
+      log.warn("文件下载收到302重定向: {}, URL: {}, Location: {}", 
+          file.getName(), fileUrl, response.getHeaders().getLocation());
+      
+      // 尝试跟随重定向
+      try {
+        if (response.getHeaders().getLocation() != null) {
+          String redirectUrl = response.getHeaders().getLocation().toString();
+          log.info("跟随302重定向到: {}", redirectUrl);
+          
+          // 重新构建请求头（重定向可能需要重新认证）
+          HttpHeaders redirectHeaders = new HttpHeaders();
+          redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
+          if (config.getToken() != null && !config.getToken().isEmpty()) {
+            redirectHeaders.set("Authorization", config.getToken());
+          }
+          
+          HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
+          
+          // 发送重定向请求
+          ResponseEntity<byte[]> redirectResponse = restTemplate.exchange(
+              redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+          
+          log.debug("重定向下载响应 - 状态码: {}, Content-Type: {}", 
+              redirectResponse.getStatusCode(), 
+              redirectResponse.getHeaders().getContentType());
+          
+          if (redirectResponse.getStatusCode().is2xxSuccessful()) {
+            byte[] content = redirectResponse.getBody();
+            if (content != null && content.length > 0) {
+              log.info("重定向下载成功: {}, 大小: {} bytes", file.getName(), content.length);
+              return content;
+            } else {
+              log.warn("重定向下载内容为空: {}", file.getName());
+              return null;
+            }
+          } else {
+            log.warn("重定向下载失败: {}, 状态码: {}", file.getName(), redirectResponse.getStatusCode());
+            return null;
+          }
+        } else {
+          log.warn("收到302重定向但没有Location头: {}", file.getName());
+          return null;
+        }
+      } catch (Exception redirectException) {
+        log.error("处理302重定向失败: {}, 错误: {}", file.getName(), redirectException.getMessage(), redirectException);
+        return null;
+      }
+    }
     
     if (!response.getStatusCode().is2xxSuccessful()) {
       log.warn("文件下载失败: {}, 状态码: {}, URL: {}", file.getName(), response.getStatusCode(), fileUrl);
@@ -426,9 +471,61 @@ public byte[] getFileContent(OpenlistConfig config, String filePath) {
     ResponseEntity<byte[]> response = restTemplate.exchange(
         fileUrl, HttpMethod.GET, entity, byte[].class);
     
-    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}", 
+    log.debug("文件下载响应 - 状态码: {}, Content-Type: {}, Headers: {}", 
         response.getStatusCode(), 
-        response.getHeaders().getContentType());
+        response.getHeaders().getContentType(),
+        response.getHeaders());
+    
+    // 特殊处理302状态码
+    if (response.getStatusCode().value() == 302) {
+      log.warn("文件下载收到302重定向: {}, URL: {}, Location: {}", 
+          filePath, fileUrl, response.getHeaders().getLocation());
+      
+      // 尝试跟随重定向
+      try {
+        if (response.getHeaders().getLocation() != null) {
+          String redirectUrl = response.getHeaders().getLocation().toString();
+          log.info("跟随302重定向到: {}", redirectUrl);
+          
+          // 重新构建请求头（重定向可能需要重新认证）
+          HttpHeaders redirectHeaders = new HttpHeaders();
+          redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
+          if (config.getToken() != null && !config.getToken().isEmpty()) {
+            redirectHeaders.set("Authorization", config.getToken());
+          }
+          
+          HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
+          
+          // 发送重定向请求
+          ResponseEntity<byte[]> redirectResponse = restTemplate.exchange(
+              redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+          
+          log.debug("重定向下载响应 - 状态码: {}, Content-Type: {}", 
+              redirectResponse.getStatusCode(), 
+              redirectResponse.getHeaders().getContentType());
+          
+          if (redirectResponse.getStatusCode().is2xxSuccessful()) {
+            byte[] content = redirectResponse.getBody();
+            if (content != null && content.length > 0) {
+              log.info("重定向下载成功: {}, 大小: {} bytes", filePath, content.length);
+              return content;
+            } else {
+              log.warn("重定向下载内容为空: {}", filePath);
+              return null;
+            }
+          } else {
+            log.warn("重定向下载失败: {}, 状态码: {}", filePath, redirectResponse.getStatusCode());
+            return null;
+          }
+        } else {
+          log.warn("收到302重定向但没有Location头: {}", filePath);
+          return null;
+        }
+      } catch (Exception redirectException) {
+        log.error("处理302重定向失败: {}, 错误: {}", filePath, redirectException.getMessage(), redirectException);
+        return null;
+      }
+    }
     
     if (!response.getStatusCode().is2xxSuccessful()) {
       log.warn("文件下载失败: {}, 状态码: {}, URL: {}", filePath, response.getStatusCode(), fileUrl);
