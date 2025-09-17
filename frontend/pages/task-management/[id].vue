@@ -198,10 +198,37 @@
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700">重命名正则表达式</label>
-                <input v-model="taskForm.renameRegex" type="text" placeholder="留空表示不需要重命名" 
+                <label class="block text-sm font-medium text-gray-700">
+                  重命名正则表达式
+                  <button type="button"
+                          @click="showRenameRegexHelp = !showRenameRegexHelp"
+                          class="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          :class="{ 'text-blue-500': showRenameRegexHelp }">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </button>
+                </label>
+                <input v-model="taskForm.renameRegex" type="text" placeholder="留空表示不需要重命名"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <p class="mt-1 text-xs text-gray-500">用于文件重命名的正则表达式，留空表示不需要重命名</p>
+                
+                <!-- 帮助提示框 -->
+                <div v-if="showRenameRegexHelp"
+                     class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <h4 class="text-sm font-medium text-blue-800 mb-2">使用说明</h4>
+                  <div class="text-xs text-blue-700 space-y-1">
+                    <p><strong>格式：</strong>原始模式|替换内容</p>
+                    <p><strong>示例：</strong></p>
+                    <ul class="list-disc list-inside ml-2 space-y-1">
+                      <li>移除方括号和圆括号： <code class="bg-blue-100 px-1 rounded">[\[\]()]|</code></li>
+                      <li>空格替换为下划线： <code class="bg-blue-100 px-1 rounded">\s+|_</code></li>
+                      <li>添加前缀： <code class="bg-blue-100 px-1 rounded">^|Movie_</code></li>
+                      <li>移除分辨率： <code class="bg-blue-100 px-1 rounded">\s*\d{3,4}p\s*|</code></li>
+                    </ul>
+                    <p class="mt-2"><strong>注意：</strong>如果正则表达式格式错误，将使用原始文件名</p>
+                  </div>
+                </div>
               </div>
               
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -329,6 +356,7 @@ const taskForm = ref({
   isActive: true
 })
 const strmSubPath = ref('')
+const showRenameRegexHelp = ref(false)
 
 // 获取配置信息
 const getConfigInfo = async () => {
@@ -382,6 +410,7 @@ const resetTaskForm = () => {
     isActive: true
   }
   strmSubPath.value = ''
+  showRenameRegexHelp.value = false
 }
 
 // 编辑任务

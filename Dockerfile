@@ -31,7 +31,7 @@ ENV WORKDIR=/app
 WORKDIR $WORKDIR
 
 # Install nginx for serving frontend
-RUN apk add --no-cache nginx tzdata && \
+RUN apk add nginx tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log && \
