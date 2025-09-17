@@ -279,7 +279,7 @@ public class NfoGeneratorService {
     if (Files.exists(path)) {
       Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
       boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-      
+
       if (!overwriteExisting) {
         log.info("检测到同名NFO文件已存在，跳过生成: {}", nfoFilePath);
         return;

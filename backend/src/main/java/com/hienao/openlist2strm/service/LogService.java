@@ -278,11 +278,11 @@ public class LogService {
             (entry.getTimestamp() != null)
                 ? Instant.ofEpochMilli(entry.getTimestamp())
                 : Instant.now();
-        String timestamp = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).format(formatter);
+        String timestamp =
+            LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).format(formatter);
 
         StringBuilder logLine = new StringBuilder();
-        logLine.append(timestamp)
-            .append(" [FRONTEND]");
+        logLine.append(timestamp).append(" [FRONTEND]");
 
         // 添加日志级别
         if (entry.getLevel() != null) {

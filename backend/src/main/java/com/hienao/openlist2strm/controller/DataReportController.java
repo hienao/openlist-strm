@@ -34,20 +34,13 @@ public class DataReportController {
    */
   @PostMapping("/event")
   public ResponseEntity<Map<String, Object>> reportEvent(
-      @RequestParam String event,
-      @RequestBody(required = false) Map<String, Object> properties) {
+      @RequestParam String event, @RequestBody(required = false) Map<String, Object> properties) {
     try {
       dataReportService.reportEvent(event, properties);
-      return ResponseEntity.ok(Map.of(
-          "success", true,
-          "message", "事件数据上报成功"
-      ));
+      return ResponseEntity.ok(Map.of("success", true, "message", "事件数据上报成功"));
     } catch (Exception e) {
       log.error("事件数据上报失败: {}, 错误: {}", event, e.getMessage(), e);
-      return ResponseEntity.ok(Map.of(
-          "success", false,
-          "message", "事件数据上报失败: " + e.getMessage()
-      ));
+      return ResponseEntity.ok(Map.of("success", false, "message", "事件数据上报失败: " + e.getMessage()));
     }
   }
 
@@ -58,8 +51,7 @@ public class DataReportController {
    * @return 响应结果
    */
   @PostMapping("/events")
-  public ResponseEntity<Map<String, Object>> reportEvents(
-      @RequestBody BatchReportRequest request) {
+  public ResponseEntity<Map<String, Object>> reportEvents(@RequestBody BatchReportRequest request) {
     try {
       int successCount = 0;
       int failCount = 0;
@@ -74,24 +66,24 @@ public class DataReportController {
         }
       }
 
-      return ResponseEntity.ok(Map.of(
-          "success", true,
-          "message", String.format("批量上报完成，成功: %d, 失败: %d", successCount, failCount),
-          "successCount", successCount,
-          "failCount", failCount
-      ));
+      return ResponseEntity.ok(
+          Map.of(
+              "success",
+              true,
+              "message",
+              String.format("批量上报完成，成功: %d, 失败: %d", successCount, failCount),
+              "successCount",
+              successCount,
+              "failCount",
+              failCount));
     } catch (Exception e) {
       log.error("批量事件数据上报失败, 错误: {}", e.getMessage(), e);
-      return ResponseEntity.ok(Map.of(
-          "success", false,
-          "message", "批量事件数据上报失败: " + e.getMessage()
-      ));
+      return ResponseEntity.ok(
+          Map.of("success", false, "message", "批量事件数据上报失败: " + e.getMessage()));
     }
   }
 
-  /**
-   * 批量上报请求DTO
-   */
+  /** 批量上报请求DTO */
   public static class BatchReportRequest {
     private java.util.List<EventData> events;
 
@@ -104,9 +96,7 @@ public class DataReportController {
     }
   }
 
-  /**
-   * 事件数据DTO
-   */
+  /** 事件数据DTO */
   public static class EventData {
     private String event;
     private Map<String, Object> properties;

@@ -76,7 +76,7 @@ public class LogCleanupJob implements Job {
   private void cleanupLogDirectory(String logDirPath, int retentionDays) {
     try {
       Path logDir = Paths.get(logDirPath);
-      
+
       // 检查日志目录是否存在
       if (!Files.exists(logDir) || !Files.isDirectory(logDir)) {
         log.debug("日志目录不存在或不是目录: {}", logDirPath);
@@ -116,8 +116,7 @@ public class LogCleanupJob implements Job {
       }
 
       if (deletedCount > 0) {
-        log.info("目录 {} 清理完成，删除 {} 个文件，释放空间 {} KB", 
-                logDirPath, deletedCount, deletedSize / 1024);
+        log.info("目录 {} 清理完成，删除 {} 个文件，释放空间 {} KB", logDirPath, deletedCount, deletedSize / 1024);
       } else {
         log.debug("目录 {} 没有需要清理的过期日志文件", logDirPath);
       }
@@ -139,9 +138,9 @@ public class LogCleanupJob implements Job {
     }
 
     String lowerFileName = fileName.toLowerCase();
-    
+
     // 检查常见的日志文件扩展名
-    return lowerFileName.endsWith(".log") 
+    return lowerFileName.endsWith(".log")
         || lowerFileName.endsWith(".log.gz")
         || lowerFileName.endsWith(".log.zip")
         || lowerFileName.contains(".log.")

@@ -7,12 +7,12 @@ import com.hienao.openlist2strm.dto.tmdb.TmdbSearchResponse;
 import com.hienao.openlist2strm.dto.tmdb.TmdbTvDetail;
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.util.MediaFileParser;
+import com.hienao.openlist2strm.util.TmdbIdExtractor;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * 媒体刮削服务 整合TMDB API、NFO生成、图片下载等功能
+ * 媒体刮削服务 整合TMDB API、NFO生成、图片下载等功能 支持从路径中提取TMDB ID直接获取媒体信息
  *
  * @author hienao
  * @since 2024-01-01
@@ -47,7 +47,8 @@ public class MediaScrapingService {
    * @param strmDirectory STRM文件目录
    * @param relativePath 相对路径
    */
-  public void scrapMedia(OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath) {
+  public void scrapMedia(
+      OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath) {
     scrapMedia(openlistConfig, fileName, strmDirectory, relativePath, null, null);
   }
 
@@ -60,7 +61,13 @@ public class MediaScrapingService {
    * @param directoryFiles 目录文件列表（可选，为null时不会调用API获取）
    * @param fullFilePath 完整的文件路径（用于上报）
    */
-  public void scrapMedia(OpenlistConfig openlistConfig, String fileName, String strmDirectory, String relativePath, List<OpenlistApiService.OpenlistFile> directoryFiles, String fullFilePath) {
+  public void scrapMedia(
+      OpenlistConfig openlistConfig,
+      String fileName,
+      String strmDirectory,
+      String relativePath,
+      List<OpenlistApiService.OpenlistFile> directoryFiles,
+      String fullFilePath) {
     try {
       log.info("开始刮削媒体文件: {}", fileName);
 
@@ -75,7 +82,8 @@ public class MediaScrapingService {
 
       // 获取新的配置选项
       boolean keepSubtitleFiles = (Boolean) scrapingConfig.getOrDefault("keepSubtitleFiles", false);
-      boolean useExistingScrapingInfo = (Boolean) scrapingConfig.getOrDefault("useExistingScrapingInfo", false);
+      boolean useExistingScrapingInfo =
+          (Boolean) scrapingConfig.getOrDefault("useExistingScrapingInfo", false);
 
       // 构建保存目录（在解析之前就需要知道保存位置）
       String saveDirectory = buildSaveDirectory(strmDirectory, relativePath);
@@ -86,87 +94,186 @@ public class MediaScrapingService {
       }
 
       // 检查是否优先使用已存在的刮削信息（在解析媒体之前执行）
-      if (useExistingScrapingInfo && copyExistingScrapingInfo(openlistConfig, fileName, relativePath, saveDirectory, directoryFiles)) {
+      if (useExistingScrapingInfo
+          && copyExistingScrapingInfo(
+              openlistConfig, fileName, relativePath, saveDirectory, directoryFiles)) {
         log.info("已复制现有刮削信息，跳过后续刮削: {}", fileName);
         return;
       }
 
-     // 获取刮削正则配置
-     Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
-     @SuppressWarnings("unchecked")
-     List<String> movieRegexps =
-         (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
-     @SuppressWarnings("unchecked")
-     List<String> tvDirRegexps =
-         (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
-     @SuppressWarnings("unchecked")
-     List<String> tvFileRegexps =
-         (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
+      // 获取刮削正则配置
+      Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
+      @SuppressWarnings("unchecked")
+      List<String> movieRegexps =
+          (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
+      @SuppressWarnings("unchecked")
+      List<String> tvDirRegexps =
+          (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
+      @SuppressWarnings("unchecked")
+      List<String> tvFileRegexps =
+          (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
 
-     // 提取目录路径
-     String directoryPath = extractDirectoryPath(relativePath);
+      // 提取目录路径
+      String directoryPath = extractDirectoryPath(relativePath);
 
-     // 解析文件名
-     MediaInfo mediaInfo =
-         MediaFileParser.parse(fileName, directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
-     log.debug("正则解析媒体信息: {}", mediaInfo);
+      // 检查路径中是否包含TMDB ID
+      Integer tmdbIdFromPath = TmdbIdExtractor.extractTmdbIdFromPath(relativePath);
+      Integer tmdbIdFromFileName = TmdbIdExtractor.extractTmdbIdFromFileName(fileName);
+      Integer tmdbId = tmdbIdFromPath != null ? tmdbIdFromPath : tmdbIdFromFileName;
 
-     // 如果正则解析置信度低，尝试使用AI
-     if (mediaInfo.getConfidence() < 70) {
-       log.info("正则解析置信度低 ({}%)，尝试使用 AI 识别: {}", mediaInfo.getConfidence(), fileName);
-       
-       // 上报正则匹配失败事件
-       Map<String, Object> regFailProperties = new HashMap<>();
-       regFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
-       regFailProperties.put("file_name", fileName);
-       regFailProperties.put("confidence", mediaInfo.getConfidence());
-       dataReportService.reportEvent("reg_match_fail", regFailProperties);
-       Map<String, Object> aiConfig = systemConfigService.getAiConfig();
-       boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
+      // 解析文件名
+      MediaInfo mediaInfo =
+          MediaFileParser.parse(fileName, directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
+      log.debug("正则解析媒体信息: {}", mediaInfo);
 
-       if (aiRecognitionEnabled) {
-         AiRecognitionResult aiResult =
-             aiFileNameRecognitionService.recognizeFileName(fileName, fullFilePath != null ? fullFilePath : relativePath);
-         if (aiResult != null && aiResult.isSuccess()) {
-           if (aiResult.isNewFormat()) {
-             // 新格式：直接从AI结果构建MediaInfo
-             mediaInfo = aiResult.toMediaInfo(fileName);
-             log.info("使用 AI 识别结果（新格式）重新解析: {}", mediaInfo);
-           } else if (aiResult.isLegacyFormat()) {
-             // 旧格式：使用filename字段重新解析
-             mediaInfo =
-                 MediaFileParser.parse(
-                     aiResult.getFilename(), directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
-             log.info("使用 AI 识别结果（旧格式）重新解析: {}", mediaInfo);
-           }
-         } else if (aiResult != null && !aiResult.isSuccess()) {
-           log.info("AI 无法识别文件名: {}, 原因: {}", fileName, aiResult.getReason());
-           
-           // 上报AI识别失败事件
-           Map<String, Object> aiFailProperties = new HashMap<>();
-           aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
-           aiFailProperties.put("file_name", fileName);
-           aiFailProperties.put("reason", aiResult.getReason());
-           dataReportService.reportEvent("ai_match_fail", aiFailProperties);
-         } else {
-           // AI服务调用失败或返回null
-           log.warn("AI识别服务调用失败: {}", fileName);
-           
-           // 上报AI识别失败事件
-           Map<String, Object> aiFailProperties = new HashMap<>();
-           aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
-           aiFailProperties.put("file_name", fileName);
-           aiFailProperties.put("reason", "AI服务调用失败");
-           dataReportService.reportEvent("ai_match_fail", aiFailProperties);
-         }
-       }
-     }
+      // 如果路径中有TMDB ID，直接使用TMDB ID获取信息，跳过文件名解析
+      if (tmdbId != null) {
+        log.info("检测到路径中的TMDB ID: {}, 直接从TMDB获取信息", tmdbId);
 
-     if (mediaInfo.getConfidence() < 70) {
-       log.warn(
-           "最终解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), mediaInfo.getOriginalFileName());
-       return;
-     }
+        // 根据文件扩展名判断媒体类型
+        boolean isMovie = MediaFileParser.isVideoFile(fileName);
+
+        try {
+          if (isMovie) {
+            // 直接获取电影详情
+            TmdbMovieDetail movieDetail = tmdbApiService.getMovieDetail(tmdbId);
+            if (movieDetail != null) {
+              log.info("直接获取电影详情成功: {} ({})", movieDetail.getTitle(), movieDetail.getId());
+
+              // 创建MediaInfo对象
+              mediaInfo =
+                  new MediaInfo()
+                      .setType(MediaInfo.MediaType.MOVIE)
+                      .setTitle(movieDetail.getTitle())
+                      .setYear(
+                          String.valueOf(
+                              movieDetail.getReleaseDate() != null
+                                  ? new SimpleDateFormat("yyyy")
+                                      .format(movieDetail.getReleaseDate())
+                                  : null))
+                      .setHasYear(movieDetail.getReleaseDate() != null)
+                      .setOriginalFileName(fileName)
+                      .setConfidence(100); // 使用TMDB ID时置信度为100%
+
+              // 执行电影刮削
+              scrapMovieWithDirectInfo(
+                  mediaInfo, saveDirectory, getStrmCompatibleBaseFileName(fileName), movieDetail);
+              return; // 直接返回，跳过后续逻辑
+            }
+          } else {
+            // 直接获取电视剧详情
+            TmdbTvDetail tvDetail = tmdbApiService.getTvDetail(tmdbId);
+            if (tvDetail != null) {
+              log.info("直接获取电视剧详情成功: {} ({})", tvDetail.getName(), tvDetail.getId());
+
+              // 创建MediaInfo对象
+              mediaInfo =
+                  new MediaInfo()
+                      .setType(MediaInfo.MediaType.TV_SHOW)
+                      .setTitle(tvDetail.getName())
+                      .setYear(
+                          String.valueOf(
+                              tvDetail.getFirstAirDate() != null
+                                  ? new SimpleDateFormat("yyyy").format(tvDetail.getFirstAirDate())
+                                  : null))
+                      .setHasYear(tvDetail.getFirstAirDate() != null)
+                      .setOriginalFileName(fileName)
+                      .setConfidence(100); // 使用TMDB ID时置信度为100%
+
+              // 尝试从文件名中提取季集信息
+              String nameWithoutExt = MediaFileParser.removeFileExtension(fileName);
+              List<String> tvFileRegexpsOnly =
+                  (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
+              for (String regex : tvFileRegexpsOnly) {
+                try {
+                  java.util.regex.Pattern pattern =
+                      java.util.regex.Pattern.compile(
+                          regex, java.util.regex.Pattern.CASE_INSENSITIVE);
+                  java.util.regex.Matcher matcher = pattern.matcher(nameWithoutExt);
+                  if (matcher.find()) {
+                    com.hienao.openlist2strm.util.MediaFileParser.extractNamedGroups(
+                        matcher, mediaInfo);
+                    log.debug("从文件名中提取季集信息成功: {}", mediaInfo);
+                    break;
+                  }
+                } catch (Exception e) {
+                  log.warn("无效的电视剧文件正则表达式: '{}', 错误: {}", regex, e.getMessage());
+                }
+              }
+
+              // 执行电视剧刮削
+              scrapTvShowWithDirectInfo(
+                  mediaInfo, saveDirectory, getStrmCompatibleBaseFileName(fileName), tvDetail);
+              return; // 直接返回，跳过后续逻辑
+            }
+          }
+        } catch (Exception e) {
+          log.error("使用TMDB ID直接获取信息失败: {}", tmdbId, e);
+          // 继续使用常规的文件名解析方式
+        }
+      }
+
+      // 如果正则解析置信度低，尝试使用AI
+      if (mediaInfo.getConfidence() < 70) {
+        log.info("正则解析置信度低 ({}%)，尝试使用 AI 识别: {}", mediaInfo.getConfidence(), fileName);
+
+        // 上报正则匹配失败事件
+        Map<String, Object> regFailProperties = new HashMap<>();
+        regFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
+        regFailProperties.put("file_name", fileName);
+        regFailProperties.put("confidence", mediaInfo.getConfidence());
+        dataReportService.reportEvent("reg_match_fail", regFailProperties);
+        Map<String, Object> aiConfig = systemConfigService.getAiConfig();
+        boolean aiRecognitionEnabled = (Boolean) aiConfig.getOrDefault("enabled", false);
+
+        if (aiRecognitionEnabled) {
+          AiRecognitionResult aiResult =
+              aiFileNameRecognitionService.recognizeFileName(
+                  fileName, fullFilePath != null ? fullFilePath : relativePath);
+          if (aiResult != null && aiResult.isSuccess()) {
+            if (aiResult.isNewFormat()) {
+              // 新格式：直接从AI结果构建MediaInfo
+              mediaInfo = aiResult.toMediaInfo(fileName);
+              log.info("使用 AI 识别结果（新格式）重新解析: {}", mediaInfo);
+            } else if (aiResult.isLegacyFormat()) {
+              // 旧格式：使用filename字段重新解析
+              mediaInfo =
+                  MediaFileParser.parse(
+                      aiResult.getFilename(),
+                      directoryPath,
+                      movieRegexps,
+                      tvDirRegexps,
+                      tvFileRegexps);
+              log.info("使用 AI 识别结果（旧格式）重新解析: {}", mediaInfo);
+            }
+          } else if (aiResult != null && !aiResult.isSuccess()) {
+            log.info("AI 无法识别文件名: {}, 原因: {}", fileName, aiResult.getReason());
+
+            // 上报AI识别失败事件
+            Map<String, Object> aiFailProperties = new HashMap<>();
+            aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
+            aiFailProperties.put("file_name", fileName);
+            aiFailProperties.put("reason", aiResult.getReason());
+            dataReportService.reportEvent("ai_match_fail", aiFailProperties);
+          } else {
+            // AI服务调用失败或返回null
+            log.warn("AI识别服务调用失败: {}", fileName);
+
+            // 上报AI识别失败事件
+            Map<String, Object> aiFailProperties = new HashMap<>();
+            aiFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
+            aiFailProperties.put("file_name", fileName);
+            aiFailProperties.put("reason", "AI服务调用失败");
+            dataReportService.reportEvent("ai_match_fail", aiFailProperties);
+          }
+        }
+      }
+
+      if (mediaInfo.getConfidence() < 70) {
+        log.warn(
+            "最终解析置信度过低 ({}%)，跳过刮削: {}", mediaInfo.getConfidence(), mediaInfo.getOriginalFileName());
+        return;
+      }
 
       // 获取与STRM文件一致的baseFileName（只移除扩展名，不进行标准化处理）
       String baseFileName = getStrmCompatibleBaseFileName(fileName);
@@ -184,10 +291,11 @@ public class MediaScrapingService {
         scrapTvShow(mediaInfo, saveDirectory, baseFileName);
       } else {
         log.warn("未知媒体类型，跳过刮削: {}", fileName);
-        
+
         // 上报媒体类型匹配失败事件
         Map<String, Object> mediaTypeFailProperties = new HashMap<>();
-        mediaTypeFailProperties.put("file_path", fullFilePath != null ? fullFilePath : relativePath);
+        mediaTypeFailProperties.put(
+            "file_path", fullFilePath != null ? fullFilePath : relativePath);
         mediaTypeFailProperties.put("file_name", fileName);
         mediaTypeFailProperties.put("media_info", mediaInfo.toString());
         dataReportService.reportEvent("media_type_match_fail", mediaTypeFailProperties);
@@ -195,6 +303,60 @@ public class MediaScrapingService {
 
     } catch (Exception e) {
       log.error("刮削媒体文件失败: {}", fileName, e);
+    }
+  }
+
+  /** 使用直接获取的电影信息进行刮削 */
+  private void scrapMovieWithDirectInfo(
+      MediaInfo mediaInfo, String saveDirectory, String baseFileName, TmdbMovieDetail movieDetail) {
+    try {
+      log.info("使用直接获取的电影信息进行刮削: {} ({})", movieDetail.getTitle(), movieDetail.getId());
+
+      // 生成NFO文件
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean generateNfo = (Boolean) scrapingConfig.getOrDefault("generateNfo", true);
+
+      if (generateNfo) {
+        String nfoFilePath = Paths.get(saveDirectory, baseFileName + ".nfo").toString();
+        nfoGeneratorService.generateMovieNfo(movieDetail, mediaInfo, nfoFilePath);
+      }
+
+      // 下载图片
+      String posterUrl = tmdbApiService.buildPosterUrl(movieDetail.getPosterPath());
+      String backdropUrl = tmdbApiService.buildBackdropUrl(movieDetail.getBackdropPath());
+      coverImageService.downloadImages(posterUrl, backdropUrl, saveDirectory, baseFileName);
+
+      log.info("直接TMDB ID刮削完成: {}", movieDetail.getTitle());
+
+    } catch (Exception e) {
+      log.error("使用直接获取的电影信息刮削失败: {}", movieDetail.getTitle(), e);
+    }
+  }
+
+  /** 使用直接获取的电视剧信息进行刮削 */
+  private void scrapTvShowWithDirectInfo(
+      MediaInfo mediaInfo, String saveDirectory, String baseFileName, TmdbTvDetail tvDetail) {
+    try {
+      log.info("使用直接获取的电视剧信息进行刮削: {} ({})", tvDetail.getName(), tvDetail.getId());
+
+      // 生成NFO文件
+      Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+      boolean generateNfo = (Boolean) scrapingConfig.getOrDefault("generateNfo", true);
+
+      if (generateNfo) {
+        String nfoFilePath = Paths.get(saveDirectory, baseFileName + ".nfo").toString();
+        nfoGeneratorService.generateTvShowNfo(tvDetail, mediaInfo, nfoFilePath);
+      }
+
+      // 下载图片
+      String posterUrl = tmdbApiService.buildPosterUrl(tvDetail.getPosterPath());
+      String backdropUrl = tmdbApiService.buildBackdropUrl(tvDetail.getBackdropPath());
+      coverImageService.downloadImages(posterUrl, backdropUrl, saveDirectory, baseFileName);
+
+      log.info("直接TMDB ID刮削完成: {}", tvDetail.getName());
+
+    } catch (Exception e) {
+      log.error("使用直接获取的电视剧信息刮削失败: {}", tvDetail.getName(), e);
     }
   }
 
@@ -367,25 +529,25 @@ public class MediaScrapingService {
     return Paths.get(strmDirectory, relativePath).toString();
   }
 
- /**
-  * 从相对路径中提取目录部分
-  *
-  * @param relativePath 文件的相对路径
-  * @return 文件所在的目录路径
-  */
- private String extractDirectoryPath(String relativePath) {
-   if (relativePath == null || relativePath.isEmpty()) {
-     return "";
-   }
-   try {
-     Path path = Paths.get(relativePath);
-     Path parent = path.getParent();
-     return parent == null ? "" : parent.toString();
-   } catch (Exception e) {
-     log.warn("无法从相对路径中提取目录: {}", relativePath, e);
-     return "";
-   }
- }
+  /**
+   * 从相对路径中提取目录部分
+   *
+   * @param relativePath 文件的相对路径
+   * @return 文件所在的目录路径
+   */
+  private String extractDirectoryPath(String relativePath) {
+    if (relativePath == null || relativePath.isEmpty()) {
+      return "";
+    }
+    try {
+      Path path = Paths.get(relativePath);
+      Path parent = path.getParent();
+      return parent == null ? "" : parent.toString();
+    } catch (Exception e) {
+      log.warn("无法从相对路径中提取目录: {}", relativePath, e);
+      return "";
+    }
+  }
 
   /** 检查是否应该执行刮削 */
   public boolean shouldScrap(String fileName) {
@@ -542,74 +704,74 @@ public class MediaScrapingService {
    * @param directoryPath 目录路径
    * @return 是否已完全刮削
    */
- public boolean isDirectoryFullyScraped(String directoryPath) {
-   try {
-     File directory = new File(directoryPath);
-     if (!directory.exists() || !directory.isDirectory()) {
-       return false;
-     }
+  public boolean isDirectoryFullyScraped(String directoryPath) {
+    try {
+      File directory = new File(directoryPath);
+      if (!directory.exists() || !directory.isDirectory()) {
+        return false;
+      }
 
-     // 获取刮削正则配置
-     Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
-     @SuppressWarnings("unchecked")
-     List<String> movieRegexps =
-         (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
-     @SuppressWarnings("unchecked")
-     List<String> tvDirRegexps =
-         (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
-     @SuppressWarnings("unchecked")
-     List<String> tvFileRegexps =
-         (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
+      // 获取刮削正则配置
+      Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
+      @SuppressWarnings("unchecked")
+      List<String> movieRegexps =
+          (List<String>) regexConfig.getOrDefault("movieRegexps", Collections.emptyList());
+      @SuppressWarnings("unchecked")
+      List<String> tvDirRegexps =
+          (List<String>) regexConfig.getOrDefault("tvDirRegexps", Collections.emptyList());
+      @SuppressWarnings("unchecked")
+      List<String> tvFileRegexps =
+          (List<String>) regexConfig.getOrDefault("tvFileRegexps", Collections.emptyList());
 
-     File[] files = directory.listFiles();
-     if (files == null || files.length == 0) {
-       return false;
-     }
+      File[] files = directory.listFiles();
+      if (files == null || files.length == 0) {
+        return false;
+      }
 
-     boolean hasVideoFiles = false;
-     boolean allVideoFilesScraped = true;
+      boolean hasVideoFiles = false;
+      boolean allVideoFilesScraped = true;
 
-     for (File file : files) {
-       if (file.isFile() && MediaFileParser.isVideoFile(file.getName())) {
-         hasVideoFiles = true;
+      for (File file : files) {
+        if (file.isFile() && MediaFileParser.isVideoFile(file.getName())) {
+          hasVideoFiles = true;
 
-         // 使用新的解析器
-         MediaInfo mediaInfo =
-             MediaFileParser.parse(
-                 file.getName(), directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
+          // 使用新的解析器
+          MediaInfo mediaInfo =
+              MediaFileParser.parse(
+                  file.getName(), directoryPath, movieRegexps, tvDirRegexps, tvFileRegexps);
 
-         if (mediaInfo.getConfidence() >= 70) {
-           String baseFileName = coverImageService.getStandardizedFileName(file.getName());
-           if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
-             allVideoFilesScraped = false;
-             break;
-           }
-         } else {
-           // 如果任何一个文件解析失败，则认为目录没有完全刮削
-           allVideoFilesScraped = false;
-           break;
-         }
-       }
-     }
+          if (mediaInfo.getConfidence() >= 70) {
+            String baseFileName = coverImageService.getStandardizedFileName(file.getName());
+            if (!isAlreadyScraped(directoryPath, baseFileName, mediaInfo)) {
+              allVideoFilesScraped = false;
+              break;
+            }
+          } else {
+            // 如果任何一个文件解析失败，则认为目录没有完全刮削
+            allVideoFilesScraped = false;
+            break;
+          }
+        }
+      }
 
-     boolean result = hasVideoFiles && allVideoFilesScraped;
-     if (result) {
-       log.debug("目录已完全刮削: {}", directoryPath);
-     } else {
-       log.debug(
-           "目录需要刮削: {} (hasVideoFiles: {}, allScraped: {})",
-           directoryPath,
-           hasVideoFiles,
-           allVideoFilesScraped);
-     }
+      boolean result = hasVideoFiles && allVideoFilesScraped;
+      if (result) {
+        log.debug("目录已完全刮削: {}", directoryPath);
+      } else {
+        log.debug(
+            "目录需要刮削: {} (hasVideoFiles: {}, allScraped: {})",
+            directoryPath,
+            hasVideoFiles,
+            allVideoFilesScraped);
+      }
 
-     return result;
+      return result;
 
-   } catch (Exception e) {
-     log.warn("检查目录刮削状态时出错: {}", directoryPath, e);
-     return false;
-   }
- }
+    } catch (Exception e) {
+      log.warn("检查目录刮削状态时出错: {}", directoryPath, e);
+      return false;
+    }
+  }
 
   /** 获取刮削统计信息 */
   public Map<String, Object> getScrapingStats() {
@@ -629,60 +791,66 @@ public class MediaScrapingService {
    * @param saveDirectory 保存目录
    * @param directoryFiles 目录文件列表（可选，为null时不会调用API获取）
    */
-  private void copySubtitleFiles(OpenlistConfig openlistConfig, String fileName, String relativePath, String saveDirectory, List<OpenlistApiService.OpenlistFile> directoryFiles) {
-     try {
-       String baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
-       String dirPath = relativePath.substring(0, relativePath.lastIndexOf('/') + 1);
-       
-       // 支持的字幕文件后缀
-       String[] subtitleExtensions = {".srt", ".ass", ".vtt", ".ssa", ".sub", ".idx"};
-       
-       // 获取目录中的所有文件（优先使用传入的文件列表）
-       List<OpenlistApiService.OpenlistFile> files;
-       if (directoryFiles != null) {
-         files = directoryFiles;
-         log.debug("使用传入的目录文件列表，避免重复API调用");
-       } else {
-         log.debug("目录文件列表为空，跳过字幕文件复制");
-         return;
-       }
-       
-       // 遍历目录中的所有文件，查找匹配的字幕文件
-       for (OpenlistApiService.OpenlistFile file : files) {
-         if ("file".equals(file.getType())) {
-           String fileName_lower = file.getName().toLowerCase();
-           String baseFileName_lower = baseFileName.toLowerCase();
-           
-           // 检查是否是字幕文件：文件名以媒体文件基础名开头，且后缀是字幕格式
-           boolean isSubtitleFile = false;
-           for (String ext : subtitleExtensions) {
-             if (fileName_lower.startsWith(baseFileName_lower) && fileName_lower.endsWith(ext)) {
-               isSubtitleFile = true;
-               break;
-             }
-           }
-           
-           if (isSubtitleFile) {
-             String subtitleRelativePath = dirPath + file.getName();
-             
-             // 获取文件内容
-             byte[] subtitleContent = openlistApiService.getFileContent(openlistConfig, subtitleRelativePath);
-             
-             if (subtitleContent != null && subtitleContent.length > 0) {
-               Path targetFile = Paths.get(saveDirectory, file.getName());
-               
-               // 确保目标目录存在
-               Files.createDirectories(targetFile.getParent());
-               
-               // 写入字幕文件
-               Files.write(targetFile, subtitleContent);
-               log.info("已复制字幕文件: {} -> {}", subtitleRelativePath, targetFile);
-             } else {
-               log.debug("字幕文件内容为空: {}", subtitleRelativePath);
-             }
-           }
-         }
-       }
+  private void copySubtitleFiles(
+      OpenlistConfig openlistConfig,
+      String fileName,
+      String relativePath,
+      String saveDirectory,
+      List<OpenlistApiService.OpenlistFile> directoryFiles) {
+    try {
+      String baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
+      String dirPath = relativePath.substring(0, relativePath.lastIndexOf('/') + 1);
+
+      // 支持的字幕文件后缀
+      String[] subtitleExtensions = {".srt", ".ass", ".vtt", ".ssa", ".sub", ".idx"};
+
+      // 获取目录中的所有文件（优先使用传入的文件列表）
+      List<OpenlistApiService.OpenlistFile> files;
+      if (directoryFiles != null) {
+        files = directoryFiles;
+        log.debug("使用传入的目录文件列表，避免重复API调用");
+      } else {
+        log.debug("目录文件列表为空，跳过字幕文件复制");
+        return;
+      }
+
+      // 遍历目录中的所有文件，查找匹配的字幕文件
+      for (OpenlistApiService.OpenlistFile file : files) {
+        if ("file".equals(file.getType())) {
+          String fileName_lower = file.getName().toLowerCase();
+          String baseFileName_lower = baseFileName.toLowerCase();
+
+          // 检查是否是字幕文件：文件名以媒体文件基础名开头，且后缀是字幕格式
+          boolean isSubtitleFile = false;
+          for (String ext : subtitleExtensions) {
+            if (fileName_lower.startsWith(baseFileName_lower) && fileName_lower.endsWith(ext)) {
+              isSubtitleFile = true;
+              break;
+            }
+          }
+
+          if (isSubtitleFile) {
+            String subtitleRelativePath = dirPath + file.getName();
+
+            // 获取文件内容
+            byte[] subtitleContent =
+                openlistApiService.getFileContent(openlistConfig, subtitleRelativePath);
+
+            if (subtitleContent != null && subtitleContent.length > 0) {
+              Path targetFile = Paths.get(saveDirectory, file.getName());
+
+              // 确保目标目录存在
+              Files.createDirectories(targetFile.getParent());
+
+              // 写入字幕文件
+              Files.write(targetFile, subtitleContent);
+              log.info("已复制字幕文件: {} -> {}", subtitleRelativePath, targetFile);
+            } else {
+              log.debug("字幕文件内容为空: {}", subtitleRelativePath);
+            }
+          }
+        }
+      }
     } catch (Exception e) {
       log.warn("复制字幕文件失败: {}", fileName, e);
     }
@@ -697,99 +865,113 @@ public class MediaScrapingService {
    * @param directoryFiles 目录文件列表（可选，为null时不会调用API获取）
    * @return 是否成功复制了刮削信息
    */
-  private boolean copyExistingScrapingInfo(OpenlistConfig openlistConfig, String fileName, String relativePath, String saveDirectory, List<OpenlistApiService.OpenlistFile> directoryFiles) {
-     try {
-       String baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
-       
-       // 处理目录路径，使用完整的relativePath作为基础路径
-       String dirPath;
-       int lastSlashIndex = relativePath.lastIndexOf('/');
-       if (lastSlashIndex >= 0) {
-         // 使用完整的目录路径，包含OpenList的路径前缀
-         dirPath = relativePath.substring(0, lastSlashIndex + 1);
-       } else {
-         // 文件在根目录，使用根路径
-         dirPath = "/";
-       }
-       
-       log.debug("[DEBUG] 构建文件路径 - relativePath: {}, dirPath: {}", relativePath, dirPath);
-       
-       boolean foundScrapingInfo = false;
-       
-       // 获取目录中的所有文件（优先使用传入的文件列表）
-       List<OpenlistApiService.OpenlistFile> files;
-       if (directoryFiles != null) {
-         files = directoryFiles;
-         log.debug("使用传入的目录文件列表，避免重复API调用");
-       } else {
-         log.debug("目录文件列表为空，跳过刮削信息复制");
-         return false;
-       }
-       
-       // 查找NFO文件 - 复制目录中所有NFO文件，不做文件名限制
-       for (OpenlistApiService.OpenlistFile file : files) {
-         if ("file".equals(file.getType())) {
-           String fileName_lower = file.getName().toLowerCase();
-           
-           // 检查是否是NFO文件：只要后缀是.nfo就复制
-           if (fileName_lower.endsWith(".nfo")) {
-             log.debug("准备复制NFO文件: {} (使用OpenlistFile对象)", file.getName());
-             
-             byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, file);
-             if (nfoContent != null && nfoContent.length > 0) {
-               Path targetNfoFile = Paths.get(saveDirectory, file.getName());
-               Files.createDirectories(targetNfoFile.getParent());
-               Files.write(targetNfoFile, nfoContent);
-               log.info("已复制NFO文件: {} -> {} (大小: {} bytes)", file.getName(), targetNfoFile, nfoContent.length);
-               foundScrapingInfo = true;
-             } else {
-               log.debug("NFO文件内容为空: {}", file.getName());
-             }
-           }
-         }
-       }
-       
-       // 查找刮削图片文件 - 复制目录中所有图片文件，不做文件名限制
-       String[] imageExtensions = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"};
-       
-       for (OpenlistApiService.OpenlistFile file : files) {
-         if ("file".equals(file.getType())) {
-           String fileName_lower = file.getName().toLowerCase();
-           
-           // 检查是否是图片文件：只要后缀是图片格式就复制
-           boolean isImageFile = false;
-           for (String ext : imageExtensions) {
-             if (fileName_lower.endsWith(ext)) {
-               isImageFile = true;
-               break;
-             }
-           }
-           
-           if (isImageFile) {
-             log.debug("准备复制图片文件: {} (使用OpenlistFile对象)", file.getName());
-             
-             byte[] imageContent = openlistApiService.getFileContent(openlistConfig, file);
-             if (imageContent != null && imageContent.length > 0) {
-               // 检查文件内容是否真的是图片（简单检查前几个字节）
-               String contentType = detectFileType(imageContent);
-               log.debug("图片文件内容类型检测: {} -> {}", file.getName(), contentType);
-               
-               Path targetImageFile = Paths.get(saveDirectory, file.getName());
-               Files.createDirectories(targetImageFile.getParent());
-               Files.write(targetImageFile, imageContent);
-               log.info("已复制刮削图片: {} -> {} (大小: {} bytes, 类型: {})", file.getName(), targetImageFile, imageContent.length, contentType);
-               foundScrapingInfo = true;
-             } else {
-               log.debug("刮削图片内容为空: {}", file.getName());
-             }
-           }
-         }
-       }
-       
-       // 注意：上面的循环已经复制了所有NFO文件和图片文件，包括电视剧相关的文件
-       // 不需要额外的电视剧文件处理逻辑，因为已经移除了文件名限制
-       
-       return foundScrapingInfo;
+  private boolean copyExistingScrapingInfo(
+      OpenlistConfig openlistConfig,
+      String fileName,
+      String relativePath,
+      String saveDirectory,
+      List<OpenlistApiService.OpenlistFile> directoryFiles) {
+    try {
+      String baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
+
+      // 处理目录路径，使用完整的relativePath作为基础路径
+      String dirPath;
+      int lastSlashIndex = relativePath.lastIndexOf('/');
+      if (lastSlashIndex >= 0) {
+        // 使用完整的目录路径，包含OpenList的路径前缀
+        dirPath = relativePath.substring(0, lastSlashIndex + 1);
+      } else {
+        // 文件在根目录，使用根路径
+        dirPath = "/";
+      }
+
+      log.debug("[DEBUG] 构建文件路径 - relativePath: {}, dirPath: {}", relativePath, dirPath);
+
+      boolean foundScrapingInfo = false;
+
+      // 获取目录中的所有文件（优先使用传入的文件列表）
+      List<OpenlistApiService.OpenlistFile> files;
+      if (directoryFiles != null) {
+        files = directoryFiles;
+        log.debug("使用传入的目录文件列表，避免重复API调用");
+      } else {
+        log.debug("目录文件列表为空，跳过刮削信息复制");
+        return false;
+      }
+
+      // 查找NFO文件 - 复制目录中所有NFO文件，不做文件名限制
+      for (OpenlistApiService.OpenlistFile file : files) {
+        if ("file".equals(file.getType())) {
+          String fileName_lower = file.getName().toLowerCase();
+
+          // 检查是否是NFO文件：只要后缀是.nfo就复制
+          if (fileName_lower.endsWith(".nfo")) {
+            log.debug("准备复制NFO文件: {} (使用OpenlistFile对象)", file.getName());
+
+            byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, file);
+            if (nfoContent != null && nfoContent.length > 0) {
+              Path targetNfoFile = Paths.get(saveDirectory, file.getName());
+              Files.createDirectories(targetNfoFile.getParent());
+              Files.write(targetNfoFile, nfoContent);
+              log.info(
+                  "已复制NFO文件: {} -> {} (大小: {} bytes)",
+                  file.getName(),
+                  targetNfoFile,
+                  nfoContent.length);
+              foundScrapingInfo = true;
+            } else {
+              log.debug("NFO文件内容为空: {}", file.getName());
+            }
+          }
+        }
+      }
+
+      // 查找刮削图片文件 - 复制目录中所有图片文件，不做文件名限制
+      String[] imageExtensions = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"};
+
+      for (OpenlistApiService.OpenlistFile file : files) {
+        if ("file".equals(file.getType())) {
+          String fileName_lower = file.getName().toLowerCase();
+
+          // 检查是否是图片文件：只要后缀是图片格式就复制
+          boolean isImageFile = false;
+          for (String ext : imageExtensions) {
+            if (fileName_lower.endsWith(ext)) {
+              isImageFile = true;
+              break;
+            }
+          }
+
+          if (isImageFile) {
+            log.debug("准备复制图片文件: {} (使用OpenlistFile对象)", file.getName());
+
+            byte[] imageContent = openlistApiService.getFileContent(openlistConfig, file);
+            if (imageContent != null && imageContent.length > 0) {
+              // 检查文件内容是否真的是图片（简单检查前几个字节）
+              String contentType = detectFileType(imageContent);
+              log.debug("图片文件内容类型检测: {} -> {}", file.getName(), contentType);
+
+              Path targetImageFile = Paths.get(saveDirectory, file.getName());
+              Files.createDirectories(targetImageFile.getParent());
+              Files.write(targetImageFile, imageContent);
+              log.info(
+                  "已复制刮削图片: {} -> {} (大小: {} bytes, 类型: {})",
+                  file.getName(),
+                  targetImageFile,
+                  imageContent.length,
+                  contentType);
+              foundScrapingInfo = true;
+            } else {
+              log.debug("刮削图片内容为空: {}", file.getName());
+            }
+          }
+        }
+      }
+
+      // 注意：上面的循环已经复制了所有NFO文件和图片文件，包括电视剧相关的文件
+      // 不需要额外的电视剧文件处理逻辑，因为已经移除了文件名限制
+
+      return foundScrapingInfo;
     } catch (Exception e) {
       log.warn("复制已存在刮削信息失败: {}", fileName, e);
       return false;
@@ -809,23 +991,41 @@ public class MediaScrapingService {
 
     // 检查常见的文件头
     // JPEG: FF D8 FF
-    if (content.length >= 3 && (content[0] & 0xFF) == 0xFF && (content[1] & 0xFF) == 0xD8 && (content[2] & 0xFF) == 0xFF) {
+    if (content.length >= 3
+        && (content[0] & 0xFF) == 0xFF
+        && (content[1] & 0xFF) == 0xD8
+        && (content[2] & 0xFF) == 0xFF) {
       return "JPEG";
     }
 
     // PNG: 89 50 4E 47
-    if (content.length >= 4 && (content[0] & 0xFF) == 0x89 && (content[1] & 0xFF) == 0x50 && (content[2] & 0xFF) == 0x4E && (content[3] & 0xFF) == 0x47) {
+    if (content.length >= 4
+        && (content[0] & 0xFF) == 0x89
+        && (content[1] & 0xFF) == 0x50
+        && (content[2] & 0xFF) == 0x4E
+        && (content[3] & 0xFF) == 0x47) {
       return "PNG";
     }
 
     // GIF: 47 49 46 38
-    if (content.length >= 4 && (content[0] & 0xFF) == 0x47 && (content[1] & 0xFF) == 0x49 && (content[2] & 0xFF) == 0x46 && (content[3] & 0xFF) == 0x38) {
+    if (content.length >= 4
+        && (content[0] & 0xFF) == 0x47
+        && (content[1] & 0xFF) == 0x49
+        && (content[2] & 0xFF) == 0x46
+        && (content[3] & 0xFF) == 0x38) {
       return "GIF";
     }
 
     // WebP: 52 49 46 46 (RIFF) + WebP signature
-    if (content.length >= 12 && (content[0] & 0xFF) == 0x52 && (content[1] & 0xFF) == 0x49 && (content[2] & 0xFF) == 0x46 && (content[3] & 0xFF) == 0x46) {
-      if ((content[8] & 0xFF) == 0x57 && (content[9] & 0xFF) == 0x45 && (content[10] & 0xFF) == 0x42 && (content[11] & 0xFF) == 0x50) {
+    if (content.length >= 12
+        && (content[0] & 0xFF) == 0x52
+        && (content[1] & 0xFF) == 0x49
+        && (content[2] & 0xFF) == 0x46
+        && (content[3] & 0xFF) == 0x46) {
+      if ((content[8] & 0xFF) == 0x57
+          && (content[9] & 0xFF) == 0x45
+          && (content[10] & 0xFF) == 0x42
+          && (content[11] & 0xFF) == 0x50) {
         return "WEBP";
       }
     }
@@ -854,8 +1054,7 @@ public class MediaScrapingService {
   }
 
   /**
-   * 获取与STRM文件一致的baseFileName
-   * 只移除扩展名，不进行标准化处理，确保与STRM文件命名一致
+   * 获取与STRM文件一致的baseFileName 只移除扩展名，不进行标准化处理，确保与STRM文件命名一致
    *
    * @param fileName 原始文件名
    * @return 与STRM文件一致的baseFileName

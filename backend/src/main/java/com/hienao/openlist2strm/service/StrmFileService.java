@@ -476,10 +476,10 @@ public class StrmFileService {
           Files.delete(tvShowFanart);
           log.info("删除孤立的电视剧背景图文件: {}", tvShowFanart);
         }
-        
+
         // 清理目录中多余的图片文件和NFO文件
         cleanExtraScrapingFiles(parentDir);
-        
+
         // 检查目录是否为空，如果为空则删除目录
         if (isDirectoryEmpty(parentDir)) {
           Files.delete(parentDir);
@@ -519,7 +519,7 @@ public class StrmFileService {
       log.warn("清理空目录失败: {}, 错误: {}", rootPath, e.getMessage());
     }
   }
-  
+
   /**
    * 清理目录中多余的图片文件和NFO文件
    *
@@ -529,26 +529,30 @@ public class StrmFileService {
     try {
       Files.list(directory)
           .filter(Files::isRegularFile)
-          .filter(path -> {
-            String fileName = path.getFileName().toString().toLowerCase();
-            // 清理图片文件和NFO文件
-            return fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") 
-                || fileName.endsWith(".png") || fileName.endsWith(".nfo")
-                || fileName.endsWith(".xml");
-          })
-          .forEach(file -> {
-            try {
-              Files.delete(file);
-              log.info("删除多余的刮削文件: {}", file);
-            } catch (IOException e) {
-              log.warn("删除多余刮削文件失败: {}, 错误: {}", file, e.getMessage());
-            }
-          });
+          .filter(
+              path -> {
+                String fileName = path.getFileName().toString().toLowerCase();
+                // 清理图片文件和NFO文件
+                return fileName.endsWith(".jpg")
+                    || fileName.endsWith(".jpeg")
+                    || fileName.endsWith(".png")
+                    || fileName.endsWith(".nfo")
+                    || fileName.endsWith(".xml");
+              })
+          .forEach(
+              file -> {
+                try {
+                  Files.delete(file);
+                  log.info("删除多余的刮削文件: {}", file);
+                } catch (IOException e) {
+                  log.warn("删除多余刮削文件失败: {}, 错误: {}", file, e.getMessage());
+                }
+              });
     } catch (IOException e) {
       log.warn("清理多余刮削文件失败: {}, 错误: {}", directory, e.getMessage());
     }
   }
-  
+
   /**
    * 检查目录是否为空
    *

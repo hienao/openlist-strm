@@ -19,8 +19,8 @@
 package com.hienao.openlist2strm.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 import java.util.List;
+import lombok.Data;
 
 @Data
 @Schema(description = "前端日志请求")
@@ -32,28 +32,28 @@ public class FrontendLogRequest {
   @Data
   @Schema(description = "日志条目")
   public static class LogEntry {
-    
+
     @Schema(description = "日志级别", example = "info", required = true)
     private String level;
-    
+
     @Schema(description = "日志消息", example = "用户登录成功", required = true)
     private String message;
-    
+
     @Schema(description = "时间戳", example = "1640995200000", required = true)
     private Long timestamp;
-    
+
     @Schema(description = "用户代理", example = "Mozilla/5.0...")
     private String userAgent;
-    
+
     @Schema(description = "页面URL", example = "/dashboard")
     private String url;
-    
+
     @Schema(description = "用户ID", example = "user123")
     private String userId;
-    
+
     @Schema(description = "会话ID", example = "session456")
     private String sessionId;
-    
+
     @Schema(description = "额外数据")
     private Object extra;
   }

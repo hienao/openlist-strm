@@ -35,10 +35,10 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
     try {
       // 1. 应用日志级别配置
       logConfigService.applyLogLevelConfig();
-      
+
       // 2. 注册日志清理定时任务
       registerLogCleanupTask();
-      
+
       // 3. 查询所有有定时任务表达式的任务配置
       List<TaskConfig> scheduledConfigs = taskConfigService.getScheduledConfigs();
 
@@ -56,40 +56,40 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
       log.error("系统初始化失败: {}", e.getMessage(), e);
     }
   }
-  
-  /**
-   * 注册日志清理定时任务
-   */
+
+  /** 注册日志清理定时任务 */
   private void registerLogCleanupTask() {
     try {
       // 获取Scheduler实例
       Scheduler scheduler = quartzSchedulerService.getScheduler();
-      
+
       // 每天凌晨1:30执行日志清理任务
       String cronExpression = "0 30 1 * * ?";
       String jobName = "LogCleanupJob";
       String jobGroup = "SYSTEM";
-      
+
       // 创建JobDetail
-      JobDetail jobDetail = JobBuilder.newJob(LogCleanupJob.class)
-          .withIdentity(jobName, jobGroup)
-          .withDescription("日志清理定时任务")
-          .storeDurably(true)
-          .build();
-      
+      JobDetail jobDetail =
+          JobBuilder.newJob(LogCleanupJob.class)
+              .withIdentity(jobName, jobGroup)
+              .withDescription("日志清理定时任务")
+              .storeDurably(true)
+              .build();
+
       // 创建CronTrigger
-      CronTrigger trigger = TriggerBuilder.newTrigger()
-          .withIdentity(jobName + "Trigger", jobGroup)
-          .withDescription("日志清理触发器")
-          .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
-          .forJob(jobDetail)
-          .build();
-      
+      CronTrigger trigger =
+          TriggerBuilder.newTrigger()
+              .withIdentity(jobName + "Trigger", jobGroup)
+              .withDescription("日志清理触发器")
+              .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
+              .forJob(jobDetail)
+              .build();
+
       // 调度任务
       scheduler.scheduleJob(jobDetail, trigger);
-      
+
       log.info("日志清理定时任务注册成功，执行时间: 每天凌晨1:30");
-      
+
     } catch (Exception e) {
       log.error("注册日志清理定时任务失败: {}", e.getMessage(), e);
     }

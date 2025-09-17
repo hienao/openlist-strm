@@ -14,25 +14,17 @@ import lombok.Data;
 @Data
 public class DataReportRequest {
 
-  /**
-   * PostHog API Key
-   */
+  /** PostHog API Key */
   @JsonProperty("api_key")
   private String apiKey = "phc_dT1G4XQQm5YJfodJbNhCavocArLqAIFI1m9H9IKxEUn";
 
-  /**
-   * 事件名称
-   */
+  /** 事件名称 */
   private String event;
 
-  /**
-   * 事件属性
-   */
+  /** 事件属性 */
   private Map<String, Object> properties;
 
-  /**
-   * 时间戳（ISO 8601格式）
-   */
+  /** 时间戳（ISO 8601格式） */
   private String timestamp;
 
   /**
@@ -47,9 +39,7 @@ public class DataReportRequest {
     this.timestamp = Instant.now().toString();
   }
 
-  /**
-   * 默认构造函数
-   */
+  /** 默认构造函数 */
   public DataReportRequest() {
     this.timestamp = Instant.now().toString();
   }

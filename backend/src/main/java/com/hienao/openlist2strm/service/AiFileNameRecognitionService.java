@@ -83,7 +83,8 @@ public class AiFileNameRecognitionService {
         log.info("AI 识别成功: {} -> {}", originalFileName, result);
         return result;
       } else {
-        log.info("AI 无法识别文件名: {} -> {}", originalFileName, result != null ? result.getReason() : "未知错误");
+        log.info(
+            "AI 无法识别文件名: {} -> {}", originalFileName, result != null ? result.getReason() : "未知错误");
         return result;
       }
 
@@ -285,22 +286,22 @@ public class AiFileNameRecognitionService {
         if (titleNode != null && !titleNode.isNull() && !titleNode.asText().trim().isEmpty()) {
           // 新格式：分离字段
           result.setTitle(titleNode.asText().trim());
-          
+
           JsonNode yearNode = jsonNode.get("year");
           if (yearNode != null && !yearNode.isNull()) {
             result.setYear(yearNode.asText().trim());
           }
-          
+
           JsonNode seasonNode = jsonNode.get("season");
           if (seasonNode != null && !seasonNode.isNull()) {
             result.setSeason(seasonNode.asInt());
           }
-          
+
           JsonNode episodeNode = jsonNode.get("episode");
           if (episodeNode != null && !episodeNode.isNull()) {
             result.setEpisode(episodeNode.asInt());
           }
-          
+
           log.debug("成功解析 JSON 响应（新格式）: {}", result);
           return result;
         } else {

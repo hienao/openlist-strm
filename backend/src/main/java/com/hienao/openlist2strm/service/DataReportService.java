@@ -87,7 +87,7 @@ public class DataReportService {
 
     // 添加必需的系统属性
     properties.put("distinct_id", getContainerInstanceId());
-    
+
     // 添加镜像信息
     Map<String, String> imageInfo = getContainerImage();
     properties.put("image", imageInfo.get("image"));
@@ -133,17 +133,17 @@ public class DataReportService {
    */
   private Map<String, String> getContainerImage() {
     Map<String, String> result = new HashMap<>();
-    
+
     // image 固定为 openlist-strm
     result.put("image", "openlist-strm");
-    
+
     // 获取版本号，优先从环境变量APP_VERSION获取，与前端NUXT_PUBLIC_APP_VERSION保持一致
     String version = System.getenv("APP_VERSION");
     if (version == null || version.trim().isEmpty()) {
       version = "dev"; // 默认版本号，与前端保持一致
     }
     result.put("version", version);
-    
+
     return result;
   }
 
@@ -162,7 +162,8 @@ public class DataReportService {
       HttpEntity<DataReportRequest> entity = new HttpEntity<>(request, headers);
 
       // 发送POST请求
-      ResponseEntity<String> response = restTemplate.postForEntity(POSTHOG_API_URL, entity, String.class);
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(POSTHOG_API_URL, entity, String.class);
 
       if (!response.getStatusCode().is2xxSuccessful()) {
         log.warn("数据上报请求失败，状态码: {}", response.getStatusCode());

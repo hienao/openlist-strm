@@ -5,6 +5,7 @@ import com.hienao.openlist2strm.dto.sign.ChangePasswordDto;
 import com.hienao.openlist2strm.dto.sign.SignInDto;
 import com.hienao.openlist2strm.dto.sign.SignUpDto;
 import com.hienao.openlist2strm.exception.BusinessException;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -12,7 +13,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -94,7 +94,7 @@ public class SignService {
 
     // 更新密码
     userInfo.put(PWD_KEY, md5Hash(changePasswordDto.getNewPassword()));
-    
+
     try {
       File userFile = new File(USER_INFO_FILE);
       objectMapper.writeValue(userFile, userInfo);
@@ -110,15 +110,17 @@ public class SignService {
     if (!userFile.exists()) {
       return false;
     }
-    
+
     try {
       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
       String username = userInfo.get("username");
       String password = userInfo.get("pwd");
-      
+
       // 检查用户名和密码字段是否都存在且不为空
-      return username != null && !username.trim().isEmpty() && 
-             password != null && !password.trim().isEmpty();
+      return username != null
+          && !username.trim().isEmpty()
+          && password != null
+          && !password.trim().isEmpty();
     } catch (IOException e) {
       log.error("读取用户信息失败", e);
       return false;
@@ -133,10 +135,10 @@ public class SignService {
    */
   public void ensureContainerInstanceId() {
     File userFile = new File(USER_INFO_FILE);
-    
+
     try {
       Map<String, String> userInfo;
-      
+
       if (userFile.exists()) {
         // 读取现有配置
         userInfo = objectMapper.readValue(userFile, Map.class);
@@ -145,23 +147,23 @@ public class SignService {
         userFile.getParentFile().mkdirs();
         userInfo = new HashMap<>();
       }
-      
+
       // 检查是否存在容器实例ID
-      if (!userInfo.containsKey(CONTAINER_INSTANCE_ID_KEY) || 
-          userInfo.get(CONTAINER_INSTANCE_ID_KEY) == null || 
-          userInfo.get(CONTAINER_INSTANCE_ID_KEY).trim().isEmpty()) {
-        
+      if (!userInfo.containsKey(CONTAINER_INSTANCE_ID_KEY)
+          || userInfo.get(CONTAINER_INSTANCE_ID_KEY) == null
+          || userInfo.get(CONTAINER_INSTANCE_ID_KEY).trim().isEmpty()) {
+
         // 生成新的容器实例ID
         String containerInstanceId = UUID.randomUUID().toString();
         userInfo.put(CONTAINER_INSTANCE_ID_KEY, containerInstanceId);
-        
+
         // 保存到文件
         objectMapper.writeValue(userFile, userInfo);
         log.info("生成新的容器实例ID: {}", containerInstanceId);
       } else {
         log.info("容器实例ID已存在: {}", userInfo.get(CONTAINER_INSTANCE_ID_KEY));
       }
-      
+
     } catch (IOException e) {
       log.error("处理容器实例ID失败", e);
       throw new BusinessException("初始化容器实例ID失败", e);
@@ -177,11 +179,11 @@ public class SignService {
    */
   public String getContainerInstanceId() {
     File userFile = new File(USER_INFO_FILE);
-    
+
     if (!userFile.exists()) {
       return null;
     }
-    
+
     try {
       Map<String, String> userInfo = objectMapper.readValue(userFile, Map.class);
       return userInfo.get(CONTAINER_INSTANCE_ID_KEY);

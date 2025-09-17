@@ -128,7 +128,7 @@ public class CoverImageService {
     if (Files.exists(savePath)) {
       Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
       boolean overwriteExisting = (Boolean) scrapingConfig.getOrDefault("overwriteExisting", false);
-      
+
       if (!overwriteExisting) {
         log.info("检测到同名图片文件已存在，跳过下载: {}", saveFilePath);
         return;

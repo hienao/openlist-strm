@@ -22,25 +22,22 @@ public class LogConfigService {
 
   private final SystemConfigService systemConfigService;
 
-  /**
-   * 应用日志级别配置
-   * 根据系统配置动态调整日志级别
-   */
+  /** 应用日志级别配置 根据系统配置动态调整日志级别 */
   public void applyLogLevelConfig() {
     try {
       Map<String, Object> logConfig = systemConfigService.getLogConfig();
       String logLevel = (String) logConfig.getOrDefault("level", "info");
-      
+
       log.info("应用日志级别配置: {}", logLevel);
-      
+
       // 设置根日志级别
       setRootLogLevel(logLevel);
-      
+
       // 设置应用包的日志级别
       setPackageLogLevel("com.hienao.openlist2strm", logLevel);
-      
+
       log.info("日志级别配置已应用: {}", logLevel);
-      
+
     } catch (Exception e) {
       log.error("应用日志级别配置失败: {}", e.getMessage(), e);
     }
@@ -55,12 +52,12 @@ public class LogConfigService {
     try {
       LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
       Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-      
+
       Level level = parseLogLevel(levelStr);
       rootLogger.setLevel(level);
-      
+
       log.debug("根日志级别已设置为: {}", level);
-      
+
     } catch (Exception e) {
       log.error("设置根日志级别失败: {}", e.getMessage(), e);
     }
@@ -76,12 +73,12 @@ public class LogConfigService {
     try {
       LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
       Logger packageLogger = loggerContext.getLogger(packageName);
-      
+
       Level level = parseLogLevel(levelStr);
       packageLogger.setLevel(level);
-      
+
       log.debug("包 {} 的日志级别已设置为: {}", packageName, level);
-      
+
     } catch (Exception e) {
       log.error("设置包 {} 的日志级别失败: {}", packageName, e.getMessage(), e);
     }
@@ -98,9 +95,9 @@ public class LogConfigService {
     if (levelStr == null || levelStr.trim().isEmpty()) {
       return Level.INFO;
     }
-    
+
     String upperLevelStr = levelStr.trim().toUpperCase();
-    
+
     return switch (upperLevelStr) {
       case "DEBUG" -> Level.DEBUG;
       case "INFO" -> Level.INFO;
@@ -125,10 +122,10 @@ public class LogConfigService {
     try {
       LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
       Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-      
+
       Level level = rootLogger.getLevel();
       return level != null ? level.toString().toLowerCase() : "info";
-      
+
     } catch (Exception e) {
       log.error("获取当前日志级别失败: {}", e.getMessage(), e);
       return "info";
@@ -145,10 +142,10 @@ public class LogConfigService {
     if (levelStr == null || levelStr.trim().isEmpty()) {
       return false;
     }
-    
+
     String upperLevelStr = levelStr.trim().toUpperCase();
-    
-    return "DEBUG".equals(upperLevelStr) 
+
+    return "DEBUG".equals(upperLevelStr)
         || "INFO".equals(upperLevelStr)
         || "WARN".equals(upperLevelStr)
         || "WARNING".equals(upperLevelStr)
@@ -168,12 +165,12 @@ public class LogConfigService {
     if (retentionDays == null) {
       return false;
     }
-    
+
     // 支持的保留天数：1, 3, 5, 7, 30
-    return retentionDays == 1 
-        || retentionDays == 3 
-        || retentionDays == 5 
-        || retentionDays == 7 
+    return retentionDays == 1
+        || retentionDays == 3
+        || retentionDays == 5
+        || retentionDays == 7
         || retentionDays == 30;
   }
 }
