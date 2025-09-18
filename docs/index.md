@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "OpenList-Strm"
-  text: "Gen Strm Files For OpenList"
-  tagline: My great project tagline
+  text: "便捷的为你的OpenList影音文件生成Strm文件"
+  tagline: 一个OpenList的配套使用工具
   actions:
     - theme: brand
       text: Markdown Examples
