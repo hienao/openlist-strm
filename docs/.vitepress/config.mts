@@ -2,12 +2,13 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  lang: 'zh_CN',
   title: "OpenList-Strm",
-  description: "Gen Strm Files For OpenList",
+  description: "便捷的为你的OpenList影音文件生成Strm文件",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Home', link: '/' },
+      { text: '首页', link: '/' },
       { text: 'Examples', link: '/markdown-examples' }
     ],
 
@@ -22,7 +23,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
+      { icon: 'github', link: 'https://github.com/hienao/openlist-strm' }
     ]
   }
 })
