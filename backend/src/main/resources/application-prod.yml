@@ -3,11 +3,6 @@ server:
 logging:
   file:
     path: ${LOG_PATH:/app/data/log}
-cors:
-  allowedOrigins: "*"
-  allowedMethods: "*"
-  allowedHeaders: "*"
-  allowedExposeHeaders: "*"
 spring:
   datasource:
     url: jdbc:sqlite:/app/data/config/db/openlist2strm.db
