@@ -7,6 +7,11 @@ spring:
   datasource:
     url: jdbc:sqlite:${DATABASE_PATH:./data/config/db/openlist2strm.db}
     driver-class-name: org.sqlite.JDBC
+    # SQLite JDBC driver compatible with Alpine Linux
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
   # MyBatis configuration
   flyway:
     enabled: true

@@ -24,14 +24,14 @@ RUN --mount=type=cache,target=$GRADLE_USER_HOME \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
 # Stage 3: Runtime
-FROM bellsoft/liberica-openjdk-alpine:21 AS runner
+FROM azul/zulu-openjdk-alpine:21 AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
 WORKDIR $WORKDIR
 
-# Install nginx for serving frontend
-RUN apk add nginx tzdata && \
+# Install nginx for serving frontend and required libraries
+RUN apk add nginx tzdata gcompat && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log && \

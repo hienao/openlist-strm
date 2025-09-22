@@ -574,7 +574,7 @@ onMounted(async () => {
 // 加载当前设置
 const loadCurrentSettings = async () => {
   // 设置所有可选的后缀列表（包含所有支持的格式）
-  availableExtensions.value = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.3g2', '.asf', '.divx', '.f4v', '.m2ts', '.m2v', '.mts', '.ogv', '.rm', '.rmvb', '.ts', '.vob', '.xvid']
+  availableExtensions.value = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.3g2', '.asf', '.divx', '.f4v', '.m2ts', '.m2v', '.mts', '.ogv', '.rm', '.rmvb', '.ts', '.vob', '.xvid', '.iso']
 
   try {
     const response = await authenticatedApiCall('/system/config')
@@ -641,13 +641,13 @@ const loadCurrentSettings = async () => {
 
     } else {
       // 如果获取失败，使用默认选择
-      selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
+      selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv', '.iso']
       // 获取配置失败，使用默认配置
     }
   } catch (error) {
     // 加载设置失败，使用默认配置
     // 出错时使用默认选择
-    selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv']
+    selectedExtensions.value = ['.mp4', '.avi', '.rmvb', '.mkv', '.iso']
   }
 }
 
