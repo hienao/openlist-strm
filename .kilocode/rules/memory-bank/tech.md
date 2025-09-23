@@ -3,26 +3,29 @@
 ## 技术栈概览
 
 ### 前端技术栈
-- **框架**：Nuxt.js 3.17.7 (Vue 3 + Composition API)
-- **样式**：Tailwind CSS 3.x + 自定义CSS组件
-- **状态管理**：Pinia 2.x
-- **构建工具**：Vite 5.x
+- **框架**：Nuxt.js 3.13.0 (Vue 3.4.0 + Composition API)
+- **样式**：Tailwind CSS 3.4.15 + @tailwindcss/forms
+- **状态管理**：Pinia 2.1.7
+- **构建工具**：Vite (Nuxt内置)
 - **运行时**：Node.js 20.x
 - **HTTP客户端**：$fetch (Nuxt内置)
-- **认证**：JWT + localStorage/sessionStorage
+- **认证**：JWT + Cookie存储
+- **路由**：文件系统路由 + 中间件
 
 ### 后端技术栈
 - **框架**：Spring Boot 3.3.9
-- **数据访问**：MyBatis 3.x + MyBatis-Plus 3.5.x
+- **数据访问**：MyBatis 3.0.4 (无MyBatis-Plus)
 - **任务调度**：Quartz 2.3.x
-- **数据库**：SQLite 3.47.1
-- **数据库迁移**：Flyway 9.x
+- **数据库**：SQLite 3.47.1.0
+- **数据库迁移**：Flyway 11.4.0
 - **构建工具**：Gradle 8.14.3
-- **运行时**：JDK 21
+- **运行时**：JDK 21 (Azul Zulu)
 - **安全框架**：Spring Security 6.x
-- **API文档**：OpenAPI 3 (Swagger)
-- **HTTP客户端**：RestTemplate
+- **API文档**：OpenAPI 3 (SpringDoc)
+- **HTTP客户端**：RestTemplate + WebFlux
 - **JSON处理**：Jackson 2.x
+- **缓存**：Caffeine 3.2.0
+- **WebSocket**：Spring WebSocket
 
 ### 部署和运维
 - **容器化**：Docker 24.x
@@ -31,7 +34,8 @@
 - **反向代理**：Nginx + SSL/TLS
 - **数据持久化**：Docker Volumes
 - **环境配置**：Docker Compose 2.x
-- **监控**：内置日志系统 + 健康检查
+- **监控**：内置日志系统 + 健康检查 + WebSocket实时通信
+- **日志**：SLF4J + Logback + 日志轮转
 
 ## 开发环境设置
 
@@ -44,11 +48,17 @@ node --version  # 需要 v20.x
 cd frontend
 npm install
 
-# 开发模式运行
+# 开发模式运行 (端口 3000)
 npm run dev
 
 # 构建生产版本
 npm run build
+
+# 预览生产版本
+npm run preview
+
+# 静态站点生成
+npm run generate
 ```
 
 ### 后端开发环境
@@ -66,8 +76,31 @@ cd backend
 # 运行测试
 ./gradlew test
 
-# 运行应用
+# 运行应用 (端口 8080)
 ./gradlew bootRun
+
+# 生成JAR文件
+./gradlew bootJar
+
+# 代码质量检查
+./gradlew spotlessApply  # 代码格式化
+./gradlew pmdMain         # 静态分析
+./gradlew jacocoTestReport  # 测试覆盖率
+```
+
+### 跨平台开发脚本
+**Linux/macOS**:
+```bash
+./dev-start.sh     # 启动开发环境（前后端）
+./dev-logs.sh      # 查看日志 [frontend|backend|both|status|clear]
+./dev-stop.sh      # 停止开发服务
+```
+
+**Windows (Command Prompt/PowerShell)**:
+```cmd
+dev-start.bat      # 启动开发环境（前后端）
+dev-logs.bat       # 查看日志 [frontend|backend|both|status|clear]
+dev-stop.bat       # 停止开发服务
 ```
 
 ### Docker开发环境
@@ -80,33 +113,40 @@ docker-compose up -d
 
 # 查看日志
 docker-compose logs -f
+
+# 完整重构建
+./dev-docker-rebuild.sh  # Linux/macOS
+dev-docker-rebuild.bat   # Windows
 ```
 
 ## 核心技术组件
 
 ### 1. 前端核心组件
 
-#### Nuxt.js 3.17.7
-- **特性**：服务端渲染(SSR)、静态站点生成(SSG)、文件系统路由
+#### Nuxt.js 3.13.0
+- **特性**：静态站点生成(SSG)、文件系统路由、Nitro服务器
 - **配置**：[`nuxt.config.ts`](frontend/nuxt.config.ts:1)
-- **中间件**：认证中间件、路由守卫
-- **插件**：API代理、全局状态管理
+- **中间件**：认证中间件(`auth.js`)、访客中间件(`guest.js`)、Docker端口修复
+- **插件**：认证插件、日志插件、Docker端口修复插件
+- **路由**：基于文件系统的路由配置，支持动态路由
 
-#### Vue 3 + Composition API
+#### Vue 3.4.0 + Composition API
 - **响应式系统**：ref、reactive、computed、watch
 - **组件通信**：props、emit、provide/inject
 - **生命周期**：onMounted、onUnmounted、onUpdated
+- **性能优化**：编译时优化、Tree-shaking
 
-#### Pinia状态管理
+#### Pinia 2.1.7状态管理
 - **Store结构**：
   - [`auth.js`](frontend/stores/auth.js:1)：用户认证状态管理
   - [`config.js`](frontend/stores/config.js:1)：系统配置状态管理
-- **特性**：TypeScript支持、模块化、持久化
+- **特性**：TypeScript支持、模块化、持久化、DevTools集成
 
-#### Tailwind CSS
+#### Tailwind CSS 3.4.15
 - **配置**：`tailwind.config.js`
-- **组件样式**：原子化CSS、响应式设计、暗色模式支持
-- **自定义样式**：[`globals.css`](frontend/assets/css/globals.css:1)
+- **组件样式**：原子化CSS、响应式设计、表单样式支持
+- **自定义样式**：[`main.css`](frontend/assets/css/main.css:1)
+- **优化**：JIT编译、PurgeCSS、暗色模式支持
 
 ### 2. 后端核心组件
 
@@ -115,25 +155,29 @@ docker-compose logs -f
 - **配置文件**：[`application.yml`](backend/src/main/resources/application.yml:1)
 - **配置类**：
   - [`WebConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/WebConfig.java:1)：Web配置
-  - [`SecurityConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/SecurityConfig.java:1)：安全配置
+  - [`CorsConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/CorsConfig.java:1)：CORS配置
   - [`QuartzConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/QuartzConfig.java:1)：Quartz配置
+  - [`TaskExecutorConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/TaskExecutorConfig.java:1)：线程池配置
 
 #### MyBatis数据访问
 - **Mapper接口**：[`TaskConfigMapper.java`](backend/src/main/java/com/hienao/openlist2strm/mapper/TaskConfigMapper.java:1)
 - **XML映射**：[`TaskConfigMapper.xml`](backend/src/main/resources/mapper/TaskConfigMapper.xml:1)
 - **实体类**：[`TaskConfig.java`](backend/src/main/java/com/hienao/openlist2strm/entity/TaskConfig.java:1)
 - **服务层**：[`TaskConfigService.java`](backend/src/main/java/com/hienao/openlist2strm/service/TaskConfigService.java:1)
+- **数据库迁移**：[`V1_0_0__init_schema.sql`](backend/src/main/resources/db/migration/V1_0_0__init_schema.sql:1)等
 
 #### Quartz任务调度
 - **Job类**：[`TaskConfigJob.java`](backend/src/main/java/com/hienao/openlist2strm/job/TaskConfigJob.java:1)
 - **调度配置**：[`QuartzConfig.java`](backend/src/main/java/com/hienao/openlist2strm/config/QuartzConfig.java:1)
 - **任务执行**：[`TaskExecutionService.java`](backend/src/main/java/com/hienao/openlist2strm/service/TaskExecutionService.java:1)
+- **数据备份**：[`DataBackupJob.java`](backend/src/main/java/com/hienao/openlist2strm/job/DataBackupJob.java:1)
+- **日志清理**：[`LogCleanupJob.java`](backend/src/main/java/com/hienao/openlist2strm/job/LogCleanupJob.java:1)
 
 #### SQLite数据库
-- **数据库文件**：`./data/openlist-strm.db`
-- **连接池**：HikariCP
-- **数据库迁移**：Flyway
-- **备份策略**：定期自动备份
+- **数据库文件**：`./data/config/db/openlist2strm.db`
+- **连接池**：HikariCP (连接超时30s，最大池大小10，最小空闲5)
+- **数据库迁移**：Flyway 11.4.0 (支持无序迁移)
+- **备份策略**：定期自动备份，数据持久化
 
 ### 3. 核心业务服务
 
