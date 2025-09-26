@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.lang.Nullable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.firewall.RequestRejectedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,7 +32,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpStatusCode status,
       WebRequest request) {
     log.error("MethodArgumentNotValidException Handled  ===> ", ex);
-    ApiResponse<Void> response = ApiResponse.error(status.value(), "参数验证失败: " + ex.getMessage());
+    
+    // 提取第一个字段错误
+    FieldError firstFieldError = ex.getBindingResult().getFieldErrors().get(0);
+    String errorMessage = firstFieldError.getDefaultMessage();
+    
+    ApiResponse<Void> response = ApiResponse.error(status.value(), errorMessage);
     return ResponseEntity.status(status).body(response);
   }
 

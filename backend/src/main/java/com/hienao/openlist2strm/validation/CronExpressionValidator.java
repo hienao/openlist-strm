@@ -30,6 +30,11 @@ public class CronExpressionValidator implements ConstraintValidator<ValidCronExp
             return true;
         }
         
+        // 验证失败，禁用默认错误信息，设置简洁的错误信息
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate("定时任务表达式格式不正确")
+               .addConstraintViolation();
+        
         return false;
     }
     
