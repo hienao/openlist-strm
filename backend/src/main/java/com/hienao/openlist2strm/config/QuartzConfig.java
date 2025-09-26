@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.config;
 
 import com.hienao.openlist2strm.job.DataBackupJob;
+import com.hienao.openlist2strm.job.VersionCheckJob;
 import java.util.Map;
 import java.util.Properties;
 import javax.sql.DataSource;
@@ -82,6 +83,42 @@ public class QuartzConfig {
     CronTriggerFactoryBean factory = new CronTriggerFactoryBean();
     factory.setJobDetail(dataBackupJobDetail);
     factory.setCronExpression("0 0/5 * * * ?");
+    return factory;
+  }
+
+  @Bean("versionCheckJobDetail")
+  public JobDetailFactoryBean versionCheckJobDetail() {
+    JobDetailFactoryBean factory = new JobDetailFactoryBean();
+    factory.setJobClass(VersionCheckJob.class);
+    factory.setName("version-check-job");
+    factory.setGroup("version-service");
+    factory.setDurability(true);
+    return factory;
+  }
+
+  @Bean("versionCheckSchedulerFactory")
+  public SchedulerFactoryBean versionCheckSchedulerFactory(
+      Trigger versionCheckTrigger,
+      JobDetail versionCheckJobDetail,
+      DataSource dataSource,
+      SpringBeanJobFactory springBeanJobFactory) {
+    SchedulerFactoryBean schedulerFactory = new SchedulerFactoryBean();
+    schedulerFactory.setSchedulerName("version-check-scheduler");
+    Properties props = getCommonProps();
+    props.setProperty("org.quartz.threadPool.threadCount", "2");
+    schedulerFactory.setQuartzProperties(props);
+    schedulerFactory.setJobDetails(versionCheckJobDetail);
+    schedulerFactory.setTriggers(versionCheckTrigger);
+    schedulerFactory.setDataSource(dataSource);
+    schedulerFactory.setJobFactory(springBeanJobFactory);
+    return schedulerFactory;
+  }
+
+  @Bean("versionCheckTrigger")
+  public CronTriggerFactoryBean versionCheckTrigger(JobDetail versionCheckJobDetail) {
+    CronTriggerFactoryBean factory = new CronTriggerFactoryBean();
+    factory.setJobDetail(versionCheckJobDetail);
+    factory.setCronExpression("0 0 */6 * * ?"); // 每6小时检查一次
     return factory;
   }
 }

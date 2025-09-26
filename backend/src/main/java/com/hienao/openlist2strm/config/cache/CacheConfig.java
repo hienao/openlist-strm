@@ -15,11 +15,17 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfig {
 
   public static final String VERIFY_CODE = "verifyCode";
+  public static final String VERSION_CHECK = "versionCheck";
+  public static final String GITHUB_RELEASES = "githubReleases";
 
   @Bean
   public CacheManager cacheManager() {
     SimpleCacheManager cacheManager = new SimpleCacheManager();
-    cacheManager.setCaches(List.of(verifyCodeCache()));
+    cacheManager.setCaches(List.of(
+        verifyCodeCache(),
+        versionCheckCache(),
+        githubReleasesCache()
+    ));
     return cacheManager;
   }
 
@@ -27,5 +33,17 @@ public class CacheConfig {
     return new CaffeineCache(
         VERIFY_CODE,
         Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(60, TimeUnit.SECONDS).build());
+  }
+
+  private CaffeineCache versionCheckCache() {
+    return new CaffeineCache(
+        VERSION_CHECK,
+        Caffeine.newBuilder().maximumSize(100).expireAfterWrite(1, TimeUnit.HOURS).build());
+  }
+
+  private CaffeineCache githubReleasesCache() {
+    return new CaffeineCache(
+        GITHUB_RELEASES,
+        Caffeine.newBuilder().maximumSize(10).expireAfterWrite(6, TimeUnit.HOURS).build());
   }
 }

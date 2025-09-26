@@ -35,3 +35,12 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:secret}
   expiration-min: ${JWT_EXPIRATION_MIN:20160}  # 14天 = 14 * 24 * 60 = 20160分钟
+
+# GitHub配置
+github:
+  repo:
+    owner: ${GITHUB_REPO_OWNER:hienao}
+    name: ${GITHUB_REPO_NAME:openlist-strm}
+  api:
+    timeout: ${GITHUB_API_TIMEOUT:30}
+    retry-count: ${GITHUB_API_RETRY_COUNT:3}
