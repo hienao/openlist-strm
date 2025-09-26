@@ -561,7 +561,7 @@ const deleteTask = async (taskId) => {
     if (response.code === 200) {
       await fetchTasks()
     } else {
-      throw new Error('删除失败')
+      throw new Error(response.message || '删除失败')
     }
   } catch (error) {
     logger.error('删除任务失败:', error)

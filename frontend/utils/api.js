@@ -57,6 +57,20 @@ export async function apiCall(endpoint, options = {}) {
       await handleUnauthorizedError()
     }
 
+    // 处理响应体中的错误信息
+    if (error.data) {
+      // 如果错误响应中包含 ApiResponse 格式的数据
+      const errorData = error.data
+      if (errorData.message) {
+        // 创建一个新的错误对象，包含正确的错误信息
+        const enhancedError = new Error(errorData.message)
+        enhancedError.status = error.status
+        enhancedError.data = error.data
+        enhancedError.code = errorData.code
+        throw enhancedError
+      }
+    }
+
     throw error
   }
 }
