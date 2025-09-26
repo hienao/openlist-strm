@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -106,6 +107,13 @@ public class TaskConfigController {
   @Operation(summary = "创建配置", description = "创建新的任务配置")
   public ResponseEntity<ApiResponse<TaskConfigDto>> createConfig(
       @Valid @RequestBody TaskConfigDto configDto) {
+    // 转换Cron表达式格式
+    if (StringUtils.hasText(configDto.getCron())) {
+      String convertedCron = convertToQuartzFormat(configDto.getCron());
+      if (convertedCron != null) {
+        configDto.setCron(convertedCron);
+      }
+    }
     TaskConfig config = convertToEntity(configDto);
     TaskConfig createdConfig = taskConfigService.createConfig(config);
     return ResponseEntity.ok(ApiResponse.success(convertToDto(createdConfig)));
@@ -118,6 +126,13 @@ public class TaskConfigController {
       @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @Valid @RequestBody TaskConfigDto configDto) {
     configDto.setId(id);
+    // 转换Cron表达式格式
+    if (StringUtils.hasText(configDto.getCron())) {
+      String convertedCron = convertToQuartzFormat(configDto.getCron());
+      if (convertedCron != null) {
+        configDto.setCron(convertedCron);
+      }
+    }
     TaskConfig config = convertToEntity(configDto);
     TaskConfig updatedConfig = taskConfigService.updateConfig(config);
     return ResponseEntity.ok(ApiResponse.success(convertToDto(updatedConfig)));
@@ -214,5 +229,41 @@ public class TaskConfigController {
     TaskConfig config = new TaskConfig();
     BeanUtils.copyProperties(dto, config);
     return config;
+  }
+
+  /**
+   * 将 Unix Cron 格式转换为 Quartz Cron 格式
+   * Unix Cron: 分 时 日 月 周 (5个字段)
+   * Quartz Cron: 秒 分 时 日 月 周 (6个字段)
+   */
+  private String convertToQuartzFormat(String cronExpression) {
+    if (cronExpression == null || cronExpression.trim().isEmpty()) {
+      return null;
+    }
+    
+    String[] parts = cronExpression.trim().split("\\s+");
+    
+    // 如果是 5 个字段，转换为 6 个字段的 Quartz 格式
+    if (parts.length == 5) {
+      String minute = parts[0];
+      String hour = parts[1];
+      String day = parts[2];
+      String month = parts[3];
+      String week = parts[4];
+      
+      // 在 Quartz 中，如果指定了周几，日期字段应该用 ?
+      if (!week.equals("*")) {
+        return "0 " + minute + " " + hour + " ? " + month + " " + week;
+      } else {
+        return "0 " + minute + " " + hour + " " + day + " " + month + " ?";
+      }
+    }
+    
+    // 如果已经是 6 个字段的 Quartz 格式，直接返回
+    if (parts.length == 6) {
+      return cronExpression;
+    }
+    
+    return null;
   }
 }
