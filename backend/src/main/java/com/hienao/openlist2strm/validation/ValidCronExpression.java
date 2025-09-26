@@ -17,10 +17,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = CronExpressionValidator.class)
 public @interface ValidCronExpression {
-    
-    String message() default "定时任务表达式格式不正确";
-    
-    Class<?>[] groups() default {};
-    
-    Class<? extends Payload>[] payload() default {};
+
+  String message() default "定时任务表达式格式不正确";
+
+  Class<?>[] groups() default {};
+
+  Class<? extends Payload>[] payload() default {};
 }

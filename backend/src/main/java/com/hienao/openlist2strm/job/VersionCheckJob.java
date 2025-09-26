@@ -26,28 +26,27 @@ public class VersionCheckJob implements Job {
   public void execute(JobExecutionContext context) throws JobExecutionException {
     try {
       log.info("开始执行版本检查定时任务");
-      
+
       // 获取当前版本
       String currentVersion = getCurrentVersion();
-      
+
       // 检查版本更新
       VersionCheckResponse response = gitHubVersionService.checkVersionUpdate(currentVersion);
-      
+
       if (response.getError() != null) {
         log.warn("版本检查失败: {}", response.getError());
         return;
       }
-      
+
       if (response.isHasUpdate()) {
-        log.info("发现新版本: 当前版本 {}, 最新版本 {}", 
-            currentVersion, response.getLatestVersion());
-        
+        log.info("发现新版本: 当前版本 {}, 最新版本 {}", currentVersion, response.getLatestVersion());
+
         // 这里可以添加通知逻辑，比如发送邮件、WebSocket推送等
         // notifyNewVersion(response);
       } else {
         log.debug("当前版本已是最新: {}", currentVersion);
       }
-      
+
       log.info("版本检查定时任务执行完成");
     } catch (Exception e) {
       log.error("版本检查定时任务执行失败", e);
@@ -55,9 +54,7 @@ public class VersionCheckJob implements Job {
     }
   }
 
-  /**
-   * 获取当前版本
-   */
+  /** 获取当前版本 */
   private String getCurrentVersion() {
     // 从环境变量获取版本号（通过GitHub Actions自动设置）
     String version = System.getenv("APP_VERSION");

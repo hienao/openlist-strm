@@ -21,11 +21,7 @@ public class CacheConfig {
   @Bean
   public CacheManager cacheManager() {
     SimpleCacheManager cacheManager = new SimpleCacheManager();
-    cacheManager.setCaches(List.of(
-        verifyCodeCache(),
-        versionCheckCache(),
-        githubReleasesCache()
-    ));
+    cacheManager.setCaches(List.of(verifyCodeCache(), versionCheckCache(), githubReleasesCache()));
     return cacheManager;
   }
 

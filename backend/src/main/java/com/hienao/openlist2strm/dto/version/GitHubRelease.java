@@ -12,23 +12,26 @@ import lombok.Data;
  */
 @Data
 public class GitHubRelease {
-  
+
   private String id;
   private String name;
+  
+  @JsonProperty("tag_name")
   private String tagName;
+  
   private String body;
   private boolean draft;
   private boolean prerelease;
-  
+
   @JsonProperty("created_at")
   private LocalDateTime createdAt;
-  
+
   @JsonProperty("published_at")
   private LocalDateTime publishedAt;
-  
+
   @JsonProperty("html_url")
   private String htmlUrl;
-  
+
   @JsonProperty("assets")
   private GitHubAsset[] assets;
 }

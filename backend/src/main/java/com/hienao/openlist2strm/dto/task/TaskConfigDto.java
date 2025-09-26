@@ -36,8 +36,7 @@ public class TaskConfigDto {
   @Size(max = 500, message = "重命名正则表达式长度不能超过500个字符") private String renameRegex;
 
   /** 定时任务表达式 */
-  @Size(max = 100, message = "定时任务表达式长度不能超过100个字符")
-  @ValidCronExpression(message = "定时任务表达式格式不正确")
+  @Size(max = 100, message = "定时任务表达式长度不能超过100个字符") @ValidCronExpression(message = "定时任务表达式格式不正确")
   private String cron;
 
   /** 是否是增量更新：true-是，false-否 */

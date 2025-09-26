@@ -32,11 +32,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpStatusCode status,
       WebRequest request) {
     log.error("MethodArgumentNotValidException Handled  ===> ", ex);
-    
+
     // 提取第一个字段错误
     FieldError firstFieldError = ex.getBindingResult().getFieldErrors().get(0);
     String errorMessage = firstFieldError.getDefaultMessage();
-    
+
     ApiResponse<Void> response = ApiResponse.error(status.value(), errorMessage);
     return ResponseEntity.status(status).body(response);
   }

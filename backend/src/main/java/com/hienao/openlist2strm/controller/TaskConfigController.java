@@ -232,17 +232,15 @@ public class TaskConfigController {
   }
 
   /**
-   * 将 Unix Cron 格式转换为 Quartz Cron 格式
-   * Unix Cron: 分 时 日 月 周 (5个字段)
-   * Quartz Cron: 秒 分 时 日 月 周 (6个字段)
+   * 将 Unix Cron 格式转换为 Quartz Cron 格式 Unix Cron: 分 时 日 月 周 (5个字段) Quartz Cron: 秒 分 时 日 月 周 (6个字段)
    */
   private String convertToQuartzFormat(String cronExpression) {
     if (cronExpression == null || cronExpression.trim().isEmpty()) {
       return null;
     }
-    
+
     String[] parts = cronExpression.trim().split("\\s+");
-    
+
     // 如果是 5 个字段，转换为 6 个字段的 Quartz 格式
     if (parts.length == 5) {
       String minute = parts[0];
@@ -250,7 +248,7 @@ public class TaskConfigController {
       String day = parts[2];
       String month = parts[3];
       String week = parts[4];
-      
+
       // 在 Quartz 中，如果指定了周几，日期字段应该用 ?
       if (!week.equals("*")) {
         return "0 " + minute + " " + hour + " ? " + month + " " + week;
@@ -258,12 +256,12 @@ public class TaskConfigController {
         return "0 " + minute + " " + hour + " " + day + " " + month + " ?";
       }
     }
-    
+
     // 如果已经是 6 个字段的 Quartz 格式，直接返回
     if (parts.length == 6) {
       return cronExpression;
     }
-    
+
     return null;
   }
 }
