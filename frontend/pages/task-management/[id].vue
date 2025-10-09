@@ -236,7 +236,7 @@
                   <input v-model="taskForm.needScrap" type="checkbox"
                          class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                   <span class="ml-2 text-sm text-gray-700">需要刮削</span>
-                  <span class="ml-1 text-xs text-gray-500">(生成NFO和封面)</span>
+                  <span class="ml-1 text-xs text-gray-500">(启用TMDB刮削功能，生成NFO和封面。如设置中启用"优先使用已存在的刮削信息"，会先尝试复制现有文件)</span>
                 </label>
 
                 <label class="flex items-center">
