@@ -235,7 +235,7 @@
                      <label for="useExistingScrapingInfo" class="block text-sm font-semibold text-gray-900">
                        优先使用已存在的刮削信息
                      </label>
-                     <p class="text-xs text-gray-500 mt-1">复制媒体文件同级目录的NFO文件和刮削图片，跳过后续刮削操作</p>
+                     <p class="text-xs text-gray-500 mt-1">无论是否启用刮削功能，都会尝试复制媒体文件同级目录的NFO文件和刮削图片，复制成功后跳过后续处理</p>
                    </div>
                  </div>
 

@@ -69,18 +69,11 @@ public class MediaScrapingService {
       List<OpenlistApiService.OpenlistFile> directoryFiles,
       String fullFilePath) {
     try {
-      log.info("开始刮削媒体文件: {}", fileName);
+      log.info("开始处理媒体文件: {}", fileName);
 
-      // 检查刮削是否启用
+      // 获取配置选项
       Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
       boolean scrapingEnabled = (Boolean) scrapingConfig.getOrDefault("enabled", true);
-
-      if (!scrapingEnabled) {
-        log.info("刮削功能已禁用，跳过: {}", fileName);
-        return;
-      }
-
-      // 获取新的配置选项
       boolean keepSubtitleFiles = (Boolean) scrapingConfig.getOrDefault("keepSubtitleFiles", false);
       boolean useExistingScrapingInfo =
           (Boolean) scrapingConfig.getOrDefault("useExistingScrapingInfo", false);
@@ -93,11 +86,17 @@ public class MediaScrapingService {
         copySubtitleFiles(openlistConfig, fileName, relativePath, saveDirectory, directoryFiles);
       }
 
-      // 检查是否优先使用已存在的刮削信息（在解析媒体之前执行）
+      // 检查是否优先使用已存在的刮削信息（独立于刮削功能启用状态）
       if (useExistingScrapingInfo
           && copyExistingScrapingInfo(
               openlistConfig, fileName, relativePath, saveDirectory, directoryFiles)) {
-        log.info("已复制现有刮削信息，跳过后续刮削: {}", fileName);
+        log.info("已复制现有刮削信息，跳过后续处理: {}", fileName);
+        return;
+      }
+
+      // 检查刮削是否启用
+      if (!scrapingEnabled) {
+        log.info("刮削功能已禁用，跳过刮削: {}", fileName);
         return;
       }
 
