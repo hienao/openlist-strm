@@ -10,7 +10,7 @@ services:
       LOG_PATH: /app/logs
       DATABASE_PATH: /app/data/config/db
     ports:
-      - "3111:80"  # 外部端口:内部端口，用户可根据需要修改外部端口
+      - "3111:80"  # External port:Internal port, users can modify external port as needed
     volumes:
       - ${LOG_PATH_HOST}:/app/logs
       - ${DATABASE_STORE_HOST}:/app/data
