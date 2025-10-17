@@ -352,7 +352,7 @@ public class StrmFileService {
 
       // 构建预期目录路径集合
       Set<Path> expectedDirectories =
-          buildExpectedDirectoryPaths(existingFiles, taskPath, strmBasePath);
+          buildExpectedDirectoryPaths(existingFiles, taskPath, strmBasePath, renameRegex);
 
       // 遍历STRM目录，找出孤立的STRM文件
       AtomicInteger cleanedCount = new AtomicInteger(0);
@@ -439,15 +439,17 @@ public class StrmFileService {
    * @param existingFiles 现有文件列表（包含文件和目录）
    * @param taskPath 任务路径
    * @param strmBasePath STRM基础路径
+   * @param renameRegex 重命名正则表达式
    * @return 预期的目录路径集合
    */
   private Set<Path> buildExpectedDirectoryPaths(
-      List<OpenlistApiService.OpenlistFile> existingFiles, String taskPath, String strmBasePath) {
+      List<OpenlistApiService.OpenlistFile> existingFiles, String taskPath, String strmBasePath, String renameRegex) {
     Set<Path> expectedPaths = new HashSet<>();
 
     // 添加根目录
     expectedPaths.add(Paths.get(strmBasePath));
 
+    // 首先添加所有明确存在的目录
     for (OpenlistApiService.OpenlistFile file : existingFiles) {
       if ("folder".equals(file.getType())) {
         try {
@@ -467,6 +469,38 @@ public class StrmFileService {
 
         } catch (Exception e) {
           log.warn("构建预期目录路径失败: {}, 错误: {}", file.getName(), e.getMessage());
+        }
+      }
+    }
+
+    // 然后添加包含视频文件的目录（这些目录应该保留）
+    for (OpenlistApiService.OpenlistFile file : existingFiles) {
+      if ("file".equals(file.getType()) && isVideoFile(file.getName())) {
+        try {
+          // 计算相对路径
+          String relativePath = calculateRelativePath(taskPath, file.getPath());
+
+          // 构建STRM文件所在目录的路径
+          Path strmDirPath = Paths.get(strmBasePath);
+          if (StringUtils.hasText(relativePath)) {
+            String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
+            if (StringUtils.hasText(cleanRelativePath)) {
+              strmDirPath = strmDirPath.resolve(cleanRelativePath);
+            }
+          }
+
+          // 添加文件所在目录
+          expectedPaths.add(strmDirPath);
+          
+          // 添加所有父级目录
+          Path parentPath = strmDirPath.getParent();
+          while (parentPath != null && !parentPath.equals(Paths.get(strmBasePath).getParent())) {
+            expectedPaths.add(parentPath);
+            parentPath = parentPath.getParent();
+          }
+
+        } catch (Exception e) {
+          log.warn("构建文件目录路径失败: {}, 错误: {}", file.getName(), e.getMessage());
         }
       }
     }
