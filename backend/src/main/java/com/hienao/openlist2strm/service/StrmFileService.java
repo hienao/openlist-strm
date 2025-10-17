@@ -356,26 +356,33 @@ public class StrmFileService {
 
       // 遍历STRM目录，找出孤立的STRM文件
       AtomicInteger cleanedCount = new AtomicInteger(0);
-      Files.walk(strmPath)
-          .filter(Files::isRegularFile)
-          .filter(path -> path.toString().toLowerCase().endsWith(".strm"))
-          .forEach(
-              strmFile -> {
-                if (!expectedStrmFiles.contains(strmFile)) {
-                  try {
-                    // 删除STRM文件
-                    Files.delete(strmFile);
-                    log.info("删除孤立的STRM文件: {}", strmFile);
-                    cleanedCount.incrementAndGet();
+      try {
+        Files.walk(strmPath)
+            .filter(Files::isRegularFile)
+            .filter(path -> path.toString().toLowerCase().endsWith(".strm"))
+            .forEach(
+                strmFile -> {
+                  if (!expectedStrmFiles.contains(strmFile)) {
+                    try {
+                      // 删除STRM文件
+                      Files.delete(strmFile);
+                      log.info("删除孤立的STRM文件: {}", strmFile);
+                      cleanedCount.incrementAndGet();
 
-                    // 删除对应的刮削文件
-                    cleanOrphanedScrapingFiles(strmFile);
+                      // 删除对应的刮削文件
+                      cleanOrphanedScrapingFiles(strmFile);
 
-                  } catch (IOException e) {
-                    log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
+                    } catch (IOException e) {
+                      log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
+                    } catch (Exception e) {
+                      log.warn("处理孤立STRM文件时发生异常: {}, 错误: {}", strmFile, e.getMessage());
+                    }
                   }
-                }
-              });
+                });
+      } catch (Exception e) {
+        log.error("遍历STRM目录时发生异常，跳过清理操作: {}", e.getMessage());
+        // 不抛出异常，继续执行后续操作
+      }
 
       // 清理孤立目录（不在预期目录集合中的目录）
       cleanOrphanedDirectories(strmPath, expectedDirectories);
@@ -532,71 +539,107 @@ public class StrmFileService {
       Path parentDir = strmFile.getParent();
 
       // 删除NFO文件
-      Path nfoFile = parentDir.resolve(baseFileName + ".nfo");
-      if (Files.exists(nfoFile)) {
-        Files.delete(nfoFile);
-        log.info("删除孤立的NFO文件: {}", nfoFile);
+      try {
+        Path nfoFile = parentDir.resolve(baseFileName + ".nfo");
+        if (Files.exists(nfoFile)) {
+          Files.delete(nfoFile);
+          log.info("删除孤立的NFO文件: {}", nfoFile);
+        }
+      } catch (Exception e) {
+        log.warn("删除NFO文件失败: {}, 错误: {}", baseFileName + ".nfo", e.getMessage());
       }
 
       // 删除电影相关的刮削文件
-      Path moviePoster = parentDir.resolve(baseFileName + "-poster.jpg");
-      if (Files.exists(moviePoster)) {
-        Files.delete(moviePoster);
-        log.info("删除孤立的电影海报文件: {}", moviePoster);
+      try {
+        Path moviePoster = parentDir.resolve(baseFileName + "-poster.jpg");
+        if (Files.exists(moviePoster)) {
+          Files.delete(moviePoster);
+          log.info("删除孤立的电影海报文件: {}", moviePoster);
+        }
+      } catch (Exception e) {
+        log.warn("删除电影海报文件失败: {}, 错误: {}", baseFileName + "-poster.jpg", e.getMessage());
       }
 
-      Path movieBackdrop = parentDir.resolve(baseFileName + "-fanart.jpg");
-      if (Files.exists(movieBackdrop)) {
-        Files.delete(movieBackdrop);
-        log.info("删除孤立的电影背景图文件: {}", movieBackdrop);
+      try {
+        Path movieBackdrop = parentDir.resolve(baseFileName + "-fanart.jpg");
+        if (Files.exists(movieBackdrop)) {
+          Files.delete(movieBackdrop);
+          log.info("删除孤立的电影背景图文件: {}", movieBackdrop);
+        }
+      } catch (Exception e) {
+        log.warn("删除电影背景图文件失败: {}, 错误: {}", baseFileName + "-fanart.jpg", e.getMessage());
       }
 
       // 删除电视剧相关的刮削文件
-      Path episodeThumb = parentDir.resolve(baseFileName + "-thumb.jpg");
-      if (Files.exists(episodeThumb)) {
-        Files.delete(episodeThumb);
-        log.info("删除孤立的剧集缩略图文件: {}", episodeThumb);
+      try {
+        Path episodeThumb = parentDir.resolve(baseFileName + "-thumb.jpg");
+        if (Files.exists(episodeThumb)) {
+          Files.delete(episodeThumb);
+          log.info("删除孤立的剧集缩略图文件: {}", episodeThumb);
+        }
+      } catch (Exception e) {
+        log.warn("删除剧集缩略图文件失败: {}, 错误: {}", baseFileName + "-thumb.jpg", e.getMessage());
       }
 
       // 检查是否需要删除电视剧公共文件（当目录中没有其他视频文件时）
-      boolean hasOtherVideoFiles =
-          Files.list(parentDir)
-              .anyMatch(
-                  path -> {
-                    String fileName = path.getFileName().toString().toLowerCase();
-                    return !fileName.equals(strmFileName.toLowerCase())
-                        && (fileName.endsWith(".strm")
-                            || isVideoFileWithDefaultExtensions(fileName));
-                  });
+      try {
+        boolean hasOtherVideoFiles =
+            Files.list(parentDir)
+                .anyMatch(
+                    path -> {
+                      String fileName = path.getFileName().toString().toLowerCase();
+                      return !fileName.equals(strmFileName.toLowerCase())
+                          && (fileName.endsWith(".strm")
+                              || isVideoFileWithDefaultExtensions(fileName));
+                    });
 
-      if (!hasOtherVideoFiles) {
-        // 删除电视剧公共文件
-        Path tvShowNfo = parentDir.resolve("tvshow.nfo");
-        if (Files.exists(tvShowNfo)) {
-          Files.delete(tvShowNfo);
-          log.info("删除孤立的电视剧NFO文件: {}", tvShowNfo);
+        if (!hasOtherVideoFiles) {
+          // 删除电视剧公共文件
+          try {
+            Path tvShowNfo = parentDir.resolve("tvshow.nfo");
+            if (Files.exists(tvShowNfo)) {
+              Files.delete(tvShowNfo);
+              log.info("删除孤立的电视剧NFO文件: {}", tvShowNfo);
+            }
+          } catch (Exception e) {
+            log.warn("删除电视剧NFO文件失败: {}, 错误: {}", "tvshow.nfo", e.getMessage());
+          }
+
+          try {
+            Path tvShowPoster = parentDir.resolve("poster.jpg");
+            if (Files.exists(tvShowPoster)) {
+              Files.delete(tvShowPoster);
+              log.info("删除孤立的电视剧海报文件: {}", tvShowPoster);
+            }
+          } catch (Exception e) {
+            log.warn("删除电视剧海报文件失败: {}, 错误: {}", "poster.jpg", e.getMessage());
+          }
+
+          try {
+            Path tvShowFanart = parentDir.resolve("fanart.jpg");
+            if (Files.exists(tvShowFanart)) {
+              Files.delete(tvShowFanart);
+              log.info("删除孤立的电视剧背景图文件: {}", tvShowFanart);
+            }
+          } catch (Exception e) {
+            log.warn("删除电视剧背景图文件失败: {}, 错误: {}", "fanart.jpg", e.getMessage());
+          }
+
+          // 清理目录中多余的图片文件和NFO文件
+          cleanExtraScrapingFiles(parentDir);
+
+          // 检查目录是否为空，如果为空则删除目录
+          try {
+            if (isDirectoryEmpty(parentDir)) {
+              Files.delete(parentDir);
+              log.info("删除空目录: {}", parentDir);
+            }
+          } catch (Exception e) {
+            log.warn("删除空目录失败: {}, 错误: {}", parentDir, e.getMessage());
+          }
         }
-
-        Path tvShowPoster = parentDir.resolve("poster.jpg");
-        if (Files.exists(tvShowPoster)) {
-          Files.delete(tvShowPoster);
-          log.info("删除孤立的电视剧海报文件: {}", tvShowPoster);
-        }
-
-        Path tvShowFanart = parentDir.resolve("fanart.jpg");
-        if (Files.exists(tvShowFanart)) {
-          Files.delete(tvShowFanart);
-          log.info("删除孤立的电视剧背景图文件: {}", tvShowFanart);
-        }
-
-        // 清理目录中多余的图片文件和NFO文件
-        cleanExtraScrapingFiles(parentDir);
-
-        // 检查目录是否为空，如果为空则删除目录
-        if (isDirectoryEmpty(parentDir)) {
-          Files.delete(parentDir);
-          log.info("删除空目录: {}", parentDir);
-        }
+      } catch (Exception e) {
+        log.warn("检查目录中的其他视频文件失败: {}, 错误: {}", parentDir, e.getMessage());
       }
 
     } catch (Exception e) {
@@ -658,10 +701,14 @@ public class StrmFileService {
                   log.info("删除多余的刮削文件: {}", file);
                 } catch (IOException e) {
                   log.warn("删除多余刮削文件失败: {}, 错误: {}", file, e.getMessage());
+                } catch (Exception e) {
+                  log.warn("删除多余刮削文件时发生异常: {}, 错误: {}", file, e.getMessage());
                 }
               });
     } catch (IOException e) {
       log.warn("清理多余刮削文件失败: {}, 错误: {}", directory, e.getMessage());
+    } catch (Exception e) {
+      log.warn("清理多余刮削文件时发生异常: {}, 错误: {}", directory, e.getMessage());
     }
   }
 
