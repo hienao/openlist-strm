@@ -2,6 +2,7 @@ package com.hienao.openlist2strm.service;
 
 import com.hienao.openlist2strm.exception.BusinessException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -122,17 +123,28 @@ public class StrmFileService {
    * @return STRM文件路径
    */
   public Path buildStrmFilePath(String strmBasePath, String relativePath, String fileName) {
-    Path basePath = Paths.get(strmBasePath);
+    try {
+      Path basePath = Paths.get(strmBasePath);
 
-    if (StringUtils.hasText(relativePath)) {
-      // 清理相对路径
-      String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
-      if (StringUtils.hasText(cleanRelativePath)) {
-        basePath = basePath.resolve(cleanRelativePath);
+      if (StringUtils.hasText(relativePath)) {
+        // 清理相对路径，并处理编码问题
+        String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
+        if (StringUtils.hasText(cleanRelativePath)) {
+          // 确保路径使用UTF-8编码
+          cleanRelativePath = new String(cleanRelativePath.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+          basePath = basePath.resolve(cleanRelativePath);
+        }
       }
-    }
 
-    return basePath.resolve(fileName);
+      // 确保文件名使用UTF-8编码
+      String safeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+      return basePath.resolve(safeFileName);
+      
+    } catch (Exception e) {
+      log.warn("构建STRM文件路径时遇到编码问题，尝试使用备用方案: {}", e.getMessage());
+      // 备用方案：使用原始路径，让Java处理
+      return Paths.get(strmBasePath, relativePath != null ? relativePath : "", fileName);
+    }
   }
 
   /**

@@ -41,7 +41,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     ca-certificates \
+    locales \
     && rm -rf /var/lib/apt/lists/* && \
+    # Generate UTF-8 locales
+    locale-gen zh_CN.UTF-8 zh_TW.UTF-8 en_US.UTF-8 && \
+    update-locale LANG=zh_CN.UTF-8 && \
     # Configure system parameters for long filename support
     echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
     echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
@@ -69,7 +73,7 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "Java Version:"' >> /start.sh && \
     echo 'java -version' >> /start.sh && \
     echo 'echo "=== Creating Directories ==="' >> /start.sh && \
-    echo 'mkdir -p /app/logs /run/nginx' >> /start.sh && \
+    echo 'mkdir -p /app/logs /run nginx' >> /start.sh && \
     echo 'chmod -R 755 /app/data' >> /start.sh && \
     echo 'echo "=== Starting Nginx ==="' >> /start.sh && \
     echo 'nginx &' >> /start.sh && \
@@ -80,8 +84,14 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "- Long filename support enabled"' >> /start.sh && \
     echo 'echo "- NIO deep access enabled"' >> /start.sh && \
     echo 'echo "- Memory mapping disabled for paths"' >> /start.sh && \
-    echo 'exec java --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio.file=ALL-UNNAMED -Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+OptimizeStringConcat -Dio.netty.maxDirectMemory=0 -Dsun.io.useCanonCaches=false -Dsun.zip.disableMemoryMapping=true -Djdk.io.File.enableADS=true -jar ./openlisttostrm.jar' >> /start.sh && \
+    echo 'echo "- UTF-8 encoding support enabled"' >> /start.sh && \
+    echo 'exec java --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.nio.file=ALL-UNNAMED -Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+OptimizeStringConcat -Dio.netty.maxDirectMemory=0 -Dsun.io.useCanonCaches=false -Dsun.zip.disableMemoryMapping=true -Djdk.io.File.enableADS=true -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=zh -Duser.country=CN -jar ./openlisttostrm.jar' >> /start.sh && \
     chmod +x /start.sh
+
+# Set environment variables for UTF-8 support
+ENV LANG=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN:zh:en_US:en
+ENV LC_ALL=zh_CN.UTF-8
 
 EXPOSE 80 8080
 
