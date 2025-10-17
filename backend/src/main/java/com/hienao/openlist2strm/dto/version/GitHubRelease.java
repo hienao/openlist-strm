@@ -15,10 +15,10 @@ public class GitHubRelease {
 
   private String id;
   private String name;
-  
+
   @JsonProperty("tag_name")
   private String tagName;
-  
+
   private String body;
   private boolean draft;
   private boolean prerelease;

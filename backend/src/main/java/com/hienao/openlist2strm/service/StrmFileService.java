@@ -39,6 +39,7 @@ public class StrmFileService {
    * @param relativePath 相对路径（相对于任务配置的path）
    * @param fileName 文件名
    * @param fileUrl 文件URL
+   * @param forceRegenerate 是否强制重新生成已存在的文件
    * @param renameRegex 重命名正则表达式（可选）
    */
   public void generateStrmFile(
@@ -46,6 +47,7 @@ public class StrmFileService {
       String relativePath,
       String fileName,
       String fileUrl,
+      boolean forceRegenerate,
       String renameRegex) {
     try {
       // 处理文件名重命名
@@ -55,7 +57,7 @@ public class StrmFileService {
       Path strmFilePath = buildStrmFilePath(strmBasePath, relativePath, finalFileName);
 
       // 检查文件是否已存在（增量任务场景）
-      if (Files.exists(strmFilePath)) {
+      if (Files.exists(strmFilePath) && !forceRegenerate) {
         log.info("STRM文件已存在，跳过生成: {}", strmFilePath);
         return;
       }
@@ -119,7 +121,7 @@ public class StrmFileService {
    * @param fileName 文件名
    * @return STRM文件路径
    */
-  private Path buildStrmFilePath(String strmBasePath, String relativePath, String fileName) {
+  public Path buildStrmFilePath(String strmBasePath, String relativePath, String fileName) {
     Path basePath = Paths.get(strmBasePath);
 
     if (StringUtils.hasText(relativePath)) {
@@ -336,6 +338,10 @@ public class StrmFileService {
       Set<Path> expectedStrmFiles =
           buildExpectedStrmFilePaths(existingFiles, taskPath, strmBasePath, renameRegex);
 
+      // 构建预期目录路径集合
+      Set<Path> expectedDirectories =
+          buildExpectedDirectoryPaths(existingFiles, taskPath, strmBasePath);
+
       // 遍历STRM目录，找出孤立的STRM文件
       AtomicInteger cleanedCount = new AtomicInteger(0);
       Files.walk(strmPath)
@@ -359,8 +365,8 @@ public class StrmFileService {
                 }
               });
 
-      // 清理空目录
-      cleanEmptyDirectories(strmPath);
+      // 清理孤立目录（不在预期目录集合中的目录）
+      cleanOrphanedDirectories(strmPath, expectedDirectories);
 
       return cleanedCount.get();
 
@@ -406,6 +412,100 @@ public class StrmFileService {
     }
 
     return expectedPaths;
+  }
+
+  /**
+   * 构建预期的目录路径集合
+   *
+   * @param existingFiles 现有文件列表（包含文件和目录）
+   * @param taskPath 任务路径
+   * @param strmBasePath STRM基础路径
+   * @return 预期的目录路径集合
+   */
+  private Set<Path> buildExpectedDirectoryPaths(
+      List<OpenlistApiService.OpenlistFile> existingFiles, String taskPath, String strmBasePath) {
+    Set<Path> expectedPaths = new HashSet<>();
+
+    // 添加根目录
+    expectedPaths.add(Paths.get(strmBasePath));
+
+    for (OpenlistApiService.OpenlistFile file : existingFiles) {
+      if ("folder".equals(file.getType())) {
+        try {
+          // 计算相对路径
+          String relativePath = calculateRelativePath(taskPath, file.getPath());
+
+          // 构建STRM目录路径
+          Path strmDirPath = Paths.get(strmBasePath);
+          if (StringUtils.hasText(relativePath)) {
+            String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
+            if (StringUtils.hasText(cleanRelativePath)) {
+              strmDirPath = strmDirPath.resolve(cleanRelativePath);
+            }
+          }
+
+          expectedPaths.add(strmDirPath);
+
+        } catch (Exception e) {
+          log.warn("构建预期目录路径失败: {}, 错误: {}", file.getName(), e.getMessage());
+        }
+      }
+    }
+
+    return expectedPaths;
+  }
+
+  /**
+   * 清理孤立的目录（不在预期目录集合中的目录） 完全删除目录及其所有内容
+   *
+   * @param rootPath 根路径
+   * @param expectedDirectories 预期的目录路径集合
+   */
+  private void cleanOrphanedDirectories(Path rootPath, Set<Path> expectedDirectories) {
+    try {
+      // 按路径深度排序，先处理深层目录
+      List<Path> allDirectories =
+          Files.walk(rootPath)
+              .filter(Files::isDirectory)
+              .filter(path -> !path.equals(rootPath)) // 不处理根目录
+              .sorted(
+                  (path1, path2) -> {
+                    // 按路径深度降序排列，先处理深层目录
+                    int depth1 = path1.getNameCount() - rootPath.getNameCount();
+                    int depth2 = path2.getNameCount() - rootPath.getNameCount();
+                    return Integer.compare(depth2, depth1);
+                  })
+              .collect(java.util.stream.Collectors.toList());
+
+      for (Path dir : allDirectories) {
+        if (!expectedDirectories.contains(dir)) {
+          try {
+            log.info("清理孤立目录: {}", dir);
+
+            // 递归删除目录及其所有内容
+            Files.walk(dir)
+                .sorted((path1, path2) -> path2.compareTo(path1)) // 先删除文件，再删除目录
+                .forEach(
+                    path -> {
+                      try {
+                        Files.delete(path);
+                        log.debug("删除: {}", path);
+                      } catch (IOException e) {
+                        log.warn("删除文件/目录失败: {}, 错误: {}", path, e.getMessage());
+                      }
+                    });
+
+            log.info("孤立目录清理完成: {}", dir);
+
+          } catch (IOException e) {
+            log.warn("清理孤立目录失败: {}, 错误: {}", dir, e.getMessage());
+          }
+        }
+      }
+
+    } catch (IOException e) {
+      log.error("清理孤立目录过程中发生错误: {}", e.getMessage(), e);
+    }
   }
 
   /**
