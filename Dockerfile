@@ -3,7 +3,7 @@
 # Build argument for version
 ARG APP_VERSION=dev
 
-# Stage 1: Build Frontend (Nuxt)
+# Stage 1: Build Frontend (Nuxt) - Keep using Alpine for frontend build
 FROM node:20-alpine AS frontend-builder
 ARG APP_VERSION
 WORKDIR /app/frontend
@@ -13,7 +13,7 @@ COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
-# Stage 2: Build Backend (Spring Boot)
+# Stage 2: Build Backend (Spring Boot) - Keep using Gradle for backend build
 FROM gradle:8.14.3-jdk21 AS backend-builder
 ENV GRADLE_USER_HOME=/cache
 ENV WORKDIR=/usr/src/app
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=$GRADLE_USER_HOME \
     gradle -i bootJar --stacktrace && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
-# Stage 3: Runtime - Ubuntu for better long filename support
+# Stage 3: Runtime - Ubuntu only for runtime, not for build
 FROM ubuntu:22.04 AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
@@ -52,10 +52,10 @@ RUN apt-get update && apt-get install -y \
     mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log && \
     chmod -R 755 /app/data
 
-# Copy frontend build
+# Copy frontend build (from Alpine stage)
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 
-# Copy backend jar
+# Copy backend jar (from Gradle stage)
 COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
 
 # Copy nginx configuration
