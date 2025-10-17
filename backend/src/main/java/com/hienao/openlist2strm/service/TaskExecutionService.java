@@ -225,12 +225,13 @@ public class TaskExecutionService {
             // 构建包含sign参数的文件URL
             String fileUrlWithSign = buildFileUrlWithSign(file.getUrl(), file.getSign());
 
-            // 生成STRM文件
+            // 生成STRM文件（增量模式下强制重新生成）
             strmFileService.generateStrmFile(
                 taskConfig.getStrmPath(),
                 relativePath,
                 file.getName(),
                 fileUrlWithSign,
+                isIncrement, // 增量模式下强制重新生成
                 taskConfig.getRenameRegex());
 
             // 如果启用了刮削功能，执行媒体刮削
@@ -240,32 +241,46 @@ public class TaskExecutionService {
                 String saveDirectory =
                     buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
-                // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
-                if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
-                  log.debug("目录已完全刮削，跳过: {}", saveDirectory);
-                  scrapSkippedCount++;
-                } else {
-                  // 过滤出当前视频文件所在目录的文件
-                  String currentDirectory =
-                      file.getPath().substring(0, file.getPath().lastIndexOf('/') + 1);
-                  List<OpenlistApiService.OpenlistFile> currentDirFiles =
-                      allFiles.stream()
-                          .filter(
-                              f ->
-                                  f.getPath().startsWith(currentDirectory)
-                                      && f.getPath()
-                                              .substring(currentDirectory.length())
-                                              .indexOf('/')
-                                          == -1)
-                          .collect(java.util.stream.Collectors.toList());
+                // 检查是否需要刮削（仅在增量模式下检查文件是否已存在）
+                boolean needScrapFile = true;
+                if (isIncrement) {
+                  // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
+                  String finalFileName = processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
+                  java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(taskConfig.getStrmPath(), relativePath, finalFileName);
+                  needScrapFile = !java.nio.file.Files.exists(strmFilePath);
+                }
 
-                  mediaScrapingService.scrapMedia(
-                      openlistConfig,
-                      file.getName(),
-                      taskConfig.getStrmPath(),
-                      relativePath,
-                      currentDirFiles,
-                      file.getPath());
+                if (needScrapFile) {
+                  // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
+                  if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
+                    log.debug("目录已完全刮削，跳过: {}", saveDirectory);
+                    scrapSkippedCount++;
+                  } else {
+                    // 过滤出当前视频文件所在目录的文件
+                    String currentDirectory =
+                        file.getPath().substring(0, file.getPath().lastIndexOf('/') + 1);
+                    List<OpenlistApiService.OpenlistFile> currentDirFiles =
+                        allFiles.stream()
+                            .filter(
+                                f ->
+                                    f.getPath().startsWith(currentDirectory)
+                                        && f.getPath()
+                                                .substring(currentDirectory.length())
+                                                .indexOf('/')
+                                            == -1)
+                            .collect(java.util.stream.Collectors.toList());
+
+                    mediaScrapingService.scrapMedia(
+                        openlistConfig,
+                        file.getName(),
+                        taskConfig.getStrmPath(),
+                        relativePath,
+                        currentDirFiles,
+                        file.getPath());
+                  }
+                } else {
+                  log.debug("STRM文件已存在，跳过刮削: {}", file.getName());
+                  scrapSkippedCount++;
                 }
               } catch (Exception scrapException) {
                 log.error(
@@ -499,12 +514,13 @@ public class TaskExecutionService {
       // 构建包含sign参数的文件URL
       String fileUrlWithSign = buildFileUrlWithSign(file.getUrl(), file.getSign());
 
-      // 生成STRM文件
+      // 生成STRM文件（增量模式下强制重新生成）
       strmFileService.generateStrmFile(
           taskConfig.getStrmPath(),
           relativePath,
           file.getName(),
           fileUrlWithSign,
+          isIncrement, // 增量模式下强制重新生成
           taskConfig.getRenameRegex());
 
       // 如果启用了刮削功能，执行媒体刮削
@@ -512,17 +528,31 @@ public class TaskExecutionService {
         try {
           String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
-          if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
-            log.debug("目录已完全刮削，跳过: {}", saveDirectory);
-            scrapSkippedCount++;
+          // 检查是否需要刮削（仅在增量模式下检查文件是否已存在）
+          boolean needScrapFile = true;
+          if (isIncrement) {
+            // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
+            String finalFileName = processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
+            java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(taskConfig.getStrmPath(), relativePath, finalFileName);
+            needScrapFile = !java.nio.file.Files.exists(strmFilePath);
+          }
+
+          if (needScrapFile) {
+            if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
+              log.debug("目录已完全刮削，跳过: {}", saveDirectory);
+              scrapSkippedCount++;
+            } else {
+              mediaScrapingService.scrapMedia(
+                  openlistConfig,
+                  file.getName(),
+                  taskConfig.getStrmPath(),
+                  relativePath,
+                  directoryFiles,
+                  file.getPath());
+            }
           } else {
-            mediaScrapingService.scrapMedia(
-                openlistConfig,
-                file.getName(),
-                taskConfig.getStrmPath(),
-                relativePath,
-                directoryFiles,
-                file.getPath());
+            log.debug("STRM文件已存在，跳过刮削: {}", file.getName());
+            scrapSkippedCount++;
           }
         } catch (Exception scrapException) {
           log.error(
@@ -535,5 +565,43 @@ public class TaskExecutionService {
     } catch (Exception e) {
       log.error("处理文件失败: {}, 错误: {}", file.getName(), e.getMessage(), e);
     }
+  }
+
+  /**
+   * 处理文件名（重命名和添加.strm扩展名）
+   * 这个方法复制自StrmFileService，用于判断STRM文件是否存在
+   *
+   * @param originalFileName 原始文件名
+   * @param renameRegex 重命名正则表达式
+   * @return 处理后的文件名
+   */
+  private String processFileNameForScraping(String originalFileName, String renameRegex) {
+    String processedName = originalFileName;
+
+    // 应用重命名规则
+    if (renameRegex != null && !renameRegex.trim().isEmpty()) {
+      try {
+        // 简单的正则替换，可以根据需要扩展
+        // 格式: "原始模式|替换内容"
+        if (renameRegex.contains("|")) {
+          String[] parts = renameRegex.split("\\|", 2);
+          String pattern = parts[0];
+          String replacement = parts[1];
+          processedName = processedName.replaceAll(pattern, replacement);
+          log.debug("文件重命名: {} -> {}", originalFileName, processedName);
+        }
+      } catch (Exception e) {
+        log.warn("重命名规则应用失败: {}, 使用原始文件名", renameRegex, e);
+      }
+    }
+
+    // 移除原始扩展名并添加.strm扩展名
+    int lastDotIndex = processedName.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+      processedName = processedName.substring(0, lastDotIndex);
+    }
+    processedName += ".strm";
+
+    return processedName;
   }
 }

@@ -95,7 +95,7 @@ public class GitHubVersionService {
 
       // 尝试解析JSON
       GitHubRelease[] releases = objectMapper.readValue(response.getBody(), GitHubRelease[].class);
-      
+
       if (releases == null || releases.length == 0) {
         log.warn("未找到任何release");
         return null;
@@ -105,8 +105,14 @@ public class GitHubVersionService {
       log.info("获取到 {} 个release", releases.length);
       for (int i = 0; i < Math.min(releases.length, 3); i++) {
         GitHubRelease release = releases[i];
-        log.info("Release {}: tagName={}, name={}, draft={}, prerelease={}, publishedAt={}", 
-            i, release.getTagName(), release.getName(), release.isDraft(), release.isPrerelease(), release.getPublishedAt());
+        log.info(
+            "Release {}: tagName={}, name={}, draft={}, prerelease={}, publishedAt={}",
+            i,
+            release.getTagName(),
+            release.getName(),
+            release.isDraft(),
+            release.isPrerelease(),
+            release.getPublishedAt());
       }
 
       // 过滤掉draft和prerelease，按发布时间排序
@@ -144,13 +150,13 @@ public class GitHubVersionService {
   public int compareVersions(String version1, String version2) {
     try {
       log.info("比较版本: {} vs {}", version1, version2);
-      
+
       // 处理null值
       if (version2 == null) {
         log.info("版本2为null，认为版本1更新");
         return 1; // version2为null，version1更新
       }
-      
+
       // 移除'v'前缀
       String v1 = version1.startsWith("v") ? version1.substring(1) : version1;
       String v2 = version2.startsWith("v") ? version2.substring(1) : version2;
@@ -216,18 +222,19 @@ public class GitHubVersionService {
 
     // 常见的开发版本标识
     String lowerVersion = version.toLowerCase();
-    boolean isDev = lowerVersion.equals("dev")
-        || lowerVersion.equals("development")
-        || lowerVersion.equals("snapshot")
-        || lowerVersion.equals("alpha")
-        || lowerVersion.equals("beta")
-        || lowerVersion.equals("rc")
-        || lowerVersion.contains("-dev")
-        || lowerVersion.contains("-snapshot")
-        || lowerVersion.contains("-alpha")
-        || lowerVersion.contains("-beta")
-        || lowerVersion.contains("-rc");
-    
+    boolean isDev =
+        lowerVersion.equals("dev")
+            || lowerVersion.equals("development")
+            || lowerVersion.equals("snapshot")
+            || lowerVersion.equals("alpha")
+            || lowerVersion.equals("beta")
+            || lowerVersion.equals("rc")
+            || lowerVersion.contains("-dev")
+            || lowerVersion.contains("-snapshot")
+            || lowerVersion.contains("-alpha")
+            || lowerVersion.contains("-beta")
+            || lowerVersion.contains("-rc");
+
     log.info("版本 {} 是否为开发版本: {}", version, isDev);
     return isDev;
   }
@@ -237,12 +244,12 @@ public class GitHubVersionService {
       String currentVersion, GitHubRelease release) {
     VersionCheckResponse response = new VersionCheckResponse();
     response.setCurrentVersion(currentVersion);
-    
+
     // 调试日志：检查release的tagName
     String tagName = release.getTagName();
     log.info("构建版本检查响应 - tagName: {}", tagName);
     response.setLatestVersion(tagName);
-    
+
     response.setReleaseUrl(release.getHtmlUrl());
     response.setReleaseNotes(release.getBody());
     response.setPrerelease(release.isPrerelease());
@@ -253,11 +260,7 @@ public class GitHubVersionService {
     int comparison = compareVersions(currentVersion, tagName);
     response.setHasUpdate(comparison < 0);
 
-    log.info(
-        "版本检查结果: 当前={}, 最新={}, 有更新={}",
-        currentVersion,
-        tagName,
-        response.isHasUpdate());
+    log.info("版本检查结果: 当前={}, 最新={}, 有更新={}", currentVersion, tagName, response.isHasUpdate());
 
     return response;
   }
