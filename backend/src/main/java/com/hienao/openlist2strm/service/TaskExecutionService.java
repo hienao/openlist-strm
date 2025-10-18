@@ -241,17 +241,13 @@ public class TaskExecutionService {
                 String saveDirectory =
                     buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
-                // 检查是否需要刮削（仅在增量模式下检查文件是否已存在）
-                boolean needScrapFile = true;
-                if (isIncrement) {
-                  // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
-                  String finalFileName =
-                      processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
-                  java.nio.file.Path strmFilePath =
-                      strmFileService.buildStrmFilePath(
-                          taskConfig.getStrmPath(), relativePath, finalFileName);
-                  needScrapFile = !java.nio.file.Files.exists(strmFilePath);
-                }
+                // 检查是否需要刮削（在增量模式下检查NFO文件是否已存在）
+                boolean needScrapFile = needScrapFile(
+                    file.getName(), 
+                    taskConfig.getRenameRegex(), 
+                    taskConfig.getStrmPath(), 
+                    relativePath, 
+                    isIncrement);
 
                 if (needScrapFile) {
                   // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
@@ -282,7 +278,7 @@ public class TaskExecutionService {
                         file.getPath());
                   }
                 } else {
-                  log.debug("STRM文件已存在，跳过刮削: {}", file.getName());
+                  log.debug("NFO文件已存在，跳过刮削: {}", file.getName());
                   scrapSkippedCount++;
                 }
               } catch (Exception scrapException) {
@@ -532,17 +528,13 @@ public class TaskExecutionService {
         try {
           String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
-          // 检查是否需要刮削（仅在增量模式下检查文件是否已存在）
-          boolean needScrapFile = true;
-          if (isIncrement) {
-            // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
-            String finalFileName =
-                processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
-            java.nio.file.Path strmFilePath =
-                strmFileService.buildStrmFilePath(
-                    taskConfig.getStrmPath(), relativePath, finalFileName);
-            needScrapFile = !java.nio.file.Files.exists(strmFilePath);
-          }
+          // 检查是否需要刮削（在增量模式下检查NFO文件是否已存在）
+          boolean needScrapFile = needScrapFile(
+              file.getName(), 
+              taskConfig.getRenameRegex(), 
+              taskConfig.getStrmPath(), 
+              relativePath, 
+              isIncrement);
 
           if (needScrapFile) {
             if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
@@ -558,7 +550,7 @@ public class TaskExecutionService {
                   file.getPath());
             }
           } else {
-            log.debug("STRM文件已存在，跳过刮削: {}", file.getName());
+            log.debug("NFO文件已存在，跳过刮削: {}", file.getName());
             scrapSkippedCount++;
           }
         } catch (Exception scrapException) {
@@ -571,6 +563,41 @@ public class TaskExecutionService {
 
     } catch (Exception e) {
       log.error("处理文件失败: {}, 错误: {}", file.getName(), e.getMessage(), e);
+    }
+  }
+
+  /**
+   * 判断是否需要刮削文件
+   * 在增量模式下，检查NFO文件是否存在，如果NFO文件已存在则跳过刮削
+   *
+   * @param fileName 原始文件名
+   * @param renameRegex 重命名正则表达式
+   * @param strmPath STRM文件路径
+   * @param relativePath 相对路径
+   * @param isIncrement 是否增量模式
+   * @return 是否需要刮削
+   */
+  private boolean needScrapFile(String fileName, String renameRegex, String strmPath, String relativePath, boolean isIncrement) {
+    // 非增量模式下总是需要刮削
+    if (!isIncrement) {
+      return true;
+    }
+    
+    try {
+      // 增量模式下，检查NFO文件是否已存在
+      String finalFileName = processFileNameForScraping(fileName, renameRegex);
+      java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(strmPath, relativePath, finalFileName);
+      
+      // 构建对应的NFO文件路径
+      java.nio.file.Path nfoFilePath = strmFilePath.resolveSibling(
+          strmFilePath.getFileName().toString().replace(".strm", ".nfo")
+      );
+      
+      // 如果NFO文件存在，则跳过刮削
+      return !java.nio.file.Files.exists(nfoFilePath);
+    } catch (Exception e) {
+      log.warn("检查NFO文件是否存在时发生错误: {}, 默认进行刮削", e.getMessage());
+      return true;
     }
   }
 
