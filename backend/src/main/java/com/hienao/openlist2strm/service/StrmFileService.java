@@ -487,7 +487,7 @@ public class StrmFileService {
               log.info("删除空目录: {}", parentDir);
             }
           } catch (Exception e) {
-            log.warn("删除空目录失败: {}, 错误: {}", parentDir, e.getMessage());
+            log.warn("删除空目录失败: {}, 详细错误: {}", parentDir, e.getMessage(), e);
           }
         }
       } catch (Exception e) {
@@ -598,7 +598,7 @@ public class StrmFileService {
   }
 
   /**
-   * 判断目录是否应该删除（内部无STRM文件）
+   * 判断目录是否应该删除（内部无STRM文件和子目录）
    *
    * @param directoryPath 目录路径
    * @return 是否应该删除
@@ -609,9 +609,25 @@ public class StrmFileService {
         return false;
       }
 
-      // 检查目录中是否还有STRM文件
-      return Files.list(directoryPath)
-          .noneMatch(path -> path.toString().toLowerCase().endsWith(".strm"));
+      // 检查目录中是否还有STRM文件或子目录
+      boolean hasStrmFiles =
+          Files.list(directoryPath)
+              .anyMatch(path -> path.toString().toLowerCase().endsWith(".strm"));
+
+      boolean hasSubDirectories = Files.list(directoryPath).anyMatch(Files::isDirectory);
+
+      if (hasStrmFiles) {
+        log.debug("目录 {} 包含STRM文件，不应删除", directoryPath);
+        return false;
+      }
+
+      if (hasSubDirectories) {
+        log.debug("目录 {} 包含子目录，不应删除", directoryPath);
+        return false;
+      }
+
+      log.debug("目录 {} 无STRM文件和子目录，可以删除", directoryPath);
+      return true;
 
     } catch (IOException e) {
       log.warn("检查目录是否应该删除失败: {}, 错误: {}", directoryPath, e.getMessage());
@@ -627,6 +643,7 @@ public class StrmFileService {
    * @param taskPath 任务路径
    * @param openlistRelativePath OpenList中的相对路径
    * @param renameRegex 重命名正则表达式
+   * @param rootTaskPath 任务根路径（用于根目录保护）
    * @return 清理的文件数量
    */
   private int cleanStrmFilesAndCheckDirectory(
@@ -634,7 +651,8 @@ public class StrmFileService {
       OpenlistConfig openlistConfig,
       String taskPath,
       String openlistRelativePath,
-      String renameRegex) {
+      String renameRegex,
+      String rootTaskPath) {
 
     AtomicInteger cleanedCount = new AtomicInteger(0);
 
@@ -643,15 +661,23 @@ public class StrmFileService {
         return 0;
       }
 
+      log.debug("清理STRM文件并检查目录: {} (OpenList路径: {})", directoryPath, openlistRelativePath);
+
       // 获取OpenList中对应路径的文件树
       List<OpenlistApiService.OpenlistFile> openlistFiles =
           getOpenListFileTree(openlistConfig, openlistRelativePath);
 
-      // 如果OpenList中不存在该路径，直接删除整个目录
+      // 如果OpenList中不存在该路径，考虑删除整个目录
       if (openlistFiles.isEmpty()) {
-        log.info("OpenList中不存在路径: {}, 删除对应STRM目录: {}", openlistRelativePath, directoryPath);
-        deleteDirectoryRecursively(directoryPath);
-        return cleanedCount.get();
+        // 检查是否为任务根目录
+        Path rootStrmPath = Paths.get(rootTaskPath);
+        if (directoryPath.equals(rootStrmPath)) {
+          log.info("OpenList中不存在路径: {}, 但这是任务根目录，不删除: {}", openlistRelativePath, directoryPath);
+        } else {
+          log.info("OpenList中不存在路径: {}, 删除对应STRM目录: {}", openlistRelativePath, directoryPath);
+          deleteDirectoryRecursively(directoryPath);
+          return cleanedCount.get();
+        }
       }
 
       // 清理目录中的孤立STRM文件
@@ -678,27 +704,42 @@ public class StrmFileService {
                     cleanOrphanedScrapingFiles(strmFile);
 
                   } catch (IOException e) {
-                    log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
+                    log.warn("删除孤立STRM文件失败: {}, 详细错误: {}", strmFile, e.getMessage(), e);
                   }
                 }
               });
 
       // 检查目录是否需要删除（内部无STRM文件）
-      if (shouldDeleteDirectory(directoryPath)) {
-        try {
-          // 清理剩余的刮削文件
-          cleanExtraScrapingFiles(directoryPath);
+      boolean shouldDelete = shouldDeleteDirectory(directoryPath);
 
-          // 删除空目录
-          Files.delete(directoryPath);
-          log.info("删除无STRM文件的目录: {}", directoryPath);
+      // 检查是否为任务根目录，根目录永远不删除
+      Path rootStrmPath = Paths.get(rootTaskPath);
+      boolean isRootDirectory = directoryPath.equals(rootStrmPath);
+
+      if (isRootDirectory) {
+        log.debug("这是任务根目录，不删除: {}", directoryPath);
+      } else if (shouldDelete) {
+        try {
+          // 再次确认目录内容
+          List<Path> remainingFiles =
+              Files.list(directoryPath).collect(java.util.stream.Collectors.toList());
+
+          if (remainingFiles.isEmpty()) {
+            // 删除空目录
+            Files.delete(directoryPath);
+            log.info("删除空目录: {}", directoryPath);
+          } else {
+            log.warn("目录不为空，跳过删除: {} (包含文件: {})", directoryPath, remainingFiles);
+          }
         } catch (IOException e) {
-          log.warn("删除空目录失败: {}, 错误: {}", directoryPath, e.getMessage());
+          log.warn("删除空目录失败: {}, 详细错误: {}", directoryPath, e.getMessage(), e);
         }
+      } else {
+        log.debug("目录不需要删除: {} (包含内容)", directoryPath);
       }
 
     } catch (Exception e) {
-      log.error("清理STRM文件和检查目录失败: {}, 错误: {}", directoryPath, e.getMessage(), e);
+      log.error("清理STRM文件和检查目录失败: {}, 详细错误: {}", directoryPath, e.getMessage(), e);
     }
 
     return cleanedCount.get();
@@ -864,7 +905,12 @@ public class StrmFileService {
       // 处理当前目录的STRM文件
       int currentDirCleanedCount =
           cleanStrmFilesAndCheckDirectory(
-              strmDirectoryPath, openlistConfig, taskPath, openlistRelativePath, renameRegex);
+              strmDirectoryPath,
+              openlistConfig,
+              taskPath,
+              openlistRelativePath,
+              renameRegex,
+              taskPath);
       totalCleanedCount.addAndGet(currentDirCleanedCount);
 
     } catch (Exception e) {
