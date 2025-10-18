@@ -245,8 +245,11 @@ public class TaskExecutionService {
                 boolean needScrapFile = true;
                 if (isIncrement) {
                   // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
-                  String finalFileName = processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
-                  java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(taskConfig.getStrmPath(), relativePath, finalFileName);
+                  String finalFileName =
+                      processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
+                  java.nio.file.Path strmFilePath =
+                      strmFileService.buildStrmFilePath(
+                          taskConfig.getStrmPath(), relativePath, finalFileName);
                   needScrapFile = !java.nio.file.Files.exists(strmFilePath);
                 }
 
@@ -313,7 +316,8 @@ public class TaskExecutionService {
                 taskConfig.getStrmPath(),
                 allFiles,
                 taskConfig.getPath(),
-                taskConfig.getRenameRegex());
+                taskConfig.getRenameRegex(),
+                openlistConfig);
         log.info("清理了 {} 个孤立的STRM文件", cleanedCount);
       }
 
@@ -532,8 +536,11 @@ public class TaskExecutionService {
           boolean needScrapFile = true;
           if (isIncrement) {
             // 增量模式下，检查STRM文件是否已存在，如果已存在则跳过刮削
-            String finalFileName = processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
-            java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(taskConfig.getStrmPath(), relativePath, finalFileName);
+            String finalFileName =
+                processFileNameForScraping(file.getName(), taskConfig.getRenameRegex());
+            java.nio.file.Path strmFilePath =
+                strmFileService.buildStrmFilePath(
+                    taskConfig.getStrmPath(), relativePath, finalFileName);
             needScrapFile = !java.nio.file.Files.exists(strmFilePath);
           }
 
@@ -568,8 +575,7 @@ public class TaskExecutionService {
   }
 
   /**
-   * 处理文件名（重命名和添加.strm扩展名）
-   * 这个方法复制自StrmFileService，用于判断STRM文件是否存在
+   * 处理文件名（重命名和添加.strm扩展名） 这个方法复制自StrmFileService，用于判断STRM文件是否存在
    *
    * @param originalFileName 原始文件名
    * @param renameRegex 重命名正则表达式

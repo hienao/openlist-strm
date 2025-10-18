@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.service;
 
+import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -7,11 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +32,7 @@ public class StrmFileService {
   private static final String ERROR_SUFFIX = ", 错误: ";
 
   private final SystemConfigService systemConfigService;
+  private final OpenlistApiService openlistApiService;
 
   /**
    * 生成STRM文件
@@ -131,15 +132,18 @@ public class StrmFileService {
         String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
         if (StringUtils.hasText(cleanRelativePath)) {
           // 确保路径使用UTF-8编码
-          cleanRelativePath = new String(cleanRelativePath.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+          cleanRelativePath =
+              new String(
+                  cleanRelativePath.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
           basePath = basePath.resolve(cleanRelativePath);
         }
       }
 
       // 确保文件名使用UTF-8编码
-      String safeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+      String safeFileName =
+          new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
       return basePath.resolve(safeFileName);
-      
+
     } catch (Exception e) {
       log.warn("构建STRM文件路径时遇到编码问题，尝试使用备用方案: {}", e.getMessage());
       // 备用方案：使用原始路径，让Java处理
@@ -321,20 +325,30 @@ public class StrmFileService {
   /**
    * 清理孤立的STRM文件（源文件已不存在的STRM文件） 用于增量执行时清理已删除源文件对应的STRM文件 同时删除对应的刮削文件（NFO文件、海报、背景图等）
    *
+   * <p>使用深度优先遍历算法，对STRM目录进行智能清理： 1. 对当前任务的STRM目录做深度优先遍历 2. 对每个文件夹X，获取OpenList中对应路径的文件树Y 3.
+   * 如果Y不存在，直接删除X 4. 检查X中的所有STRM文件对应的源文件在OpenList中是否存在 5. 删除不存在的STRM文件及其关联的NFO/图片文件 6.
+   * 如果目录X内无STRM文件后，删除X并继续向上检查父目录
+   *
    * @param strmBasePath STRM基础路径
-   * @param existingFiles 当前存在的源文件列表
+   * @param existingFiles 当前存在的源文件列表（保留参数但不再使用）
    * @param taskPath 任务路径
    * @param renameRegex 重命名正则表达式
+   * @param openlistConfig OpenList配置（必需参数，用于实时验证文件存在性）
    * @return 清理的文件数量
    */
   public int cleanOrphanedStrmFiles(
       String strmBasePath,
       List<OpenlistApiService.OpenlistFile> existingFiles,
       String taskPath,
-      String renameRegex) {
+      String renameRegex,
+      OpenlistConfig openlistConfig) {
     if (!StringUtils.hasText(strmBasePath)) {
       log.warn("STRM基础路径为空，跳过孤立文件清理");
       return 0;
+    }
+
+    if (openlistConfig == null) {
+      throw new BusinessException("OpenList配置不能为空，无法执行孤立文件清理");
     }
 
     try {
@@ -346,218 +360,22 @@ public class StrmFileService {
         return 0;
       }
 
-      // 构建现有视频文件的STRM文件路径集合
-      Set<Path> expectedStrmFiles =
-          buildExpectedStrmFilePaths(existingFiles, taskPath, strmBasePath, renameRegex);
+      log.info("开始使用深度优先遍历清理孤立STRM文件: {}", strmBasePath);
 
-      // 构建预期目录路径集合
-      Set<Path> expectedDirectories =
-          buildExpectedDirectoryPaths(existingFiles, taskPath, strmBasePath, renameRegex);
+      // 计算任务路径在OpenList中的相对路径（作为根路径）
+      String openlistRootPath = taskPath;
 
-      // 遍历STRM目录，找出孤立的STRM文件
-      AtomicInteger cleanedCount = new AtomicInteger(0);
-      try {
-        Files.walk(strmPath)
-            .filter(Files::isRegularFile)
-            .filter(path -> path.toString().toLowerCase().endsWith(".strm"))
-            .forEach(
-                strmFile -> {
-                  if (!expectedStrmFiles.contains(strmFile)) {
-                    try {
-                      // 删除STRM文件
-                      Files.delete(strmFile);
-                      log.info("删除孤立的STRM文件: {}", strmFile);
-                      cleanedCount.incrementAndGet();
+      // 使用深度优先遍历清理STRM目录
+      int cleanedCount =
+          validateAndCleanDirectory(
+              strmPath, openlistConfig, taskPath, openlistRootPath, renameRegex);
 
-                      // 删除对应的刮削文件
-                      cleanOrphanedScrapingFiles(strmFile);
-
-                    } catch (IOException e) {
-                      log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
-                    } catch (Exception e) {
-                      log.warn("处理孤立STRM文件时发生异常: {}, 错误: {}", strmFile, e.getMessage());
-                    }
-                  }
-                });
-      } catch (Exception e) {
-        log.error("遍历STRM目录时发生异常，跳过清理操作: {}", e.getMessage());
-        // 不抛出异常，继续执行后续操作
-      }
-
-      // 清理孤立目录（不在预期目录集合中的目录）
-      cleanOrphanedDirectories(strmPath, expectedDirectories);
-
-      return cleanedCount.get();
+      log.info("深度优先遍历清理完成，共清理 {} 个孤立文件/目录", cleanedCount);
+      return cleanedCount;
 
     } catch (Exception e) {
       log.error("清理孤立STRM文件失败: {}, 错误: {}", strmBasePath, e.getMessage(), e);
       return 0;
-    }
-  }
-
-  /**
-   * 构建预期的STRM文件路径集合
-   *
-   * @param existingFiles 现有文件列表
-   * @param taskPath 任务路径
-   * @param strmBasePath STRM基础路径
-   * @param renameRegex 重命名正则表达式
-   * @return 预期的STRM文件路径集合
-   */
-  private Set<Path> buildExpectedStrmFilePaths(
-      List<OpenlistApiService.OpenlistFile> existingFiles,
-      String taskPath,
-      String strmBasePath,
-      String renameRegex) {
-    Set<Path> expectedPaths = new HashSet<>();
-
-    for (OpenlistApiService.OpenlistFile file : existingFiles) {
-      if ("file".equals(file.getType()) && isVideoFile(file.getName())) {
-        try {
-          // 计算相对路径
-          String relativePath = calculateRelativePath(taskPath, file.getPath());
-
-          // 处理文件名（重命名和添加.strm扩展名）
-          String finalFileName = processFileName(file.getName(), renameRegex);
-
-          // 构建STRM文件路径
-          Path strmFilePath = buildStrmFilePath(strmBasePath, relativePath, finalFileName);
-          expectedPaths.add(strmFilePath);
-
-        } catch (Exception e) {
-          log.warn("构建预期STRM文件路径失败: {}, 错误: {}", file.getName(), e.getMessage());
-        }
-      }
-    }
-
-    return expectedPaths;
-  }
-
-  /**
-   * 构建预期的目录路径集合
-   *
-   * @param existingFiles 现有文件列表（包含文件和目录）
-   * @param taskPath 任务路径
-   * @param strmBasePath STRM基础路径
-   * @param renameRegex 重命名正则表达式
-   * @return 预期的目录路径集合
-   */
-  private Set<Path> buildExpectedDirectoryPaths(
-      List<OpenlistApiService.OpenlistFile> existingFiles, String taskPath, String strmBasePath, String renameRegex) {
-    Set<Path> expectedPaths = new HashSet<>();
-
-    // 添加根目录
-    expectedPaths.add(Paths.get(strmBasePath));
-
-    // 首先添加所有明确存在的目录
-    for (OpenlistApiService.OpenlistFile file : existingFiles) {
-      if ("folder".equals(file.getType())) {
-        try {
-          // 计算相对路径
-          String relativePath = calculateRelativePath(taskPath, file.getPath());
-
-          // 构建STRM目录路径
-          Path strmDirPath = Paths.get(strmBasePath);
-          if (StringUtils.hasText(relativePath)) {
-            String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
-            if (StringUtils.hasText(cleanRelativePath)) {
-              strmDirPath = strmDirPath.resolve(cleanRelativePath);
-            }
-          }
-
-          expectedPaths.add(strmDirPath);
-
-        } catch (Exception e) {
-          log.warn("构建预期目录路径失败: {}, 错误: {}", file.getName(), e.getMessage());
-        }
-      }
-    }
-
-    // 然后添加包含视频文件的目录（这些目录应该保留）
-    for (OpenlistApiService.OpenlistFile file : existingFiles) {
-      if ("file".equals(file.getType()) && isVideoFile(file.getName())) {
-        try {
-          // 计算相对路径
-          String relativePath = calculateRelativePath(taskPath, file.getPath());
-
-          // 构建STRM文件所在目录的路径
-          Path strmDirPath = Paths.get(strmBasePath);
-          if (StringUtils.hasText(relativePath)) {
-            String cleanRelativePath = relativePath.replaceAll("^/+", "").replaceAll("/+$", "");
-            if (StringUtils.hasText(cleanRelativePath)) {
-              strmDirPath = strmDirPath.resolve(cleanRelativePath);
-            }
-          }
-
-          // 添加文件所在目录
-          expectedPaths.add(strmDirPath);
-          
-          // 添加所有父级目录
-          Path parentPath = strmDirPath.getParent();
-          while (parentPath != null && !parentPath.equals(Paths.get(strmBasePath).getParent())) {
-            expectedPaths.add(parentPath);
-            parentPath = parentPath.getParent();
-          }
-
-        } catch (Exception e) {
-          log.warn("构建文件目录路径失败: {}, 错误: {}", file.getName(), e.getMessage());
-        }
-      }
-    }
-
-    return expectedPaths;
-  }
-
-  /**
-   * 清理孤立的目录（不在预期目录集合中的目录） 完全删除目录及其所有内容
-   *
-   * @param rootPath 根路径
-   * @param expectedDirectories 预期的目录路径集合
-   */
-  private void cleanOrphanedDirectories(Path rootPath, Set<Path> expectedDirectories) {
-    try {
-      // 按路径深度排序，先处理深层目录
-      List<Path> allDirectories =
-          Files.walk(rootPath)
-              .filter(Files::isDirectory)
-              .filter(path -> !path.equals(rootPath)) // 不处理根目录
-              .sorted(
-                  (path1, path2) -> {
-                    // 按路径深度降序排列，先处理深层目录
-                    int depth1 = path1.getNameCount() - rootPath.getNameCount();
-                    int depth2 = path2.getNameCount() - rootPath.getNameCount();
-                    return Integer.compare(depth2, depth1);
-                  })
-              .collect(java.util.stream.Collectors.toList());
-
-      for (Path dir : allDirectories) {
-        if (!expectedDirectories.contains(dir)) {
-          try {
-            log.info("清理孤立目录: {}", dir);
-
-            // 递归删除目录及其所有内容
-            Files.walk(dir)
-                .sorted((path1, path2) -> path2.compareTo(path1)) // 先删除文件，再删除目录
-                .forEach(
-                    path -> {
-                      try {
-                        Files.delete(path);
-                        log.debug("删除: {}", path);
-                      } catch (IOException e) {
-                        log.warn("删除文件/目录失败: {}, 错误: {}", path, e.getMessage());
-                      }
-                    });
-
-            log.info("孤立目录清理完成: {}", dir);
-
-          } catch (IOException e) {
-            log.warn("清理孤立目录失败: {}, 错误: {}", dir, e.getMessage());
-          }
-        }
-      }
-
-    } catch (IOException e) {
-      log.error("清理孤立目录过程中发生错误: {}", e.getMessage(), e);
     }
   }
 
@@ -759,5 +577,300 @@ public class StrmFileService {
       log.warn("检查目录是否为空失败: {}, 错误: {}", directory, e.getMessage());
       return false;
     }
+  }
+
+  /**
+   * 获取OpenList指定路径的文件树
+   *
+   * @param config OpenList配置
+   * @param openlistPath OpenList中的路径
+   * @return 文件树列表，如果路径不存在或访问失败返回空列表
+   */
+  private List<OpenlistApiService.OpenlistFile> getOpenListFileTree(
+      OpenlistConfig config, String openlistPath) {
+    try {
+      log.debug("获取OpenList文件树: {}", openlistPath);
+      return openlistApiService.getDirectoryContents(config, openlistPath);
+    } catch (Exception e) {
+      log.warn("获取OpenList文件树失败: {}, 错误: {}", openlistPath, e.getMessage());
+      return new ArrayList<>();
+    }
+  }
+
+  /**
+   * 判断目录是否应该删除（内部无STRM文件）
+   *
+   * @param directoryPath 目录路径
+   * @return 是否应该删除
+   */
+  private boolean shouldDeleteDirectory(Path directoryPath) {
+    try {
+      if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
+        return false;
+      }
+
+      // 检查目录中是否还有STRM文件
+      return Files.list(directoryPath)
+          .noneMatch(path -> path.toString().toLowerCase().endsWith(".strm"));
+
+    } catch (IOException e) {
+      log.warn("检查目录是否应该删除失败: {}, 错误: {}", directoryPath, e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * 清理STRM文件并检查目录是否需要删除
+   *
+   * @param directoryPath 要清理的目录路径
+   * @param openlistConfig OpenList配置
+   * @param taskPath 任务路径
+   * @param openlistRelativePath OpenList中的相对路径
+   * @param renameRegex 重命名正则表达式
+   * @return 清理的文件数量
+   */
+  private int cleanStrmFilesAndCheckDirectory(
+      Path directoryPath,
+      OpenlistConfig openlistConfig,
+      String taskPath,
+      String openlistRelativePath,
+      String renameRegex) {
+
+    AtomicInteger cleanedCount = new AtomicInteger(0);
+
+    try {
+      if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
+        return 0;
+      }
+
+      // 获取OpenList中对应路径的文件树
+      List<OpenlistApiService.OpenlistFile> openlistFiles =
+          getOpenListFileTree(openlistConfig, openlistRelativePath);
+
+      // 如果OpenList中不存在该路径，直接删除整个目录
+      if (openlistFiles.isEmpty()) {
+        log.info("OpenList中不存在路径: {}, 删除对应STRM目录: {}", openlistRelativePath, directoryPath);
+        deleteDirectoryRecursively(directoryPath);
+        return cleanedCount.get();
+      }
+
+      // 清理目录中的孤立STRM文件
+      Files.list(directoryPath)
+          .filter(Files::isRegularFile)
+          .filter(path -> path.toString().toLowerCase().endsWith(".strm"))
+          .forEach(
+              strmFile -> {
+                String strmFileName = strmFile.getFileName().toString();
+                String baseFileName = strmFileName.substring(0, strmFileName.lastIndexOf(".strm"));
+
+                // 检查OpenList中是否存在对应的源文件
+                boolean existsInOpenList =
+                    checkFileExistsInOpenList(baseFileName, openlistFiles, renameRegex);
+
+                if (!existsInOpenList) {
+                  try {
+                    // 删除孤立的STRM文件
+                    Files.delete(strmFile);
+                    log.info("删除孤立的STRM文件: {} (OpenList中不存在对应文件)", strmFile);
+                    cleanedCount.incrementAndGet();
+
+                    // 删除对应的刮削文件
+                    cleanOrphanedScrapingFiles(strmFile);
+
+                  } catch (IOException e) {
+                    log.warn("删除孤立STRM文件失败: {}, 错误: {}", strmFile, e.getMessage());
+                  }
+                }
+              });
+
+      // 检查目录是否需要删除（内部无STRM文件）
+      if (shouldDeleteDirectory(directoryPath)) {
+        try {
+          // 清理剩余的刮削文件
+          cleanExtraScrapingFiles(directoryPath);
+
+          // 删除空目录
+          Files.delete(directoryPath);
+          log.info("删除无STRM文件的目录: {}", directoryPath);
+        } catch (IOException e) {
+          log.warn("删除空目录失败: {}, 错误: {}", directoryPath, e.getMessage());
+        }
+      }
+
+    } catch (Exception e) {
+      log.error("清理STRM文件和检查目录失败: {}, 错误: {}", directoryPath, e.getMessage(), e);
+    }
+
+    return cleanedCount.get();
+  }
+
+  /**
+   * 检查文件在OpenList中是否存在（考虑重命名规则和扩展名匹配）
+   *
+   * @param strmBaseName STRM文件的基础名（不含.strm后缀）
+   * @param openlistFiles OpenList文件列表
+   * @param renameRegex 重命名正则表达式
+   * @return 文件是否存在
+   */
+  private boolean checkFileExistsInOpenList(
+      String strmBaseName,
+      List<OpenlistApiService.OpenlistFile> openlistFiles,
+      String renameRegex) {
+
+    // 尝试多种匹配方式
+    return openlistFiles.stream()
+        .filter(file -> "file".equals(file.getType()) && isVideoFile(file.getName()))
+        .anyMatch(
+            file -> {
+              String openlistFileName = file.getName();
+              String openlistBaseName = getBaseName(openlistFileName);
+
+              // 1. 直接匹配基础名
+              if (strmBaseName.equals(openlistBaseName)) {
+                return true;
+              }
+
+              // 2. 如果有重命名规则，尝试反向匹配
+              if (StringUtils.hasText(renameRegex) && renameRegex.contains("|")) {
+                try {
+                  String[] parts = renameRegex.split("\\|", 2);
+                  String pattern = parts[0];
+                  String replacement = parts[1];
+
+                  // 尝试将STRM基础名反向还原
+                  String restoredName = strmBaseName.replaceAll(replacement, pattern);
+
+                  // 检查还原后的名称是否匹配
+                  if (restoredName.equals(openlistBaseName)) {
+                    log.debug("反向还原匹配成功: {} -> {}", strmBaseName, restoredName);
+                    return true;
+                  }
+
+                  // 也尝试将OpenList文件名应用重命名规则后匹配
+                  String renamedOpenListFile = openlistBaseName.replaceAll(pattern, replacement);
+                  if (strmBaseName.equals(renamedOpenListFile)) {
+                    log.debug("重命名规则匹配成功: {} -> {}", openlistBaseName, renamedOpenListFile);
+                    return true;
+                  }
+
+                } catch (Exception e) {
+                  log.debug("重命名规则匹配失败: {}", e.getMessage());
+                }
+              }
+
+              // 3. 模糊匹配（包含关系）
+              if (strmBaseName.contains(openlistBaseName)
+                  || openlistBaseName.contains(strmBaseName)) {
+                log.debug("模糊匹配成功: {} <-> {}", strmBaseName, openlistBaseName);
+                return true;
+              }
+
+              return false;
+            });
+  }
+
+  /**
+   * 获取文件的基础名（不含扩展名）
+   *
+   * @param fileName 文件名
+   * @return 基础名
+   */
+  private String getBaseName(String fileName) {
+    if (!StringUtils.hasText(fileName)) {
+      return "";
+    }
+    int lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+      return fileName.substring(0, lastDotIndex);
+    }
+    return fileName;
+  }
+
+  /**
+   * 递归删除目录及其所有内容
+   *
+   * @param directoryPath 要删除的目录路径
+   */
+  private void deleteDirectoryRecursively(Path directoryPath) {
+    try {
+      if (!Files.exists(directoryPath)) {
+        return;
+      }
+
+      Files.walk(directoryPath)
+          .sorted((path1, path2) -> path2.compareTo(path1)) // 先删除文件，再删除目录
+          .forEach(
+              path -> {
+                try {
+                  Files.delete(path);
+                  log.debug("递归删除: {}", path);
+                } catch (IOException e) {
+                  log.warn("递归删除失败: {}, 错误: {}", path, e.getMessage());
+                }
+              });
+
+      log.info("递归删除目录完成: {}", directoryPath);
+
+    } catch (IOException e) {
+      log.error("递归删除目录失败: {}, 错误: {}", directoryPath, e.getMessage(), e);
+    }
+  }
+
+  /**
+   * 验证并清理单个目录（深度优先遍历的核心方法）
+   *
+   * @param strmDirectoryPath STRM目录路径
+   * @param openlistConfig OpenList配置
+   * @param taskPath 任务路径
+   * @param openlistRelativePath OpenList中的相对路径
+   * @param renameRegex 重命名正则表达式
+   * @return 清理的文件数量
+   */
+  private int validateAndCleanDirectory(
+      Path strmDirectoryPath,
+      OpenlistConfig openlistConfig,
+      String taskPath,
+      String openlistRelativePath,
+      String renameRegex) {
+
+    AtomicInteger totalCleanedCount = new AtomicInteger(0);
+
+    try {
+      if (!Files.exists(strmDirectoryPath) || !Files.isDirectory(strmDirectoryPath)) {
+        return 0;
+      }
+
+      log.debug("验证并清理目录: {} -> OpenList路径: {}", strmDirectoryPath, openlistRelativePath);
+
+      // 获取当前STRM目录下的所有子目录
+      List<Path> subDirectories =
+          Files.list(strmDirectoryPath)
+              .filter(Files::isDirectory)
+              .sorted()
+              .collect(java.util.stream.Collectors.toList());
+
+      // 深度优先：先处理所有子目录
+      for (Path subDir : subDirectories) {
+        String subDirName = subDir.getFileName().toString();
+        String openlistSubPath =
+            openlistRelativePath.isEmpty() ? subDirName : openlistRelativePath + "/" + subDirName;
+
+        int cleanedCount =
+            validateAndCleanDirectory(
+                subDir, openlistConfig, taskPath, openlistSubPath, renameRegex);
+        totalCleanedCount.addAndGet(cleanedCount);
+      }
+
+      // 处理当前目录的STRM文件
+      int currentDirCleanedCount =
+          cleanStrmFilesAndCheckDirectory(
+              strmDirectoryPath, openlistConfig, taskPath, openlistRelativePath, renameRegex);
+      totalCleanedCount.addAndGet(currentDirCleanedCount);
+
+    } catch (Exception e) {
+      log.error("验证并清理目录失败: {}, 错误: {}", strmDirectoryPath, e.getMessage(), e);
+    }
+
+    return totalCleanedCount.get();
   }
 }
