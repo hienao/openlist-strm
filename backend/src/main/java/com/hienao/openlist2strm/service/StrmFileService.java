@@ -799,12 +799,8 @@ public class StrmFileService {
                 }
               }
 
-              // 3. 模糊匹配（包含关系）
-              if (strmBaseName.contains(openlistBaseName)
-                  || openlistBaseName.contains(strmBaseName)) {
-                log.debug("模糊匹配成功: {} <-> {}", strmBaseName, openlistBaseName);
-                return true;
-              }
+              // 注意：移除了模糊匹配逻辑，清理任务只使用精确匹配
+              // 模糊匹配可能导致误判，使应该被删除的孤立文件保留下来
 
               return false;
             });
