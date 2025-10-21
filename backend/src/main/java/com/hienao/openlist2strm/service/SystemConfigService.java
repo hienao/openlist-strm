@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hienao.openlist2strm.config.PathConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,10 +26,19 @@ import org.springframework.stereotype.Service;
 public class SystemConfigService {
 
   private final ObjectMapper objectMapper;
+  private final PathConfiguration pathConfiguration;
 
-  private static final String CONFIG_DIR = "./data/config";
   private static final String CONFIG_FILE = "systemconf.json";
-  private static final String CONFIG_PATH = CONFIG_DIR + "/" + CONFIG_FILE;
+
+  /** 获取配置目录路径 */
+  private String getConfigDirectoryPath() {
+    return pathConfiguration.getConfig();
+  }
+
+  /** 获取配置文件路径 */
+  private String getConfigFilePath() {
+    return getConfigDirectoryPath() + "/" + CONFIG_FILE;
+  }
 
   /**
    * 获取系统配置
@@ -40,18 +50,18 @@ public class SystemConfigService {
       // 确保配置目录存在
       createConfigDirectoryIfNotExists();
 
-      File configFile = new File(CONFIG_PATH);
+      File configFile = new File(getConfigFilePath());
       Map<String, Object> result;
       boolean needSave = false;
 
       if (!configFile.exists()) {
         // 如果配置文件不存在，创建默认配置
-        log.info("系统配置文件不存在，创建默认配置: {}", CONFIG_PATH);
+        log.info("系统配置文件不存在，创建默认配置: {}", getConfigFilePath());
         result = getDefaultConfig();
         needSave = true;
       } else {
         // 读取配置文件
-        String content = Files.readString(Paths.get(CONFIG_PATH));
+        String content = Files.readString(Paths.get(getConfigFilePath()));
         if (content.trim().isEmpty()) {
           result = getDefaultConfig();
           needSave = true;
@@ -131,7 +141,7 @@ public class SystemConfigService {
       // 写入配置文件
       saveSystemConfigInternal(existingConfig);
 
-      log.info("系统配置已保存到: {}", CONFIG_PATH);
+      log.info("系统配置已保存到: {}", getConfigFilePath());
     } catch (Exception e) {
       log.error("保存系统配置失败", e);
       throw new RuntimeException("保存系统配置失败", e);
@@ -147,7 +157,7 @@ public class SystemConfigService {
   private void saveSystemConfigInternal(Map<String, Object> config) throws Exception {
     String jsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config);
 
-    Files.writeString(Paths.get(CONFIG_PATH), jsonContent);
+    Files.writeString(Paths.get(getConfigFilePath()), jsonContent);
   }
 
   /**
@@ -384,13 +394,13 @@ public class SystemConfigService {
   /** 创建配置目录（如果不存在） */
   private void createConfigDirectoryIfNotExists() {
     try {
-      Path configDir = Paths.get(CONFIG_DIR);
+      Path configDir = Paths.get(getConfigDirectoryPath());
       if (!Files.exists(configDir)) {
         Files.createDirectories(configDir);
-        log.info("创建配置目录: {}", CONFIG_DIR);
+        log.info("创建配置目录: {}", getConfigDirectoryPath());
       }
     } catch (IOException e) {
-      log.error("创建配置目录失败: {}", CONFIG_DIR, e);
+      log.error("创建配置目录失败: {}", getConfigDirectoryPath(), e);
       throw new RuntimeException("创建配置目录失败", e);
     }
   }

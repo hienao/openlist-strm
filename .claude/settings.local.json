@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chcp:*)"
+      "Bash(chcp:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose up:*)"
     ],
     "deny": [],
     "ask": []

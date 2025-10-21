@@ -18,6 +18,7 @@
 
 package com.hienao.openlist2strm.component;
 
+import com.hienao.openlist2strm.config.PathConfiguration;
 import com.hienao.openlist2strm.service.LogService;
 import java.io.IOException;
 import java.net.URI;
@@ -30,12 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class LogWebSocketHandler implements WebSocketHandler {
 
   private final LogService logService;
+  private final PathConfiguration pathConfiguration;
   private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, WatchService> watchServices = new ConcurrentHashMap<>();
   private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -102,8 +104,8 @@ public class LogWebSocketHandler implements WebSocketHandler {
 
   /** 获取日志文件路径 */
   private Path getLogFilePath(String logType) {
-    // 这里需要与LogService中的逻辑保持一致
-    String logPath = System.getProperty("logging.file.path", "./logs");
+    // 使用统一的路径配置
+    String logPath = pathConfiguration.getLogs();
     String fileName =
         switch (logType.toLowerCase()) {
           case "backend" -> "backend.log";

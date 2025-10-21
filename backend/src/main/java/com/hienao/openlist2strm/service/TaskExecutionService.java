@@ -242,12 +242,13 @@ public class TaskExecutionService {
                     buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
                 // 检查是否需要刮削（在增量模式下检查NFO文件是否已存在）
-                boolean needScrapFile = needScrapFile(
-                    file.getName(), 
-                    taskConfig.getRenameRegex(), 
-                    taskConfig.getStrmPath(), 
-                    relativePath, 
-                    isIncrement);
+                boolean needScrapFile =
+                    needScrapFile(
+                        file.getName(),
+                        taskConfig.getRenameRegex(),
+                        taskConfig.getStrmPath(),
+                        relativePath,
+                        isIncrement);
 
                 if (needScrapFile) {
                   // 检查目录是否已完全刮削（仅在增量模式下进行目录级别检查）
@@ -529,12 +530,13 @@ public class TaskExecutionService {
           String saveDirectory = buildScrapSaveDirectory(taskConfig.getStrmPath(), relativePath);
 
           // 检查是否需要刮削（在增量模式下检查NFO文件是否已存在）
-          boolean needScrapFile = needScrapFile(
-              file.getName(), 
-              taskConfig.getRenameRegex(), 
-              taskConfig.getStrmPath(), 
-              relativePath, 
-              isIncrement);
+          boolean needScrapFile =
+              needScrapFile(
+                  file.getName(),
+                  taskConfig.getRenameRegex(),
+                  taskConfig.getStrmPath(),
+                  relativePath,
+                  isIncrement);
 
           if (needScrapFile) {
             if (isIncrement && mediaScrapingService.isDirectoryFullyScraped(saveDirectory)) {
@@ -567,8 +569,7 @@ public class TaskExecutionService {
   }
 
   /**
-   * 判断是否需要刮削文件
-   * 在增量模式下，检查NFO文件是否存在，如果NFO文件已存在则跳过刮削
+   * 判断是否需要刮削文件 在增量模式下，检查NFO文件是否存在，如果NFO文件已存在则跳过刮削
    *
    * @param fileName 原始文件名
    * @param renameRegex 重命名正则表达式
@@ -577,22 +578,28 @@ public class TaskExecutionService {
    * @param isIncrement 是否增量模式
    * @return 是否需要刮削
    */
-  private boolean needScrapFile(String fileName, String renameRegex, String strmPath, String relativePath, boolean isIncrement) {
+  private boolean needScrapFile(
+      String fileName,
+      String renameRegex,
+      String strmPath,
+      String relativePath,
+      boolean isIncrement) {
     // 非增量模式下总是需要刮削
     if (!isIncrement) {
       return true;
     }
-    
+
     try {
       // 增量模式下，检查NFO文件是否已存在
       String finalFileName = processFileNameForScraping(fileName, renameRegex);
-      java.nio.file.Path strmFilePath = strmFileService.buildStrmFilePath(strmPath, relativePath, finalFileName);
-      
+      java.nio.file.Path strmFilePath =
+          strmFileService.buildStrmFilePath(strmPath, relativePath, finalFileName);
+
       // 构建对应的NFO文件路径
-      java.nio.file.Path nfoFilePath = strmFilePath.resolveSibling(
-          strmFilePath.getFileName().toString().replace(".strm", ".nfo")
-      );
-      
+      java.nio.file.Path nfoFilePath =
+          strmFilePath.resolveSibling(
+              strmFilePath.getFileName().toString().replace(".strm", ".nfo"));
+
       // 如果NFO文件存在，则跳过刮削
       return !java.nio.file.Files.exists(nfoFilePath);
     } catch (Exception e) {

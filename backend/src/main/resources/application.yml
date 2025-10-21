@@ -1,11 +1,22 @@
+# 统一路径配置
+app:
+  paths:
+    logs: ${APP_LOG_PATH:./data/log}
+    data: ${APP_DATA_PATH:./data}
+    database: ${APP_DATABASE_PATH:./data/config/db/openlist2strm.db}
+    config: ${APP_CONFIG_PATH:./data/config}
+    strm: ${APP_STRM_PATH:./backend/strm}
+    userInfo: ${APP_USER_INFO_PATH:./data/config/userInfo.json}
+    frontendLogs: ${APP_FRONTEND_LOGS_PATH:./frontend/logs}
+
 server:
   port: 8080
 logging:
   file:
-    path: ${LOG_PATH:./data/log}
+    path: ${app.paths.logs}
 spring:
   datasource:
-    url: jdbc:sqlite:${DATABASE_PATH:./data/config/db/openlist2strm.db}
+    url: jdbc:sqlite:${app.paths.database}
     driver-class-name: org.sqlite.JDBC
     # SQLite JDBC driver compatible with Alpine Linux
     hikari:

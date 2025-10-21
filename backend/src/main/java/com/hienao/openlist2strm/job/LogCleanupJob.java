@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.job;
 
+import com.hienao.openlist2strm.config.PathConfiguration;
 import com.hienao.openlist2strm.service.DataReportService;
 import com.hienao.openlist2strm.service.SystemConfigService;
 import java.io.File;
@@ -10,11 +11,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,13 +26,12 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class LogCleanupJob implements Job {
 
-  @Autowired private SystemConfigService systemConfigService;
-  @Autowired private DataReportService dataReportService;
-
-  private static final String BACKEND_LOG_DIR = "./logs";
-  private static final String FRONTEND_LOG_DIR = "./frontend/logs";
+  private final SystemConfigService systemConfigService;
+  private final DataReportService dataReportService;
+  private final PathConfiguration pathConfiguration;
 
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -45,10 +45,10 @@ public class LogCleanupJob implements Job {
       log.info("日志保留天数: {} 天", retentionDays);
 
       // 清理后端日志
-      cleanupLogDirectory(BACKEND_LOG_DIR, retentionDays);
+      cleanupLogDirectory(pathConfiguration.getLogs(), retentionDays);
 
       // 清理前端日志
-      cleanupLogDirectory(FRONTEND_LOG_DIR, retentionDays);
+      cleanupLogDirectory(pathConfiguration.getFrontendLogs(), retentionDays);
 
       log.info("日志清理任务执行完成");
 

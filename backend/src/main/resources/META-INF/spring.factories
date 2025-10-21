@@ -1,2 +1,0 @@
-org.springframework.context.ApplicationListener=\
-com.hienao.openlist2strm.config.DataDirectoryConfig

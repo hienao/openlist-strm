@@ -1,11 +1,22 @@
+# 统一路径配置
+app:
+  paths:
+    logs: ${APP_LOG_PATH:/app/data/log}
+    data: ${APP_DATA_PATH:/app/data}
+    database: ${APP_DATABASE_PATH:/app/data/config/db/openlist2strm.db}
+    config: ${APP_CONFIG_PATH:/app/data/config}
+    strm: ${APP_STRM_PATH:/app/backend/strm}
+    userInfo: ${APP_USER_INFO_PATH:/app/data/config/userInfo.json}
+    frontendLogs: ${APP_FRONTEND_LOGS_PATH:/app/data/log/frontend}
+
 server:
   port: 8080
 logging:
   file:
-    path: ${LOG_PATH:/app/data/log}
+    path: ${app.paths.logs}
 spring:
   datasource:
-    url: jdbc:sqlite:/app/data/config/db/openlist2strm.db
+    url: jdbc:sqlite:${app.paths.database}
     driver-class-name: org.sqlite.JDBC
   # MyBatis configuration
   flyway:
