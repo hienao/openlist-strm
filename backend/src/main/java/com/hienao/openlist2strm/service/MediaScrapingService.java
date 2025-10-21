@@ -164,7 +164,6 @@ public class MediaScrapingService {
             TmdbTvDetail tvDetail = tmdbApiService.getTvDetail(tmdbId);
             if (tvDetail != null) {
               log.info("直接获取电视剧详情成功: {} ({})", tvDetail.getName(), tvDetail.getId());
-
               // 创建MediaInfo对象
               mediaInfo =
                   new MediaInfo()
