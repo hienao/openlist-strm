@@ -208,20 +208,35 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
         return;
       }
 
+      log.info("在目录 {} 中找到 {} 个文件", logDirPath, logFiles.length);
+      for (File file : logFiles) {
+        log.debug("文件: {}, 是目录: {}, 是文件: {}", file.getName(), file.isDirectory(), file.isFile());
+      }
+
       int deletedCount = 0;
       long deletedSize = 0;
 
       for (File logFile : logFiles) {
-        if (logFile.isFile() && isLogFile(logFile.getName())) {
-          // 检查文件最后修改时间
-          if (logFile.lastModified() < cutoffMillis) {
-            long fileSize = logFile.length();
-            if (logFile.delete()) {
-              deletedCount++;
-              deletedSize += fileSize;
-              log.info("删除过期日志文件: {} (大小: {} bytes)", logFile.getAbsolutePath(), fileSize);
-            } else {
-              log.warn("删除日志文件失败: {}", logFile.getAbsolutePath());
+        if (logFile.isFile()) {
+          log.debug("检查文件: {}, 是否为日志文件: {}", logFile.getName(), isLogFile(logFile.getName()));
+          if (isLogFile(logFile.getName())) {
+            long fileModifiedTime = logFile.lastModified();
+            LocalDateTime fileModifiedDateTime = LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(fileModifiedTime), ZoneId.systemDefault());
+            log.debug("日志文件: {}, 最后修改时间: {}, 是否过期: {}",
+                logFile.getName(), fileModifiedDateTime, fileModifiedTime < cutoffMillis);
+
+            // 检查文件最后修改时间
+            if (fileModifiedTime < cutoffMillis) {
+              long fileSize = logFile.length();
+              if (logFile.delete()) {
+                deletedCount++;
+                deletedSize += fileSize;
+                log.info("删除过期日志文件: {} (大小: {} bytes, 修改时间: {})",
+                    logFile.getAbsolutePath(), fileSize, fileModifiedDateTime);
+              } else {
+                log.warn("删除日志文件失败: {}", logFile.getAbsolutePath());
+              }
             }
           }
         }
