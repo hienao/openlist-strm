@@ -175,8 +175,13 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
       return logPath;
     }
 
-    // 最后使用默认路径
-    return "./logs";
+    // 最后使用默认路径，根据环境自动选择
+    // 检查是否在Docker容器中（通过是否存在.dockerenv文件）
+    if (new File("/.dockerenv").exists()) {
+      return "/app/logs";  // Docker环境
+    } else {
+      return "./logs";     // 本地环境
+    }
   }
 
   /**
