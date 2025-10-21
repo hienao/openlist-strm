@@ -73,7 +73,7 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "Java Version:"' >> /start.sh && \
     echo 'java -version' >> /start.sh && \
     echo 'echo "=== Creating Directories ==="' >> /start.sh && \
-    echo 'mkdir -p /app/logs /run nginx' >> /start.sh && \
+    echo 'mkdir -p /app/data/log /run nginx' >> /start.sh && \
     echo 'chmod -R 755 /app/data' >> /start.sh && \
     echo 'echo "=== Starting Nginx ==="' >> /start.sh && \
     echo 'nginx &' >> /start.sh && \

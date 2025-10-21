@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -583,8 +582,7 @@ public class OpenlistApiService {
   /**
    * 构建文件URL，使用URI类进行智能URL编码
    *
-   * 使用Java标准库URI类进行URL编码，避免URLEncoder.encode的过度编码问题
-   * URI.create()会自动判断哪些字符需要编码，生成符合标准的URL
+   * <p>使用Java标准库URI类进行URL编码，避免URLEncoder.encode的过度编码问题 URI.create()会自动判断哪些字符需要编码，生成符合标准的URL
    *
    * @param baseUrl 基础URL
    * @param filePath 文件路径

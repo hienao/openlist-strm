@@ -1,12 +1,13 @@
 package com.hienao.openlist2strm.listener;
 
+import com.hienao.openlist2strm.config.PathConfiguration;
 import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.job.LogCleanupJob;
 import com.hienao.openlist2strm.service.DataReportService;
 import com.hienao.openlist2strm.service.LogConfigService;
 import com.hienao.openlist2strm.service.QuartzSchedulerService;
-import com.hienao.openlist2strm.service.TaskConfigService;
 import com.hienao.openlist2strm.service.SystemConfigService;
+import com.hienao.openlist2strm.service.TaskConfigService;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +45,7 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
   private final LogConfigService logConfigService;
   private final SystemConfigService systemConfigService;
   private final DataReportService dataReportService;
+  private final PathConfiguration pathConfiguration;
 
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -115,10 +117,7 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
     }
   }
 
-  /**
-   * 执行启动时日志清理
-   * 在应用启动时执行一次日志清理，清理过期的日志文件
-   */
+  /** 执行启动时日志清理 在应用启动时执行一次日志清理，清理过期的日志文件 */
   private void executeStartupLogCleanup() {
     try {
       log.info("开始执行启动时日志清理");
@@ -129,9 +128,9 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
 
       log.info("启动时日志清理 - 保留天数: {} 天", retentionDays);
 
-      // 获取日志目录路径，支持Docker环境
-      String backendLogDir = getLogDirectoryPath();
-      String frontendLogDir = "./frontend/logs"; // 前端日志目录
+      // 获取日志目录路径
+      String backendLogDir = pathConfiguration.getLogs();
+      String frontendLogDir = pathConfiguration.getFrontendLogs();
 
       log.info("清理后端日志目录: {}", backendLogDir);
       log.info("清理前端日志目录: {}", frontendLogDir);
@@ -156,31 +155,6 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
     } catch (Exception e) {
       log.error("启动时日志清理执行失败: {}", e.getMessage(), e);
       // 启动时日志清理失败不应该影响应用启动，只记录错误日志
-    }
-  }
-
-  /**
-   * 获取日志目录路径，支持Docker环境和普通环境
-   */
-  private String getLogDirectoryPath() {
-    // 优先使用系统环境变量LOG_PATH（Docker环境）
-    String logPath = System.getenv("LOG_PATH");
-    if (logPath != null && !logPath.trim().isEmpty()) {
-      return logPath;
-    }
-
-    // 其次使用Spring配置的logging.file.path
-    logPath = System.getProperty("logging.file.path");
-    if (logPath != null && !logPath.trim().isEmpty()) {
-      return logPath;
-    }
-
-    // 最后使用默认路径，根据环境自动选择
-    // 检查是否在Docker容器中（通过是否存在.dockerenv文件）
-    if (new File("/.dockerenv").exists()) {
-      return "/app/logs";  // Docker环境
-    } else {
-      return "./logs";     // 本地环境
     }
   }
 
@@ -226,10 +200,14 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
           log.debug("检查文件: {}, 是否为日志文件: {}", logFile.getName(), isLogFile(logFile.getName()));
           if (isLogFile(logFile.getName())) {
             long fileModifiedTime = logFile.lastModified();
-            LocalDateTime fileModifiedDateTime = LocalDateTime.ofInstant(
-                java.time.Instant.ofEpochMilli(fileModifiedTime), ZoneId.systemDefault());
-            log.debug("日志文件: {}, 最后修改时间: {}, 是否过期: {}",
-                logFile.getName(), fileModifiedDateTime, fileModifiedTime < cutoffMillis);
+            LocalDateTime fileModifiedDateTime =
+                LocalDateTime.ofInstant(
+                    java.time.Instant.ofEpochMilli(fileModifiedTime), ZoneId.systemDefault());
+            log.debug(
+                "日志文件: {}, 最后修改时间: {}, 是否过期: {}",
+                logFile.getName(),
+                fileModifiedDateTime,
+                fileModifiedTime < cutoffMillis);
 
             // 检查文件最后修改时间
             if (fileModifiedTime < cutoffMillis) {
@@ -237,8 +215,11 @@ public class ApplicationStartupListener implements ApplicationListener<Applicati
               if (logFile.delete()) {
                 deletedCount++;
                 deletedSize += fileSize;
-                log.info("删除过期日志文件: {} (大小: {} bytes, 修改时间: {})",
-                    logFile.getAbsolutePath(), fileSize, fileModifiedDateTime);
+                log.info(
+                    "删除过期日志文件: {} (大小: {} bytes, 修改时间: {})",
+                    logFile.getAbsolutePath(),
+                    fileSize,
+                    fileModifiedDateTime);
               } else {
                 log.warn("删除日志文件失败: {}", logFile.getAbsolutePath());
               }

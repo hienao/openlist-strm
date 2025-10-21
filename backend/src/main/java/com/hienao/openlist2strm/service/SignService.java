@@ -1,6 +1,7 @@
 package com.hienao.openlist2strm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hienao.openlist2strm.config.PathConfiguration;
 import com.hienao.openlist2strm.dto.sign.ChangePasswordDto;
 import com.hienao.openlist2strm.dto.sign.SignInDto;
 import com.hienao.openlist2strm.dto.sign.SignUpDto;
@@ -13,17 +14,24 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Service
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class SignService {
 
-  private static final String USER_INFO_FILE = "./data/config/userInfo.json";
   private static final String PWD_KEY = "pwd";
   private static final String CONTAINER_INSTANCE_ID_KEY = "containerInstanceId";
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
+  private final PathConfiguration pathConfiguration;
+
+  /** 获取用户信息文件路径 */
+  private String getUserInfoFilePath() {
+    return pathConfiguration.getUserInfo();
+  }
 
   /**
    * 容器启动时检查并生成容器实例ID
@@ -46,7 +54,7 @@ public class SignService {
       throw new BusinessException("用户已存在，不允许重复注册");
     }
 
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(getUserInfoFilePath());
 
     try {
       // 创建目录（如果不存在）
@@ -96,7 +104,7 @@ public class SignService {
     userInfo.put(PWD_KEY, md5Hash(changePasswordDto.getNewPassword()));
 
     try {
-      File userFile = new File(USER_INFO_FILE);
+      File userFile = new File(getUserInfoFilePath());
       objectMapper.writeValue(userFile, userInfo);
       log.info("密码修改成功");
     } catch (IOException e) {
@@ -106,7 +114,7 @@ public class SignService {
   }
 
   public boolean checkUserExists() {
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(getUserInfoFilePath());
     if (!userFile.exists()) {
       return false;
     }
@@ -134,7 +142,7 @@ public class SignService {
    * @since 2024-01-01
    */
   public void ensureContainerInstanceId() {
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(getUserInfoFilePath());
 
     try {
       Map<String, String> userInfo;
@@ -178,7 +186,7 @@ public class SignService {
    * @since 2024-01-01
    */
   public String getContainerInstanceId() {
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(getUserInfoFilePath());
 
     if (!userFile.exists()) {
       return null;
@@ -202,7 +210,7 @@ public class SignService {
    * @since 2024-01-01
    */
   private Map<String, String> readUserInfoOrThrow() {
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(getUserInfoFilePath());
 
     if (!userFile.exists()) {
       throw new BusinessException("用户不存在");

@@ -207,7 +207,7 @@ docker run -d \
   -v ./logs:/app/data/log \
   -v ./strm:/app/backend/strm \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e LOG_PATH=/app/logs \
+  -e LOG_PATH=/app/data/log \
   --restart always \
   hienao6/openlist-strm:latest
 ```
