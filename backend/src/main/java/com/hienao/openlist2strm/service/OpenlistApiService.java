@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -277,12 +278,8 @@ public class OpenlistApiService {
         filePath += alistFile.getName();
         file.setPath(filePath);
 
-        // 构建文件URL - 对路径进行URL编码以处理特殊字符
-        String fileUrl = config.getBaseUrl();
-        if (!fileUrl.endsWith("/")) {
-          fileUrl += "/";
-        }
-        fileUrl += "d" + encodeFilePath(filePath);
+        // 构建文件URL - 使用URI类进行智能URL编码
+        String fileUrl = buildFileUrl(config.getBaseUrl(), filePath);
         file.setUrl(fileUrl);
 
         files.add(file);
@@ -466,12 +463,8 @@ public class OpenlistApiService {
    */
   public byte[] getFileContent(OpenlistConfig config, String filePath) {
     try {
-      // 构建文件下载URL - 对路径进行URL编码以处理特殊字符
-      String fileUrl = config.getBaseUrl();
-      if (!fileUrl.endsWith("/")) {
-        fileUrl += "/";
-      }
-      fileUrl += "d" + encodeFilePath(filePath);
+      // 构建文件下载URL - 使用URI类进行智能URL编码
+      String fileUrl = buildFileUrl(config.getBaseUrl(), filePath);
 
       log.debug("下载文件请求 - 文件路径: {}, 完整URL: {}", filePath, fileUrl);
 
@@ -588,42 +581,29 @@ public class OpenlistApiService {
   }
 
   /**
-   * 对文件路径进行URL编码，处理特殊字符（空格、中文、符号等）
+   * 构建文件URL，使用URI类进行智能URL编码
    *
-   * @param filePath 原始文件路径
-   * @return URL编码后的文件路径
+   * 使用Java标准库URI类进行URL编码，避免URLEncoder.encode的过度编码问题
+   * URI.create()会自动判断哪些字符需要编码，生成符合标准的URL
+   *
+   * @param baseUrl 基础URL
+   * @param filePath 文件路径
+   * @return 完整的文件URL
    */
-  private String encodeFilePath(String filePath) {
-    if (filePath == null || filePath.isEmpty()) {
-      return filePath;
+  private String buildFileUrl(String baseUrl, String filePath) {
+    // 确保baseUrl以/结尾
+    if (!baseUrl.endsWith("/")) {
+      baseUrl += "/";
     }
 
-    try {
-      // 将路径按斜杠分割，对每个部分单独编码，保持路径分隔符
-      String[] pathParts = filePath.split("/");
-      StringBuilder encodedPath = new StringBuilder();
+    // 构建完整URL路径：baseUrl + "d" + filePath
+    String fullPath = baseUrl + "d" + filePath;
 
-      for (int i = 0; i < pathParts.length; i++) {
-        String part = pathParts[i];
-        if (part != null && !part.isEmpty()) {
-          // 对每个路径部分进行URL编码
-          String encodedPart = URLEncoder.encode(part, StandardCharsets.UTF_8.name());
-          encodedPath.append(encodedPart);
-        }
+    // 使用URI.create()进行智能编码
+    URI uri = URI.create(fullPath);
 
-        // 添加路径分隔符（除了最后一个部分）
-        if (i < pathParts.length - 1) {
-          encodedPath.append("/");
-        }
-      }
-
-      String result = encodedPath.toString();
-      log.debug("路径编码: {} -> {}", filePath, result);
-      return result;
-
-    } catch (UnsupportedEncodingException e) {
-      log.warn("URL编码失败，使用原始路径: {}, 错误: {}", filePath, e.getMessage());
-      return filePath;
-    }
+    String result = uri.toString();
+    log.debug("URL构建编码: {} -> {}", fullPath, result);
+    return result;
   }
 }
