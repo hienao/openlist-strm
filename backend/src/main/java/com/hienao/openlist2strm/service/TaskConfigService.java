@@ -1,5 +1,6 @@
 package com.hienao.openlist2strm.service;
 
+import com.hienao.openlist2strm.config.PathConfiguration;
 import com.hienao.openlist2strm.entity.TaskConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
 import com.hienao.openlist2strm.mapper.TaskConfigMapper;
@@ -8,6 +9,7 @@ import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -27,6 +29,7 @@ public class TaskConfigService {
 
   private final TaskConfigMapper taskConfigMapper;
   private final QuartzSchedulerService quartzSchedulerService;
+  private final PathConfiguration pathConfiguration;
 
   /**
    * 根据ID查询任务配置
@@ -386,7 +389,7 @@ public class TaskConfigService {
       taskConfig.setIsIncrement(true);
     }
     if (!StringUtils.hasText(taskConfig.getStrmPath())) {
-      taskConfig.setStrmPath("/strm/");
+      taskConfig.setStrmPath(pathConfiguration.getStrm());
     }
     if (taskConfig.getLastExecTime() == null) {
       taskConfig.setLastExecTime(0L);

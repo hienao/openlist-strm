@@ -2,6 +2,17 @@
 
 本指南将帮助您快速部署 OpenList to Stream 应用，无需深入了解开发细节。
 
+::: tip 路径标准化说明
+从最新版本开始，项目采用标准化的路径结构：
+- 容器内统一使用 `/maindata/` 作为数据存储根目录
+- 配置文件存储在 `/maindata/config/`
+- 数据库文件存储在 `/maindata/db/`
+- 日志文件存储在 `/maindata/log/`
+- STRM 文件仍存储在 `/app/backend/strm/`
+
+本文档中的所有命令已更新为使用标准化路径。
+:::
+
 ## 快速开始
 
 ### 最简单的部署方式
@@ -12,8 +23,9 @@
 docker run -d \
   --name openlist-strm \
   -p 3111:80 \
-  -v ./config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   --restart always \
   hienao6/openlist-strm:latest
@@ -40,9 +52,10 @@ services:
     ports:
       - "3111:80"
     volumes:
-      - ./config:/app/data/config    # 配置和数据库
-      - ./logs:/app/data/log         # 日志文件
-      - ./strm:/app/backend/strm     # STRM文件输出
+      - ./data/config:/maindata/config    # 配置文件
+      - ./data/db:/maindata/db            # 数据库文件
+      - ./logs:/maindata/log              # 日志文件
+      - ./strm:/app/backend/strm          # STRM文件输出
     restart: always
 ```
 
@@ -64,15 +77,16 @@ docker-compose up -d
 
 ```bash
 # 创建必要目录
-mkdir -p ./config ./logs ./strm
+mkdir -p ./data/config ./data/db ./logs ./strm
 
 # 设置权限（Linux/macOS）
-chmod -R 755 ./config ./logs ./strm
+chmod -R 755 ./data/config ./data/db ./logs ./strm
 ```
 
 ### 目录用途
 
-- **`./config`** - 存放配置文件和数据库
+- **`./data/config`** - 存放配置文件
+- **`./data/db`** - 存放数据库文件
 - **`./logs`** - 存放应用日志
 - **`./strm`** - 存放生成的 STRM 流媒体文件
 
@@ -174,8 +188,9 @@ docker run -d \
 docker run -d \
   --name openlist-strm \
   -p 8080:80 \
-  -v ./config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   --restart always \
   hienao6/openlist-strm:latest
@@ -190,8 +205,9 @@ docker run -d \
 docker run -d \
   --name openlist-strm \
   -p 3111:80 \
-  -v /docker/openlist/config:/app/data/config \
-  -v /docker/openlist/logs:/app/data/log \
+  -v /docker/openlist/data/config:/maindata/config \
+  -v /docker/openlist/data/db:/maindata/db \
+  -v /docker/openlist/logs:/maindata/log \
   -v /docker/openlist/strm:/app/backend/strm \
   --restart always \
   hienao6/openlist-strm:latest
@@ -203,11 +219,12 @@ docker run -d \
 docker run -d \
   --name openlist-strm \
   -p 3111:80 \
-  -v ./config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e LOG_PATH=/app/data/log \
+  -e LOG_PATH=/maindata/log \
   --restart always \
   hienao6/openlist-strm:latest
 ```
@@ -235,7 +252,7 @@ docker info
 netstat -tulpn | grep 3111
 
 # 检查目录权限
-ls -la ./config ./logs ./strm
+ls -la ./data/config ./data/db ./logs ./strm
 ```
 
 ### 无法访问应用
@@ -285,7 +302,7 @@ docker logs --tail=100 openlist-strm
 
 ```bash
 # 备份配置和数据库
-tar -czf backup-$(date +%Y%m%d).tar.gz ./config/
+tar -czf backup-$(date +%Y%m%d).tar.gz ./data/
 
 # 备份 STRM 文件
 tar -czf strm-backup-$(date +%Y%m%d).tar.gz ./strm/
@@ -361,7 +378,7 @@ A: 修改 `docker run` 命令中的 `-p 3111:80` 参数
 A: 使用 `docker logs openlist-strm` 命令
 
 **Q: 如何备份数据？**
-A: 备份 `./config` 和 `./strm` 目录
+A: 备份 `./data` 和 `./strm` 目录
 
 ### 社区支持
 
@@ -384,7 +401,7 @@ docker pull hienao6/openlist-strm:latest
 docker stop openlist-strm
 
 # 2. 备份数据
-cp -r ./config ./config.backup
+cp -r ./data ./data.backup
 cp -r ./strm ./strm.backup
 
 # 3. 拉取新版本
@@ -394,8 +411,9 @@ docker pull hienao6/openlist-strm:latest
 docker run -d \
   --name openlist-strm \
   -p 3111:80 \
-  -v ./config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   --restart always \
   hienao6/openlist-strm:latest

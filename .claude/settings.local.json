@@ -4,7 +4,8 @@
       "Bash(chcp:*)",
       "Bash(docker-compose build:*)",
       "Bash(docker logs:*)",
-      "Bash(docker-compose up:*)"
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "ask": []

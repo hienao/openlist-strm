@@ -124,21 +124,23 @@ cp .env.docker.example .env
 ```bash
 # Host paths for Docker volumes
 LOG_PATH_HOST=./logs           # Log files host path
-DATABASE_STORE_HOST=./data     # Data storage host path
+CONFIG_PATH_HOST=./data/config # Configuration files host path
+DB_PATH_HOST=./data/db         # Database files host path
 STRM_PATH_HOST=./strm          # STRM files host path
 ```
 
 **Volume Mappings**:
-- `${LOG_PATH_HOST}:/app/data/log` - Application logs
-- `${DATABASE_STORE_HOST}:/app/data` - Application configuration and SQLite database
+- `${LOG_PATH_HOST}:/maindata/log` - Application logs
+- `${CONFIG_PATH_HOST}:/maindata/config` - Application configuration files
+- `${DB_PATH_HOST}:/maindata/db` - Database files
 - `${STRM_PATH_HOST}:/app/backend/strm` - Generated STRM files output
 
 **Standardized Path Structure**:
 ```
 Container Internal Path          Host Path (Default)
-/app/data/log/                   → ./logs/
-/app/data/config/               → ./data/config/
-/app/data/config/db/            → ./data/config/db/
+/maindata/log/                   → ./logs/
+/maindata/config/               → ./data/config/
+/maindata/db/                   → ./data/db/
 /app/backend/strm/              → ./strm/
 ```
 
@@ -177,8 +179,9 @@ docker build -t openlist2strm:latest .
 docker run -d \
   --name openlist2strm \
   -p 3111:80 \
-  -v ./data/config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   openlist2strm:latest
 ```
@@ -195,15 +198,16 @@ docker run -d \
 - **Quartz Configuration**: Uses RAM storage (RAMJobStore) instead of database persistence due to SQLite compatibility
 - **Authentication**: JWT tokens with configurable expiration
 - **CORS**: Configured for development and production environments
-- **File Generation**: STRM files are generated in the `/backend/strm` directory
+- **File Generation**: STRM files are generated in the `/app/backend/strm` directory
 - **AI Integration**: Optional AI scraping feature for media metadata
 - **Path Migration**: Automatic migration from legacy paths to standardized paths
+- **New Path Structure**: Uses `/maindata/` for logs, configs, and database files with clear separation
 
 ## Important Notes
 
 - **Quartz Configuration**: Uses RAM storage (RAMJobStore) instead of database persistence due to SQLite compatibility
 - **Authentication**: JWT tokens with configurable expiration
 - **CORS**: Configured for development and production environments
-- **File Generation**: STRM files are generated in the `/backend/strm` directory
+- **File Generation**: STRM files are generated in the `/app/backend/strm` directory
 - **AI Integration**: Optional AI scraping feature for media metadata
 - **Path Management**: Standardized paths ensure consistent behavior across deployment environments

@@ -53,8 +53,8 @@ RUN apt-get update && apt-get install -y \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     # Create necessary directories
-    mkdir -p /var/log /run/nginx /var/www/html /app/data /app/data/config /app/data/config/db /app/data/log && \
-    chmod -R 755 /app/data
+    mkdir -p /var/log /run/nginx /var/www/html /maindata /maindata/config /maindata/db /maindata/log /app/data /app/data/config /app/data/config/db /app/data/log /app/backend/strm && \
+    chmod -R 755 /maindata /app/data /app/backend
 
 # Copy frontend build (from Alpine stage)
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
@@ -73,8 +73,8 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "Java Version:"' >> /start.sh && \
     echo 'java -version' >> /start.sh && \
     echo 'echo "=== Creating Directories ==="' >> /start.sh && \
-    echo 'mkdir -p /app/data/log /run nginx' >> /start.sh && \
-    echo 'chmod -R 755 /app/data' >> /start.sh && \
+    echo 'mkdir -p /maindata/log /maindata/config /maindata/db /maindata/log/frontend /app/backend/strm /run nginx' >> /start.sh && \
+    echo 'chmod -R 755 /maindata /app/backend' >> /start.sh && \
     echo 'echo "=== Starting Nginx ==="' >> /start.sh && \
     echo 'nginx &' >> /start.sh && \
     echo 'echo "=== Starting Spring Boot Application ==="' >> /start.sh && \

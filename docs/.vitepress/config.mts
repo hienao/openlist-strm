@@ -17,8 +17,7 @@ export default defineConfig({
           { text: '快速开始', link: '/quick-start' },
           { text: '添加OpenList', link: '/add-openlist' },
           { text: '添加任务', link: '/add-task' },
-          { text: '系统设置', link: '/system-config' },
-          { text: '日志', link: '/log' },
+          { text: '系统设置', link: '/system-config' }
         ] },
       { text: '更新历史', link: '/update-log' },
       { text: '参与开发', link: '/dev' },
@@ -36,8 +35,7 @@ export default defineConfig({
           { text: '快速开始', link: '/quick-start' },
           { text: '添加OpenList', link: '/add-openlist' },
           { text: '添加任务', link: '/add-task' },
-          { text: '系统设置', link: '/system-config' },
-          { text: '日志', link: '/log' },
+          { text: '系统设置', link: '/system-config' }
         ] },
       { text: '更新历史', link: '/update-log' },
       { text: '参与开发', link: '/dev' },
