@@ -40,37 +40,37 @@ public class PathConfiguration {
       this.logs = System.getProperty("logging.file.path");
     }
     if (this.logs == null) {
-      this.logs = "./data/log";
+      this.logs = "/maindata/log";
     }
 
     this.data = System.getenv("DATA_PATH");
     if (this.data == null) {
-      this.data = "./data";
+      this.data = "/maindata";
     }
 
     this.database = System.getenv("DATABASE_PATH");
     if (this.database == null) {
-      this.database = "./data/config/db/openlist2strm.db";
+      this.database = "/maindata/db/openlist2strm.db";
     }
 
     this.config = System.getenv("CONFIG_PATH");
     if (this.config == null) {
-      this.config = "./data/config";
+      this.config = "/maindata/config";
     }
 
     this.strm = System.getenv("STRM_PATH");
     if (this.strm == null) {
-      this.strm = "./backend/strm";
+      this.strm = "/app/backend/strm";
     }
 
     this.userInfo = System.getenv("USER_INFO_PATH");
     if (this.userInfo == null) {
-      this.userInfo = "./data/config/userInfo.json";
+      this.userInfo = "/maindata/config/userInfo.json";
     }
 
     this.frontendLogs = System.getenv("FRONTEND_LOGS_PATH");
     if (this.frontendLogs == null) {
-      this.frontendLogs = "./frontend/logs";
+      this.frontendLogs = "/maindata/log/frontend";
     }
   }
 

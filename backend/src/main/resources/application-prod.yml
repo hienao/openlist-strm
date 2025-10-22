@@ -1,13 +1,13 @@
 # 统一路径配置
 app:
   paths:
-    logs: ${APP_LOG_PATH:/app/data/log}
-    data: ${APP_DATA_PATH:/app/data}
-    database: ${APP_DATABASE_PATH:/app/data/config/db/openlist2strm.db}
-    config: ${APP_CONFIG_PATH:/app/data/config}
+    logs: ${APP_LOG_PATH:/maindata/log}
+    data: ${APP_DATA_PATH:/maindata}
+    database: ${APP_DATABASE_PATH:/maindata/db/openlist2strm.db}
+    config: ${APP_CONFIG_PATH:/maindata/config}
     strm: ${APP_STRM_PATH:/app/backend/strm}
-    userInfo: ${APP_USER_INFO_PATH:/app/data/config/userInfo.json}
-    frontendLogs: ${APP_FRONTEND_LOGS_PATH:/app/data/log/frontend}
+    userInfo: ${APP_USER_INFO_PATH:/maindata/config/userInfo.json}
+    frontendLogs: ${APP_FRONTEND_LOGS_PATH:/maindata/log/frontend}
 
 server:
   port: 8080

@@ -33,8 +33,9 @@
 docker run -d \
   --name openlist-strm \
   -p 3111:80 \
-  -v ./config:/app/data/config \
-  -v ./logs:/app/data/log \
+  -v ./data/config:/maindata/config \
+  -v ./data/db:/maindata/db \
+  -v ./logs:/maindata/log \
   -v ./strm:/app/backend/strm \
   --restart always \
   hienao6/openlist-strm:latest
@@ -51,9 +52,10 @@ services:
     ports:
       - "3111:80"
     volumes:
-      - ./config:/app/data/config    # 配置文件和数据库存储
-      - ./logs:/app/data/log         # 日志文件存储
-      - ./strm:/app/backend/strm     # STRM 文件输出目录
+      - ./data/config:/maindata/config    # 配置文件和数据库存储
+      - ./data/db:/maindata/db            # 数据库文件存储
+      - ./logs:/maindata/log              # 日志文件存储
+      - ./strm:/app/backend/strm          # STRM 文件输出目录
     restart: always
 ```
 
@@ -71,8 +73,11 @@ cp .env.docker.example .env
 # 日志路径（宿主机路径）
 LOG_PATH_HOST=./logs
 
-# 数据存储路径（宿主机路径）
-DATABASE_STORE_HOST=./data
+# 配置文件路径（宿主机路径）
+CONFIG_PATH_HOST=./data/config
+
+# 数据库文件路径（宿主机路径）
+DB_PATH_HOST=./data/db
 
 # STRM文件路径（宿主机路径）
 STRM_PATH_HOST=./strm
@@ -95,11 +100,10 @@ docker-compose up -d
 git clone https://github.com/hienao/openlist-strm.git
 cd openlist-strm
 
-# Linux/macOS
-./dev-docker-rebuild.sh
-
-# Windows
-dev-docker-rebuild.bat
+# 清理现有容器并重新构建
+docker-compose down --rmi all --volumes
+docker-compose build
+docker-compose up -d
 ```
 
 #### 快速启动
@@ -107,37 +111,25 @@ dev-docker-rebuild.bat
 docker-compose up -d
 ```
 
-**Docker 调试脚本**:
-```bash
-# 全面容器调试和配置 (Linux/macOS/Git Bash)
-./docker-debug.sh
-
-# 功能:
-# - 检查 Docker 守护进程状态
-# - 创建/验证 .env 文件（包含路径标准化配置）
-# - 创建必要的数据目录
-# - 验证 Flyway 迁移文件
-# - 提供数据库清理选项
-# - 使用 --no-cache 构建镜像
-# - 自动应用标准路径配置
-```
-
 **路径标准化配置**：
-- 调试脚本已更新为使用标准化路径配置
+- 使用 .env 文件配置自定义路径（复制 .env.docker.example 为 .env）
 - 自动创建统一的数据存储目录结构
 - 支持跨平台路径兼容性
 
 访问应用：http://localhost:3111
 
 **目录说明：**
-- `./config` → `/app/data/config` - 存储应用配置文件和 SQLite 数据库
-- `./logs` → `/app/data/log` - 存储应用运行日志
+- `./data/config` → `/maindata/config` - 存储应用配置文件和 SQLite 数据库
+- `./data/db` → `/maindata/db` - 存储数据库文件
+- `./logs` → `/maindata/log` - 存储应用运行日志
 - `./strm` → `/app/backend/strm` - 存储生成的 STRM 流媒体文件（核心输出目录）
 
 **路径标准化说明：**
 - 所有路径现已统一为标准化格式，确保不同部署环境的一致性
-- 容器内使用 `/app/data/` 作为统一数据存储根目录
-- 日志文件统一存储在 `/app/data/log/` 目录下
+- 容器内使用 `/maindata/` 作为统一数据存储根目录
+- 日志文件统一存储在 `/maindata/log/` 目录下
+- 配置文件统一存储在 `/maindata/config/` 目录下
+- 数据库文件统一存储在 `/maindata/db/` 目录下
 - 支持通过环境变量灵活配置宿主机路径
 
 ## 使用说明
@@ -160,10 +152,10 @@ A: 输出到容器的 `/app/backend/strm` 目录，对应宿主机的 `./strm` �
 ## 技术架构
 
 ### 🏗️ 全栈技术栈
-- **前端**: Nuxt.js 3.17.7 + Vue 3 + Tailwind CSS
-- **后端**: Spring Boot 3.3.9 + MyBatis + Quartz Scheduler
-- **数据库**: SQLite 3.47.1 + Flyway 迁移
-- **构建**: Gradle 8.14.3 + Node.js 20
+- **前端**: Nuxt.js 3.13.0 + Vue 3.4.0 + Tailwind CSS 3.4.15
+- **后端**: Spring Boot 3.3.9 + MyBatis 3.0.4 + Quartz Scheduler
+- **数据库**: SQLite 3.47.1.0 + Flyway 11.4.0 迁移
+- **构建**: Gradle + Java 21 + Node.js
 - **容器化**: Docker 多阶段构建 + Nginx
 - **认证**: JWT + Spring Security
 
@@ -195,42 +187,22 @@ A: 输出到容器的 `/app/backend/strm` 目录，对应宿主机的 `./strm` �
 ## 开发文档
 
 ### 📖 开发指南
-- [前端开发文档](frontend-dev.md) - Nuxt.js 前端开发指南
-- [后端开发文档](backend-dev.md) - Spring Boot 后端开发指南
 - [CLAUDE.md](CLAUDE.md) - Claude Code 开发助手配置
+- [llmdoc/index.md](llmdoc/index.md) - 项目文档系统索引
 
-### ⚡ 快速开发
+### ⚡ 开发环境
 
-#### 所有平台支持的原生脚本
+项目采用容器化部署方式，开发环境建议使用 Docker Compose。
 
-**Linux/macOS**:
-```bash
-./dev-start.sh     # 启动开发环境（前后端）
-./dev-logs.sh      # 查看日志 [frontend|backend|both|status|clear]
-./dev-stop.sh      # 停止开发服务
-```
+**本地开发流程**:
+1. 克隆项目并配置环境变量
+2. 使用 `docker-compose up -d` 启动服务
+3. 访问 http://localhost:3111 进行开发和测试
 
-**Windows (Command Prompt/PowerShell)**:
-```cmd
-dev-start.bat      # 启动开发环境（前后端）
-dev-logs.bat       # 查看日志 [frontend|backend|both|status|clear]
-dev-stop.bat       # 停止开发服务
-```
-
-**Windows PowerShell (Direct)**:
-```powershell
-.\dev-start.ps1    # 启动开发环境（前后端）
-.\dev-logs.ps1     # 查看日志 [frontend|backend|both|status|clear]
-.\dev-stop.ps1     # 停止开发服务
-```
-
-**特性说明**:
-- 自动健康检查和启动确认
-- 优雅停止和清理残余进程
-- PID 文件管理 (`.frontend.pid`, `.backend.pid`)
-- 日志文件保存 (`logs/frontend.log`, `logs/backend.log`)
-- 端口：前端 3000，后端 8080
-- Windows 脚本包含 UTF-8 编码支持和依赖检查
+**开发说明**:
+- 前端端口：容器内 3000，通过 Nginx 代理到 80
+- 后端端口：容器内 8080，通过 Nginx 代理到 80
+- 所有日志统一输出到容器内 `/maindata/log` 目录
 
 ## 📋 更新日志
 ### v1.1.1 (2025-09-27) 

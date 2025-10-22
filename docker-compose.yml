@@ -7,12 +7,16 @@ services:
     hostname: app
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      LOG_PATH: /app/data/log
-      DATABASE_PATH: /app/data/config/db
+      LOG_PATH: /maindata/log
+      DATABASE_PATH: /maindata/db/openlist2strm.db
+      CONFIG_PATH: /maindata/config
+      USER_INFO_PATH: /maindata/config/userInfo.json
+      FRONTEND_LOGS_PATH: /maindata/log/frontend
     ports:
       - "3111:80"  # External port:Internal port, users can modify external port as needed
     volumes:
-      - ${LOG_PATH_HOST}:/app/data/log
-      - ${DATABASE_STORE_HOST}:/app/data
+      - ${LOG_PATH_HOST}:/maindata/log
+      - ${CONFIG_PATH_HOST}:/maindata/config
+      - ${DB_PATH_HOST}:/maindata/db
       - ${STRM_PATH_HOST}:/app/backend/strm
     restart: always

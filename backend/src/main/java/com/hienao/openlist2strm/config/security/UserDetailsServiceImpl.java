@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,12 +17,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-  private static final String USER_INFO_FILE = "./data/config/userInfo.json";
+  private final String userInfoFile;
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  public UserDetailsServiceImpl(@Value("${app.paths.userInfo}") String userInfoFile) {
+    this.userInfoFile = userInfoFile;
+  }
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    File userFile = new File(USER_INFO_FILE);
+    File userFile = new File(userInfoFile);
 
     if (!userFile.exists()) {
       throw new UsernameNotFoundException(String.format("用户 %s 不存在", username));
