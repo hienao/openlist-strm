@@ -2,6 +2,7 @@ package com.hienao.openlist2strm.service;
 
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
+import com.hienao.openlist2strm.util.UrlEncoder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -175,15 +176,46 @@ public class StrmFileService {
    */
   private void writeStrmFile(Path strmFilePath, String fileUrl) {
     try {
+      // 对URL进行编码处理，确保中文和特殊字符正确编码
+      String encodedUrl = encodeUrlForStrm(fileUrl);
+
       // STRM文件内容就是文件的URL
       Files.writeString(
-          strmFilePath, fileUrl, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-      log.debug("写入STRM文件: {} -> {}", strmFilePath, fileUrl);
+          strmFilePath, encodedUrl, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+      log.debug("写入STRM文件: {} -> {}", strmFilePath, encodedUrl);
+      log.info("URL编码处理: 原始={}, 编码后={}", fileUrl, encodedUrl);
     } catch (IOException e) {
       throw new BusinessException("写入STRM文件失败: " + strmFilePath + ERROR_SUFFIX + e.getMessage(), e);
     }
   }
 
+  /**
+   * 对STRM文件的URL进行智能编码处理
+   *
+   * <p>使用自定义的UrlEncoder工具类进行智能编码，只编码路径部分，保留协议、域名、查询参数结构，
+   * 确保URL中的中文和特殊字符正确编码，同时保持URL结构的完整性
+   *
+   * @param originalUrl 原始URL
+   * @return 编码后的URL
+   */
+  private String encodeUrlForStrm(String originalUrl) {
+    if (originalUrl == null || originalUrl.isEmpty()) {
+      return originalUrl;
+    }
+
+    try {
+      // 使用智能编码，只编码路径部分，保留协议和域名结构
+      String encodedUrl = UrlEncoder.encodeUrlSmart(originalUrl);
+
+      log.debug("URL智能编码成功: {} -> {}", originalUrl, encodedUrl);
+      return encodedUrl;
+    } catch (Exception e) {
+      log.warn("URL编码失败，使用原始URL: {}, 错误: {}", originalUrl, e.getMessage());
+      return originalUrl;
+    }
+  }
+
+  
   /**
    * 计算相对路径
    *
