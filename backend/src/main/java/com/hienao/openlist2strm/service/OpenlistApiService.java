@@ -580,9 +580,9 @@ public class OpenlistApiService {
   }
 
   /**
-   * 构建文件URL，使用URI类进行智能URL编码
+   * 构建文件URL，使用UriComponentsBuilder进行正确的URL编码
    *
-   * <p>使用Java标准库URI类进行URL编码，避免URLEncoder.encode的过度编码问题 URI.create()会自动判断哪些字符需要编码，生成符合标准的URL
+   * <p>使用Spring的UriComponentsBuilder进行URL编码，正确处理包含中文字符的路径
    *
    * @param baseUrl 基础URL
    * @param filePath 文件路径
@@ -594,14 +594,15 @@ public class OpenlistApiService {
       baseUrl += "/";
     }
 
-    // 构建完整URL路径：baseUrl + "d" + filePath
-    String fullPath = baseUrl + "d" + filePath;
+    // 使用UriComponentsBuilder构建URL，自动处理路径编码
+    String result = UriComponentsBuilder
+        .fromHttpUrl(baseUrl)
+        .pathSegment("d")
+        .path(filePath)
+        .build()
+        .toUriString();
 
-    // 使用URI.create()进行智能编码
-    URI uri = URI.create(fullPath);
-
-    String result = uri.toString();
-    log.debug("URL构建编码: {} -> {}", fullPath, result);
+    log.debug("URL构建编码: {}{}d{} -> {}", baseUrl, "d", filePath, result);
     return result;
   }
 }

@@ -5,7 +5,10 @@
       "Bash(docker-compose build:*)",
       "Bash(docker logs:*)",
       "Bash(docker-compose up:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "Bash(./dev-docker.bat:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
