@@ -243,6 +243,21 @@
                 :disabled="formLoading"
               />
             </div>
+
+            <div>
+              <label for="strmBaseUrl" class="block text-sm font-semibold text-gray-700 mb-2">STRM Base URL（可选）</label>
+              <input
+                id="strmBaseUrl"
+                v-model="configForm.strmBaseUrl"
+                type="url"
+                class="input-field"
+                placeholder="https://your-media-server.com/path"
+                :disabled="formLoading"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                用于STRM文件生成时替换原始URL的baseUrl，留空则不进行替换
+              </p>
+            </div>
             
             <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
               <div class="flex items-center">
@@ -320,6 +335,21 @@
                 :disabled="formLoading"
               />
             </div>
+
+            <div>
+              <label for="editStrmBaseUrl" class="block text-sm font-semibold text-gray-700 mb-2">STRM Base URL（可选）</label>
+              <input
+                id="editStrmBaseUrl"
+                v-model="configForm.strmBaseUrl"
+                type="url"
+                class="input-field"
+                placeholder="https://your-media-server.com/path"
+                :disabled="formLoading"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                用于STRM文件生成时替换原始URL的baseUrl，留空则不进行替换
+              </p>
+            </div>
             
             <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
               <div class="flex items-center">
@@ -384,7 +414,8 @@ const showEditModal = ref(false)
 const currentConfig = ref(null)
 const configForm = ref({
   baseUrl: '',
-  token: ''
+  token: '',
+  strmBaseUrl: ''
 })
 const formLoading = ref(false)
 const formError = ref('')
@@ -511,7 +542,8 @@ const addConfig = async () => {
         baseUrl: configForm.value.baseUrl,
         token: configForm.value.token,
         username: validationResult.username,
-        basePath: validationResult.basePath
+        basePath: validationResult.basePath,
+        strmBaseUrl: configForm.value.strmBaseUrl
       }
     })
     
@@ -535,7 +567,8 @@ const editConfig = (config) => {
   currentConfig.value = config
   configForm.value = {
     baseUrl: config.baseUrl,
-    token: config.token
+    token: config.token,
+    strmBaseUrl: config.strmBaseUrl || ''
   }
   showEditModal.value = true
 }
@@ -556,7 +589,8 @@ const updateConfig = async () => {
         baseUrl: configForm.value.baseUrl,
         token: configForm.value.token,
         username: validationResult.username,
-        basePath: validationResult.basePath
+        basePath: validationResult.basePath,
+        strmBaseUrl: configForm.value.strmBaseUrl
       }
     })
     
@@ -630,7 +664,8 @@ const closeAddModal = () => {
   showAddModal.value = false
   configForm.value = {
     baseUrl: '',
-    token: ''
+    token: '',
+    strmBaseUrl: ''
   }
   formError.value = ''
   formLoading.value = false
@@ -642,7 +677,8 @@ const closeEditModal = () => {
   currentConfig.value = null
   configForm.value = {
     baseUrl: '',
-    token: ''
+    token: '',
+    strmBaseUrl: ''
   }
   formError.value = ''
   formLoading.value = false

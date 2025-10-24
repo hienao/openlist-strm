@@ -12,11 +12,12 @@
         <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
         <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
         <result column="is_active" property="isActive" jdbcType="BOOLEAN"/>
+        <result column="strm_base_url" property="strmBaseUrl" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!-- 基础字段 -->
     <sql id="Base_Column_List">
-        id, base_url, token, base_path, username, created_at, updated_at, is_active
+        id, base_url, token, base_path, username, created_at, updated_at, is_active, strm_base_url
     </sql>
 
     <!-- 根据ID查询 -->
@@ -72,6 +73,9 @@
             <if test="isActive != null">
                 is_active,
             </if>
+            <if test="strmBaseUrl != null">
+                strm_base_url,
+            </if>
         </trim>
         <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
             <if test="baseUrl != null and baseUrl != ''">
@@ -88,6 +92,9 @@
             </if>
             <if test="isActive != null">
                 #{isActive},
+            </if>
+            <if test="strmBaseUrl != null">
+                #{strmBaseUrl},
             </if>
         </trim>
     </insert>
@@ -110,6 +117,9 @@
             </if>
             <if test="isActive != null">
                 is_active = #{isActive},
+            </if>
+            <if test="strmBaseUrl != null">
+                strm_base_url = #{strmBaseUrl},
             </if>
             updated_at = CURRENT_TIMESTAMP,
         </set>

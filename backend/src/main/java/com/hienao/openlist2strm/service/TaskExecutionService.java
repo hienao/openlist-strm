@@ -232,7 +232,8 @@ public class TaskExecutionService {
                 file.getName(),
                 fileUrlWithSign,
                 isIncrement, // 增量模式下强制重新生成
-                taskConfig.getRenameRegex());
+                taskConfig.getRenameRegex(),
+                openlistConfig);
 
             // 如果启用了刮削功能，执行媒体刮削
             if (needScrap) {
@@ -350,7 +351,7 @@ public class TaskExecutionService {
   }
 
   /**
-   * 构建包含sign参数的文件URL
+   * 构建包含sign参数的文件URL，并处理baseUrl替换
    *
    * @param originalUrl 原始文件URL
    * @param sign 签名参数
@@ -361,16 +362,85 @@ public class TaskExecutionService {
       return null;
     }
 
-    // 如果sign为空，直接返回原始URL
-    if (sign == null || sign.trim().isEmpty()) {
+    // 先处理URL，再添加sign参数
+    String processedUrl = originalUrl;
+
+    // 添加sign参数
+    if (sign != null && !sign.trim().isEmpty()) {
+      // 检查URL是否已经包含查询参数
+      String separator = processedUrl.contains("?") ? "&" : "?";
+      processedUrl = processedUrl + separator + "sign=" + sign;
+    }
+
+    return processedUrl;
+  }
+
+  /**
+   * 处理URL的baseUrl替换 这个方法会在StrmFileService中调用，用于在生成STRM文件时替换baseUrl
+   *
+   * @param originalUrl 原始URL
+   * @param openlistConfig OpenList配置
+   * @return 处理后的URL
+   */
+  public String processUrlWithBaseUrlReplacement(
+      String originalUrl, OpenlistConfig openlistConfig) {
+    if (originalUrl == null || openlistConfig == null) {
       return originalUrl;
     }
 
-    // 检查URL是否已经包含查询参数
-    String separator = originalUrl.contains("?") ? "&" : "?";
+    // 如果没有配置strmBaseUrl，直接返回原始URL
+    if (openlistConfig.getStrmBaseUrl() == null
+        || openlistConfig.getStrmBaseUrl().trim().isEmpty()) {
+      log.debug("未配置strmBaseUrl，直接使用原始URL: {}", originalUrl);
+      return originalUrl;
+    }
 
-    // 拼接sign参数
-    return originalUrl + separator + "sign=" + sign;
+    try {
+      // 解析原始URL
+      java.net.URL url = new java.net.URL(originalUrl);
+      String originalBaseUrl =
+          url.getProtocol()
+              + "://"
+              + url.getHost()
+              + (url.getPort() != -1 && url.getPort() != 80 && url.getPort() != 443
+                  ? ":" + url.getPort()
+                  : "");
+
+      // 获取路径和查询参数
+      String path = url.getPath();
+      String query = url.getQuery();
+      String ref = url.getRef();
+
+      // 构建新的URL
+      String newBaseUrl = openlistConfig.getStrmBaseUrl();
+      if (!newBaseUrl.endsWith("/")) {
+        newBaseUrl += "/";
+      }
+
+      // 确保路径不以/开头（避免双斜杠）
+      if (path.startsWith("/")) {
+        path = path.substring(1);
+      }
+
+      String newUrl = newBaseUrl + path;
+
+      // 添加查询参数
+      if (query != null && !query.isEmpty()) {
+        newUrl += "?" + query;
+      }
+
+      // 添加锚点
+      if (ref != null && !ref.isEmpty()) {
+        newUrl += "#" + ref;
+      }
+
+      log.info("URL替换: {} -> {}", originalUrl, newUrl);
+      return newUrl;
+
+    } catch (Exception e) {
+      log.warn("URL替换失败，使用原始URL: {}, 错误: {}", originalUrl, e.getMessage());
+      return originalUrl;
+    }
   }
 
   /**
@@ -522,7 +592,8 @@ public class TaskExecutionService {
           file.getName(),
           fileUrlWithSign,
           isIncrement, // 增量模式下强制重新生成
-          taskConfig.getRenameRegex());
+          taskConfig.getRenameRegex(),
+          openlistConfig);
 
       // 如果启用了刮削功能，执行媒体刮削
       if (needScrap) {

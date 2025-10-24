@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -595,12 +594,12 @@ public class OpenlistApiService {
     }
 
     // 使用UriComponentsBuilder构建URL，自动处理路径编码
-    String result = UriComponentsBuilder
-        .fromHttpUrl(baseUrl)
-        .pathSegment("d")
-        .path(filePath)
-        .build()
-        .toUriString();
+    String result =
+        UriComponentsBuilder.fromHttpUrl(baseUrl)
+            .pathSegment("d")
+            .path(filePath)
+            .build()
+            .toUriString();
 
     log.debug("URL构建编码: {}{}d{} -> {}", baseUrl, "d", filePath, result);
     return result;
