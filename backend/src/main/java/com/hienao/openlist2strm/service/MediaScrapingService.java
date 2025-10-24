@@ -100,6 +100,14 @@ public class MediaScrapingService {
         return;
       }
 
+      // 检查TMDB API Key是否已配置
+      Map<String, Object> tmdbConfig = systemConfigService.getTmdbConfig();
+      String tmdbApiKey = (String) tmdbConfig.getOrDefault("apiKey", "");
+      if (tmdbApiKey == null || tmdbApiKey.trim().isEmpty()) {
+        log.warn("TMDB API Key未配置，跳过刮削功能: {}", fileName);
+        return;
+      }
+
       // 获取刮削正则配置
       Map<String, Object> regexConfig = systemConfigService.getScrapingRegexConfig();
       @SuppressWarnings("unchecked")
@@ -556,7 +564,20 @@ public class MediaScrapingService {
 
     // 检查刮削配置
     Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
-    return (Boolean) scrapingConfig.getOrDefault("enabled", true);
+    boolean scrapingEnabled = (Boolean) scrapingConfig.getOrDefault("enabled", true);
+
+    if (!scrapingEnabled) {
+      return false;
+    }
+
+    // 检查TMDB API Key是否已配置
+    Map<String, Object> tmdbConfig = systemConfigService.getTmdbConfig();
+    String tmdbApiKey = (String) tmdbConfig.getOrDefault("apiKey", "");
+    if (tmdbApiKey == null || tmdbApiKey.trim().isEmpty()) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -773,12 +794,19 @@ public class MediaScrapingService {
 
   /** 获取刮削统计信息 */
   public Map<String, Object> getScrapingStats() {
-    // 这里可以添加刮削统计信息的实现
-    // 比如成功/失败次数、处理的文件数量等
+    // 检查刮削功能是否启用
+    Map<String, Object> scrapingConfig = systemConfigService.getScrapingConfig();
+    boolean scrapingEnabled = (Boolean) scrapingConfig.getOrDefault("enabled", true);
+
+    // 检查TMDB API Key是否已配置
+    Map<String, Object> tmdbConfig = systemConfigService.getTmdbConfig();
+    String tmdbApiKey = (String) tmdbConfig.getOrDefault("apiKey", "");
+    boolean tmdbConfigured = tmdbApiKey != null && !tmdbApiKey.trim().isEmpty();
+
     return Map.of(
-        "enabled", systemConfigService.getScrapingConfig().getOrDefault("enabled", true),
-        "tmdbConfigured",
-            !systemConfigService.getTmdbConfig().getOrDefault("apiKey", "").toString().isEmpty());
+        "enabled", scrapingEnabled,
+        "tmdbConfigured", tmdbConfigured,
+        "canScrap", scrapingEnabled && tmdbConfigured);
   }
 
   /**
