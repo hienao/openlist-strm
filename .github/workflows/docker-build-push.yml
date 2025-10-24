@@ -58,7 +58,7 @@ jobs:
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
-        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm-v2
         tags: |
           type=ref,event=tag
           type=raw,value=latest
@@ -68,7 +68,7 @@ jobs:
       if: startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
-        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm-v2
         tags: |
           type=ref,event=tag
         flavor: |
