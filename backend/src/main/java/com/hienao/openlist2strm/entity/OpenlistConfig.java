@@ -39,4 +39,7 @@ public class OpenlistConfig {
 
   /** 是否启用：1-启用，0-禁用 */
   private Boolean isActive;
+
+  /** STRM文件生成时的baseUrl替换，可为空，为空时则不进行替换 */
+  private String strmBaseUrl;
 }

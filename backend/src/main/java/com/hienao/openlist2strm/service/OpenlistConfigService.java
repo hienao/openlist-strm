@@ -53,7 +53,17 @@ public class OpenlistConfigService {
     if (id == null) {
       throw new BusinessException(CONFIG_ID_NULL_ERROR);
     }
-    return openlistConfigMapper.selectById(id);
+    OpenlistConfig config = openlistConfigMapper.selectById(id);
+    if (config != null) {
+      log.info("获取OpenList配置 - ID: {}, strmBaseUrl: '{}'", config.getId(), config.getStrmBaseUrl());
+
+      // 测试：打印所有字段值以确认数据库映射正确
+      if (config.getId() != null && config.getId() == 1L) { // 只对第一个配置打印详细信息
+        log.info("配置详细信息 - ID: {}, baseUrl: {}, token: [已隐藏], basePath: {}, username: {}, isActive: {}, strmBaseUrl: '{}'",
+                 config.getId(), config.getBaseUrl(), config.getBasePath(), config.getUsername(), config.getIsActive(), config.getStrmBaseUrl());
+      }
+    }
+    return config;
   }
 
   /**
@@ -111,6 +121,7 @@ public class OpenlistConfigService {
       config.setIsActive(true);
     }
 
+    log.info("创建OpenList配置 - strmBaseUrl: '{}'", config.getStrmBaseUrl());
     int result = openlistConfigMapper.insert(config);
     if (result <= 0) {
       throw new BusinessException("创建配置失败");
@@ -139,6 +150,10 @@ public class OpenlistConfigService {
     }
 
     validateConfig(config);
+
+    // 记录更新前的配置信息
+    log.info("更新OpenList配置 - ID: {}, 原strmBaseUrl: '{}', 新strmBaseUrl: '{}'",
+             config.getId(), existingConfig.getStrmBaseUrl(), config.getStrmBaseUrl());
 
     // 如果更新了用户名，检查是否与其他配置冲突
     if (StringUtils.hasText(config.getUsername())

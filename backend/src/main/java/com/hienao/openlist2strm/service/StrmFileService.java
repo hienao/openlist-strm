@@ -44,6 +44,7 @@ public class StrmFileService {
    * @param fileUrl 文件URL
    * @param forceRegenerate 是否强制重新生成已存在的文件
    * @param renameRegex 重命名正则表达式（可选）
+   * @param openlistConfig OpenList配置（用于baseUrl替换）
    */
   public void generateStrmFile(
       String strmBasePath,
@@ -51,7 +52,8 @@ public class StrmFileService {
       String fileName,
       String fileUrl,
       boolean forceRegenerate,
-      String renameRegex) {
+      String renameRegex,
+      OpenlistConfig openlistConfig) {
     try {
       // 处理文件名重命名
       String finalFileName = processFileName(fileName, renameRegex);
@@ -68,8 +70,11 @@ public class StrmFileService {
       // 确保目录存在
       createDirectoriesIfNotExists(strmFilePath.getParent());
 
+      // 处理baseUrl替换
+      String processedUrl = processUrlWithBaseUrlReplacement(fileUrl, openlistConfig);
+
       // 写入STRM文件内容
-      writeStrmFile(strmFilePath, fileUrl);
+      writeStrmFile(strmFilePath, processedUrl);
 
       log.info("生成STRM文件成功: {}", strmFilePath);
 
@@ -181,7 +186,10 @@ public class StrmFileService {
 
       // STRM文件内容就是文件的URL
       Files.writeString(
-          strmFilePath, encodedUrl, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+          strmFilePath,
+          encodedUrl,
+          StandardOpenOption.CREATE,
+          StandardOpenOption.TRUNCATE_EXISTING);
       log.debug("写入STRM文件: {} -> {}", strmFilePath, encodedUrl);
       log.info("URL编码处理: 原始={}, 编码后={}", fileUrl, encodedUrl);
     } catch (IOException e) {
@@ -192,8 +200,7 @@ public class StrmFileService {
   /**
    * 对STRM文件的URL进行智能编码处理
    *
-   * <p>使用自定义的UrlEncoder工具类进行智能编码，只编码路径部分，保留协议、域名、查询参数结构，
-   * 确保URL中的中文和特殊字符正确编码，同时保持URL结构的完整性
+   * <p>使用自定义的UrlEncoder工具类进行智能编码，只编码路径部分，保留协议、域名、查询参数结构， 确保URL中的中文和特殊字符正确编码，同时保持URL结构的完整性
    *
    * @param originalUrl 原始URL
    * @return 编码后的URL
@@ -215,7 +222,6 @@ public class StrmFileService {
     }
   }
 
-  
   /**
    * 计算相对路径
    *
@@ -946,5 +952,78 @@ public class StrmFileService {
     }
 
     return totalCleanedCount.get();
+  }
+
+  /**
+   * 处理URL的baseUrl替换
+   *
+   * @param originalUrl 原始URL
+   * @param openlistConfig OpenList配置
+   * @return 处理后的URL
+   */
+  private String processUrlWithBaseUrlReplacement(
+      String originalUrl, OpenlistConfig openlistConfig) {
+    log.info("开始处理URL替换，原始URL: {}", originalUrl);
+
+    if (originalUrl == null || openlistConfig == null) {
+      log.warn(
+          "URL或OpenList配置为空，返回原始URL。URL: {}, Config: {}",
+          originalUrl,
+          openlistConfig != null ? "非空" : "空");
+      return originalUrl;
+    }
+
+    // 打印配置详情
+    log.info(
+        "OpenList配置详情 - ID: {}, strmBaseUrl: '{}'",
+        openlistConfig.getId(),
+        openlistConfig.getStrmBaseUrl());
+
+    // 如果没有配置strmBaseUrl，直接返回原始URL
+    if (openlistConfig.getStrmBaseUrl() == null
+        || openlistConfig.getStrmBaseUrl().trim().isEmpty()) {
+      log.info("未配置strmBaseUrl或为空，直接使用原始URL: {}", originalUrl);
+      return originalUrl;
+    }
+
+    try {
+      // 解析原始URL
+      java.net.URL url = new java.net.URL(originalUrl);
+
+      // 获取路径和查询参数
+      String path = url.getPath();
+      String query = url.getQuery();
+      String ref = url.getRef();
+
+      // 构建新的URL
+      String newBaseUrl = openlistConfig.getStrmBaseUrl();
+      if (!newBaseUrl.endsWith("/")) {
+        newBaseUrl += "/";
+      }
+
+      // 确保路径不以/开头（避免双斜杠）
+      if (path.startsWith("/")) {
+        path = path.substring(1);
+      }
+
+      String newUrl = newBaseUrl + path;
+
+      // 添加查询参数
+      if (query != null && !query.isEmpty()) {
+        newUrl += "?" + query;
+      }
+
+      // 添加锚点
+      if (ref != null && !ref.isEmpty()) {
+        newUrl += "#" + ref;
+      }
+
+      log.info("URL替换: {} -> {}", originalUrl, newUrl);
+      return newUrl;
+
+    } catch (Exception e) {
+      log.warn("URL替换失败，使用原始URL: {}, 错误: {}", originalUrl, e.getMessage());
+      return originalUrl;
+    }
   }
 }
