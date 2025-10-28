@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hienao.openlist2strm.entity.OpenlistConfig;
 import com.hienao.openlist2strm.exception.BusinessException;
+import com.hienao.openlist2strm.util.UrlEncoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -331,8 +332,12 @@ public class OpenlistApiService {
       // 使用OpenlistFile中的url字段，已包含sign参数
       String fileUrl = file.getUrl();
       if (file.getSign() != null && !file.getSign().isEmpty()) {
-        // 对sign参数进行URL编码
-        fileUrl += "?sign=" + URLEncoder.encode(file.getSign(), StandardCharsets.UTF_8.name());
+        // 构建完整URL并使用统一的智能编码，避免双重编码
+        String completeUrl = file.getUrl() + "?sign=" + file.getSign();
+        fileUrl = UrlEncoder.encodeUrlSmart(completeUrl);
+      } else {
+        // 即使没有sign参数，也使用统一编码标准确保中文路径正确处理
+        fileUrl = UrlEncoder.encodeUrlSmart(fileUrl);
       }
 
       log.debug("下载文件请求 - 文件名: {}, 完整URL: {}", file.getName(), fileUrl);
