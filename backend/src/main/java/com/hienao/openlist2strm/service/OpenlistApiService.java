@@ -402,11 +402,22 @@ public class OpenlistApiService {
             String redirectUrl = response.getHeaders().getLocation().toString();
             log.info("跟随302重定向到: {}", redirectUrl);
 
-            // 重新构建请求头（重定向可能需要重新认证）
+            // 检查重定向URL是否是外部CDN/存储服务
+            boolean isExternalRedirect = redirectUrl.contains("ctyunxs.cn") ||
+                                       redirectUrl.contains("amazonaws.com") ||
+                                       redirectUrl.contains("aliyuncs.com") ||
+                                       !redirectUrl.contains(config.getBaseUrl());
+
+            // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
             redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
-            if (config.getToken() != null && !config.getToken().isEmpty()) {
+
+            // 只有重定向到同一域名时才发送认证头
+            if (!isExternalRedirect && config.getToken() != null && !config.getToken().isEmpty()) {
               redirectHeaders.set("Authorization", config.getToken());
+              log.debug("重定向到同一域名，携带认证头");
+            } else {
+              log.debug("重定向到外部CDN/存储服务，不携带认证头");
             }
 
             HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
@@ -531,11 +542,22 @@ public class OpenlistApiService {
             String redirectUrl = response.getHeaders().getLocation().toString();
             log.info("跟随302重定向到: {}", redirectUrl);
 
-            // 重新构建请求头（重定向可能需要重新认证）
+            // 检查重定向URL是否是外部CDN/存储服务
+            boolean isExternalRedirect = redirectUrl.contains("ctyunxs.cn") ||
+                                       redirectUrl.contains("amazonaws.com") ||
+                                       redirectUrl.contains("aliyuncs.com") ||
+                                       !redirectUrl.contains(config.getBaseUrl());
+
+            // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
             redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
-            if (config.getToken() != null && !config.getToken().isEmpty()) {
+
+            // 只有重定向到同一域名时才发送认证头
+            if (!isExternalRedirect && config.getToken() != null && !config.getToken().isEmpty()) {
               redirectHeaders.set("Authorization", config.getToken());
+              log.debug("重定向到同一域名，携带认证头");
+            } else {
+              log.debug("重定向到外部CDN/存储服务，不携带认证头");
             }
 
             HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
