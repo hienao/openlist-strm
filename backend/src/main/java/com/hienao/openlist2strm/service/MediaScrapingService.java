@@ -934,7 +934,8 @@ public class MediaScrapingService {
           if (fileName_lower.endsWith(".nfo")) {
             log.debug("准备复制NFO文件: {} (使用OpenlistFile对象)", file.getName());
 
-            byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, file);
+            // 刮削文件下载场景：不进行URL编码，避免认证问题
+            byte[] nfoContent = openlistApiService.getFileContent(openlistConfig, file, false);
             if (nfoContent != null && nfoContent.length > 0) {
               Path targetNfoFile = Paths.get(saveDirectory, file.getName());
               Files.createDirectories(targetNfoFile.getParent());
@@ -971,7 +972,8 @@ public class MediaScrapingService {
           if (isImageFile) {
             log.debug("准备复制图片文件: {} (使用OpenlistFile对象)", file.getName());
 
-            byte[] imageContent = openlistApiService.getFileContent(openlistConfig, file);
+            // 刮削文件下载场景：不进行URL编码，避免认证问题
+            byte[] imageContent = openlistApiService.getFileContent(openlistConfig, file, false);
             if (imageContent != null && imageContent.length > 0) {
               // 检查文件内容是否真的是图片（简单检查前几个字节）
               String contentType = detectFileType(imageContent);
