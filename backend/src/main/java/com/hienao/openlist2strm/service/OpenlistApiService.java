@@ -328,16 +328,40 @@ public class OpenlistApiService {
    * @return 文件内容字节数组
    */
   public byte[] getFileContent(OpenlistConfig config, OpenlistFile file) {
+    // 默认使用URL编码（兼容STRM文件写入场景）
+    return getFileContent(config, file, true);
+  }
+
+  /**
+   * 获取文件内容（使用OpenlistFile对象，包含sign参数）
+   *
+   * @param config OpenList配置
+   * @param file OpenlistFile对象
+   * @param enableUrlEncoding 是否启用URL编码（false适用于刮削文件下载场景）
+   * @return 文件内容字节数组
+   */
+  public byte[] getFileContent(OpenlistConfig config, OpenlistFile file, boolean enableUrlEncoding) {
     try {
       // 使用OpenlistFile中的url字段，已包含sign参数
       String fileUrl = file.getUrl();
       if (file.getSign() != null && !file.getSign().isEmpty()) {
-        // 构建完整URL并使用统一的智能编码，避免双重编码
+        // 构建完整URL
         String completeUrl = file.getUrl() + "?sign=" + file.getSign();
-        fileUrl = UrlEncoder.encodeUrlSmart(completeUrl);
+        if (enableUrlEncoding) {
+          // 使用统一的智能编码，避免双重编码（适用于STRM文件写入场景）
+          fileUrl = UrlEncoder.encodeUrlSmart(completeUrl);
+        } else {
+          // 不进行URL编码（适用于刮削文件下载场景，避免认证问题）
+          fileUrl = completeUrl;
+        }
       } else {
-        // 即使没有sign参数，也使用统一编码标准确保中文路径正确处理
-        fileUrl = UrlEncoder.encodeUrlSmart(fileUrl);
+        if (enableUrlEncoding) {
+          // 使用统一编码标准确保中文路径正确处理
+          fileUrl = UrlEncoder.encodeUrlSmart(fileUrl);
+        } else {
+          // 不进行编码，直接使用原始URL
+          fileUrl = file.getUrl();
+        }
       }
 
       log.debug("下载文件请求 - 文件名: {}, 完整URL: {}", file.getName(), fileUrl);
