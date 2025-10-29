@@ -4,39 +4,58 @@
 # Build argument for version
 ARG APP_VERSION=dev
 
-# Stage 1: Build Frontend (Nuxt) - Use slimmer image for faster builds
-FROM node:20-slim AS frontend-builder
+# Stage 1: Build Frontend (Nuxt) - Use Alpine for smaller build image
+FROM node:20-alpine AS frontend-builder
 ARG APP_VERSION
 WORKDIR /app/frontend
 
 # Install dependencies first to leverage Docker layer cache
 COPY frontend/package*.json ./
-RUN npm ci && npm cache clean --force
+RUN npm ci --only=production && \
+    npm cache clean --force && \
+    rm -rf /tmp/* && \
+    rm -rf /root/.npm
 
 # Copy source code and build
 COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
-RUN npm run generate
+RUN npm run generate && \
+    rm -rf /app/frontend/.nuxt && \
+    rm -rf /app/frontend/node_modules/.cache
 
 # Stage 2: Build Backend (Spring Boot) - Cross-platform compatible
 FROM eclipse-temurin:21-jdk AS backend-builder
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
 
-# Install unzip and Gradle with proper permissions (cross-platform compatible)
-RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
-    wget -O /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
-    unzip /tmp/gradle.zip -d /opt && \
-    rm /tmp/gradle.zip && \
-    ln -s /opt/gradle-8.5/bin/gradle /usr/bin/gradle && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install build dependencies and Gradle with proper cleanup
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    wget \
+    && wget -O /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip \
+    && unzip /tmp/gradle.zip -d /opt \
+    && rm /tmp/gradle.zip \
+    && ln -s /opt/gradle-8.5/bin/gradle /usr/bin/gradle \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
 
-# Copy all backend source code and build
-COPY backend/ ./
+# Copy gradle files first to leverage layer cache
+COPY backend/build.gradle backend/settings.gradle backend/gradle.properties ./
+COPY backend/gradle/wrapper/ ./gradle/wrapper/
+
+# Download dependencies and cache them
 RUN chmod +x ./gradlew && \
     sed -i 's|\r$||g' ./gradlew && \
-    ./gradlew --no-daemon bootJar -x test && \
-    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
+    ./gradlew --no-daemon dependencies --configuration compileClasspath
+
+# Copy source code and build
+COPY backend/src ./src
+RUN ./gradlew --no-daemon bootJar -x test --parallel && \
+    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar && \
+    rm -rf $WORKDIR/build && \
+    rm -rf $HOME/.gradle/caches
 
 # Stage 3: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
 FROM azul/zulu-openjdk-debian:21-jre-headless-latest AS runner
@@ -48,32 +67,33 @@ WORKDIR $WORKDIR
 # Avoid interactive installation prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install essential packages including nginx and utilities
+# Copy nginx configuration first (changes less frequently)
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Install essential packages, configure system and create directories in a single layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     tzdata \
     curl \
     libc-bin \
-    && rm -rf /var/lib/apt/lists/* && \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/* \
     # Set timezone to Asia/Shanghai
-    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone \
     # Configure system parameters for performance and long filename support
-    echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
-    echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
+    && echo "fs.file-max = 65536" >> /etc/sysctl.conf \
+    && echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf \
     # Create necessary directories with proper permissions
-    mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
-    touch /var/log/nginx/access.log /var/log/nginx/error.log && \
-    chmod -R 755 /maindata /app/data /app/backend /var/log/nginx
+    && mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm \
+    && touch /var/log/nginx/access.log /var/log/nginx/error.log \
+    && chmod -R 755 /maindata /app/data /app/backend /var/log/nginx
 
-# Copy frontend build
+# Copy application files
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
-
-# Copy backend jar - use builder stage (works for both GitHub Actions and local builds)
 COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create optimized startup script with long filename support
 RUN echo '#!/bin/bash' > /start.sh && \

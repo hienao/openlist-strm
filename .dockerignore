@@ -11,15 +11,23 @@ node_modules
 **/dist
 **/.next
 **/.output
+**/coverage
+**/nyc_output
+**/junit
+**/test-results
 
 # Ignore logs
 *.log
 logs
+**/*.log
 
 # Ignore environment files
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+.env.test
 
 # Ignore IDE files
 .vscode
@@ -27,11 +35,100 @@ logs
 *.swp
 *.swo
 *~
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
 
 # Ignore OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Ignore temporary files
 *.tmp
 *.temp
+*.bak
+*.backup
+*.pid
+*.seed
+*.pid.lock
+
+# Ignore documentation and markdown files
+*.md
+docs/
+**/docs/
+README*
+CHANGELOG*
+LICENSE*
+CONTRIBUTING*
+
+# Ignore test files
+**/__tests__
+**/test
+**/tests
+**/*.test.*
+**/*.spec.*
+cypress/
+jest.config.*
+playwright.config.*
+vitest.config.*
+
+# Ignore configuration files that aren't needed in container
+.eslintrc*
+.prettierrc*
+.editorconfig
+.stylelintrc*
+babel.config.*
+postcss.config.*
+tailwind.config.*
+vue.config.*
+nuxt.config.*
+
+# Ignore CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+azure-pipelines.yml
+
+# Ignore local development files
+docker-compose.override.yml
+docker-compose.dev.yml
+docker-compose.test.yml
+Dockerfile.dev
+Dockerfile.test
+
+# Ignore build scripts and development tools
+dev-*
+rebuild-*
+debug-*
+*.sh
+*.bat
+scripts/
+
+# Ignore cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Ignore package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+**/yarn-error.log
+**/yarn-integrity
+**/.pnpm-debug.log*
+
+# Ignore Gradle files
+**/.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+.GradleTaskOutputCache
+
+# Ignore Spring Boot specific
+**/application-*.properties
+**/application-*.yml
+!application.properties
+!application.yml
