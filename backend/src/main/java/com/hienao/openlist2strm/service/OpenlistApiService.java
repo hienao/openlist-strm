@@ -390,7 +390,7 @@ public class OpenlistApiService {
 
       // 特殊处理302状态码
       if (response.getStatusCode().value() == 302) {
-        log.warn(
+        log.info(
             "文件下载收到302重定向: {}, URL: {}, Location: {}",
             file.getName(),
             fileUrl,
@@ -542,7 +542,7 @@ public class OpenlistApiService {
 
       // 特殊处理302状态码
       if (response.getStatusCode().value() == 302) {
-        log.warn(
+        log.info(
             "文件下载收到302重定向: {}, URL: {}, Location: {}",
             filePath,
             fileUrl,
