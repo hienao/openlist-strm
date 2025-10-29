@@ -408,6 +408,17 @@ public class OpenlistApiService {
                                        redirectUrl.contains("aliyuncs.com") ||
                                        !redirectUrl.contains(config.getBaseUrl());
 
+            // 对于外部CDN重定向，需要先进行URL解码以避免双重编码
+            if (isExternalRedirect) {
+              try {
+                // 使用URLDecoder解码，避免RestTemplate再次编码导致双重编码问题
+                redirectUrl = java.net.URLDecoder.decode(redirectUrl, "UTF-8");
+                log.debug("对外部CDN重定向URL进行解码: {}", redirectUrl);
+              } catch (Exception e) {
+                log.warn("外部CDN重定向URL解码失败: {}, 使用原始URL", redirectUrl, e);
+              }
+            }
+
             // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
             redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
@@ -547,6 +558,17 @@ public class OpenlistApiService {
                                        redirectUrl.contains("amazonaws.com") ||
                                        redirectUrl.contains("aliyuncs.com") ||
                                        !redirectUrl.contains(config.getBaseUrl());
+
+            // 对于外部CDN重定向，需要先进行URL解码以避免双重编码
+            if (isExternalRedirect) {
+              try {
+                // 使用URLDecoder解码，避免RestTemplate再次编码导致双重编码问题
+                redirectUrl = java.net.URLDecoder.decode(redirectUrl, "UTF-8");
+                log.debug("对外部CDN重定向URL进行解码: {}", redirectUrl);
+              } catch (Exception e) {
+                log.warn("外部CDN重定向URL解码失败: {}, 使用原始URL", redirectUrl, e);
+              }
+            }
 
             // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
