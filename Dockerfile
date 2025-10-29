@@ -17,7 +17,18 @@ COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
-# Stage 2: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
+# Stage 2: Build Backend (Spring Boot) - Fallback if local JAR not available
+FROM gradle:8.5-jdk21-alpine AS backend-builder
+ENV WORKDIR=/usr/src/app
+WORKDIR $WORKDIR
+
+# Copy all backend source code and build
+COPY backend/ ./
+RUN chmod +x ./gradlew && \
+    ./gradlew --no-daemon bootJar -x test && \
+    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
+
+# Stage 3: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
 FROM azul/zulu-openjdk-debian:21-latest AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
@@ -48,8 +59,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 
-# Copy backend jar from local build
-COPY backend/build/libs/openlisttostrm.jar ./openlisttostrm.jar
+# Copy backend jar - try local build first, fallback to builder stage
+COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
