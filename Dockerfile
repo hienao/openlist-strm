@@ -1,4 +1,5 @@
 # Multi-stage Dockerfile for frontend (Nuxt) and backend (Spring Boot)
+# Compatible with both GitHub Actions and local Docker Compose builds
 
 # Build argument for version
 ARG APP_VERSION=dev
@@ -17,14 +18,23 @@ COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
-# Stage 2: Build Backend (Spring Boot) - Fallback if local JAR not available
-FROM gradle:8.5-jdk21-alpine AS backend-builder
+# Stage 2: Build Backend (Spring Boot) - Cross-platform compatible
+FROM eclipse-temurin:21-jdk AS backend-builder
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
+
+# Install unzip and Gradle with proper permissions (cross-platform compatible)
+RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
+    wget -O /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
+    unzip /tmp/gradle.zip -d /opt && \
+    rm /tmp/gradle.zip && \
+    ln -s /opt/gradle-8.5/bin/gradle /usr/bin/gradle && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy all backend source code and build
 COPY backend/ ./
 RUN chmod +x ./gradlew && \
+    sed -i 's|\r$||g' ./gradlew && \
     ./gradlew --no-daemon bootJar -x test && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
@@ -59,7 +69,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 
-# Copy backend jar - try local build first, fallback to builder stage
+# Copy backend jar - use builder stage (works for both GitHub Actions and local builds)
 COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
 
 # Copy nginx configuration

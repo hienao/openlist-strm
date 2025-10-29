@@ -1,0 +1,37 @@
+# Ignore .dockerignore and git files
+.git
+.gitignore
+.dockerignore
+
+# Ignore node_modules and build artifacts
+node_modules
+**/node_modules
+**/build
+**/target
+**/dist
+**/.next
+**/.output
+
+# Ignore logs
+*.log
+logs
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+*.temp
