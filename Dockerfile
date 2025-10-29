@@ -11,7 +11,7 @@ WORKDIR /app/frontend
 
 # Install dependencies first to leverage Docker layer cache
 COPY frontend/package*.json ./
-RUN npm ci --only=production && \
+RUN npm ci --omit=dev && \
     npm cache clean --force && \
     rm -rf /tmp/* && \
     rm -rf /root/.npm
@@ -70,26 +70,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install essential packages, configure system and create directories in a single layer
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install essential packages in separate step for better error handling
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
     nginx \
     tzdata \
     curl \
     libc-bin \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/* \
-    # Set timezone to Asia/Shanghai
-    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && echo "Asia/Shanghai" > /etc/timezone \
-    # Configure system parameters for performance and long filename support
-    && echo "fs.file-max = 65536" >> /etc/sysctl.conf \
-    && echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf \
-    # Create necessary directories with proper permissions
-    && mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm \
-    && touch /var/log/nginx/access.log /var/log/nginx/error.log \
-    && chmod -R 755 /maindata /app/data /app/backend /var/log/nginx
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure system and create directories
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
+    echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
+    mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
+    touch /var/log/nginx/access.log /var/log/nginx/error.log && \
+    chmod -R 755 /maindata /app/data /app/backend /var/log/nginx && \
+    rm -rf /tmp/* /var/tmp/*
 
 # Copy application files
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
