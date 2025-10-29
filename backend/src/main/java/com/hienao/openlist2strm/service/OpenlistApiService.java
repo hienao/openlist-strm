@@ -408,18 +408,7 @@ public class OpenlistApiService {
                                        redirectUrl.contains("aliyuncs.com") ||
                                        !redirectUrl.contains(config.getBaseUrl());
 
-            // 对于外部CDN重定向，需要先进行URL解码以避免双重编码
-            if (isExternalRedirect) {
-              try {
-                // 使用URLDecoder解码，避免RestTemplate再次编码导致双重编码问题
-                redirectUrl = java.net.URLDecoder.decode(redirectUrl, "UTF-8");
-                log.debug("对外部CDN重定向URL进行解码: {}", redirectUrl);
-              } catch (Exception e) {
-                log.warn("外部CDN重定向URL解码失败: {}, 使用原始URL", redirectUrl, e);
-              }
-            }
-
-            // 重新构建请求头
+          // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
             redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
 
@@ -433,9 +422,21 @@ public class OpenlistApiService {
 
             HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
 
-            // 发送重定向请求
-            ResponseEntity<byte[]> redirectResponse =
-                restTemplate.exchange(redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+          // 发送重定向请求 - 对于外部CDN，直接使用URI避免RestTemplate自动编码
+            ResponseEntity<byte[]> redirectResponse;
+            if (isExternalRedirect) {
+              // 对于外部CDN，使用URI直接请求，避免RestTemplate自动编码导致签名失效
+              try {
+                java.net.URI uri = java.net.URI.create(redirectUrl);
+                redirectResponse = restTemplate.exchange(uri, HttpMethod.GET, redirectEntity, byte[].class);
+                log.debug("使用URI直接请求外部CDN，避免自动编码: {}", uri);
+              } catch (Exception e) {
+                log.error("外部CDN重定向URL构建URI失败，标记下载失败: {}", redirectUrl, e);
+                return null;
+              }
+            } else {
+              redirectResponse = restTemplate.exchange(redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+            }
 
             log.debug(
                 "重定向下载响应 - 状态码: {}, Content-Type: {}",
@@ -559,18 +560,7 @@ public class OpenlistApiService {
                                        redirectUrl.contains("aliyuncs.com") ||
                                        !redirectUrl.contains(config.getBaseUrl());
 
-            // 对于外部CDN重定向，需要先进行URL解码以避免双重编码
-            if (isExternalRedirect) {
-              try {
-                // 使用URLDecoder解码，避免RestTemplate再次编码导致双重编码问题
-                redirectUrl = java.net.URLDecoder.decode(redirectUrl, "UTF-8");
-                log.debug("对外部CDN重定向URL进行解码: {}", redirectUrl);
-              } catch (Exception e) {
-                log.warn("外部CDN重定向URL解码失败: {}, 使用原始URL", redirectUrl, e);
-              }
-            }
-
-            // 重新构建请求头
+          // 重新构建请求头
             HttpHeaders redirectHeaders = new HttpHeaders();
             redirectHeaders.set("User-Agent", "OpenList-STRM/1.0");
 
@@ -584,9 +574,21 @@ public class OpenlistApiService {
 
             HttpEntity<String> redirectEntity = new HttpEntity<>(redirectHeaders);
 
-            // 发送重定向请求
-            ResponseEntity<byte[]> redirectResponse =
-                restTemplate.exchange(redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+          // 发送重定向请求 - 对于外部CDN，直接使用URI避免RestTemplate自动编码
+            ResponseEntity<byte[]> redirectResponse;
+            if (isExternalRedirect) {
+              // 对于外部CDN，使用URI直接请求，避免RestTemplate自动编码导致签名失效
+              try {
+                java.net.URI uri = java.net.URI.create(redirectUrl);
+                redirectResponse = restTemplate.exchange(uri, HttpMethod.GET, redirectEntity, byte[].class);
+                log.debug("使用URI直接请求外部CDN，避免自动编码: {}", uri);
+              } catch (Exception e) {
+                log.error("外部CDN重定向URL构建URI失败，标记下载失败: {}", redirectUrl, e);
+                return null;
+              }
+            } else {
+              redirectResponse = restTemplate.exchange(redirectUrl, HttpMethod.GET, redirectEntity, byte[].class);
+            }
 
             log.debug(
                 "重定向下载响应 - 状态码: {}, Content-Type: {}",
