@@ -3,28 +3,38 @@
 # Build argument for version
 ARG APP_VERSION=dev
 
-# Stage 1: Build Frontend (Nuxt) - Keep using Alpine for frontend build
-FROM node:20-alpine AS frontend-builder
+# Stage 1: Build Frontend (Nuxt) - Use slimmer image for faster builds
+FROM node:20-slim AS frontend-builder
 ARG APP_VERSION
 WORKDIR /app/frontend
+
+# Install dependencies first to leverage Docker layer cache
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force
+
+# Copy source code and build
 COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
-# Stage 2: Build Backend (Spring Boot) - Keep using Gradle for backend build
-FROM gradle:8.14.3-jdk21 AS backend-builder
+# Stage 2: Build Backend (Spring Boot) - Use JDK image directly for faster builds
+FROM eclipse-temurin:21-jdk-alpine AS backend-builder
 ENV GRADLE_USER_HOME=/cache
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
+
+# Copy gradle wrapper and build file first to leverage cache
+COPY backend/gradlew backend/gradlew.bat backend/gradle/ ./
+COPY backend/build.gradle.kts ./
+
+# Copy source code and build in one step to optimize cache
 COPY backend/ ./
 RUN --mount=type=cache,target=$GRADLE_USER_HOME \
-    gradle -i bootJar --stacktrace && \
+    ./gradlew --no-daemon bootJar -x test --parallel && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
-# Stage 3: Runtime - Ubuntu only for runtime, not for build
-FROM ubuntu:22.04 AS runner
+# Stage 3: Runtime - Use minimal base image with glibc for long filename support
+FROM debian:bookworm-slim AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
@@ -33,55 +43,46 @@ WORKDIR $WORKDIR
 # Avoid interactive installation prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Java and required packages with long filename support
-RUN apt-get update && apt-get install -y \
+# Install essential packages including glibc libraries for long filename support
+RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-21-jre-headless \
     nginx \
     tzdata \
     curl \
-    wget \
-    ca-certificates \
-    locales \
+    libc-bin \
     && rm -rf /var/lib/apt/lists/* && \
-    # Generate UTF-8 locales
-    locale-gen zh_CN.UTF-8 zh_TW.UTF-8 en_US.UTF-8 && \
-    update-locale LANG=zh_CN.UTF-8 && \
-    # Configure system parameters for long filename support
-    echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
-    echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
     # Set timezone to Asia/Shanghai
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    # Create necessary directories
-    mkdir -p /var/log /run/nginx /var/www/html /maindata /maindata/config /maindata/db /maindata/log /app/data /app/data/config /app/data/config/db /app/data/log /app/backend/strm && \
+    # Configure system parameters for performance and long filename support
+    echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
+    echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
+    # Create necessary directories with proper permissions
+    mkdir -p /var/log /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
     chmod -R 755 /maindata /app/data /app/backend
 
-# Copy frontend build (from Alpine stage)
+# Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 
-# Copy backend jar (from Gradle stage)
+# Copy backend jar
 COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create optimized startup script
+# Create optimized startup script with long filename support
 RUN echo '#!/bin/bash' > /start.sh && \
-    echo 'echo "=== Ubuntu Container Startup ==="' >> /start.sh && \
-    echo 'echo "Container Info:"' >> /start.sh && \
-    echo 'uname -a' >> /start.sh && \
+    echo 'set -e' >> /start.sh && \
+    echo 'echo "=== Container Startup ==="' >> /start.sh && \
     echo 'echo "Java Version:"' >> /start.sh && \
-    echo 'java -version' >> /start.sh && \
-    echo 'echo "=== Creating Directories ==="' >> /start.sh && \
-    echo 'mkdir -p /maindata/log /maindata/config /maindata/db /maindata/log/frontend /app/backend/strm /run nginx' >> /start.sh && \
-    echo 'chmod -R 755 /maindata /app/backend' >> /start.sh && \
-    echo 'echo "=== Starting Nginx ==="' >> /start.sh && \
-    echo 'nginx &' >> /start.sh && \
+    echo 'java -version 2>&1 | head -1' >> /start.sh && \
+    echo 'echo "=== Starting Services ==="' >> /start.sh && \
+    echo 'nginx -g "daemon on;"' >> /start.sh && \
     echo 'echo "=== Starting Spring Boot Application ==="' >> /start.sh && \
-    echo 'echo "Log Path: $LOG_PATH"' >> /start.sh && \
-    echo 'echo "Spring Profile: $SPRING_PROFILES_ACTIVE"' >> /start.sh && \
-    echo 'echo "=== Java Optimizations Applied ==="' >> /start.sh && \
-    echo 'echo "- Long filename support enabled"' >> /start.sh && \
+    echo 'echo "Log Path: ${LOG_PATH:-/maindata/log}"' >> /start.sh && \
+    echo 'echo "Spring Profile: ${SPRING_PROFILES_ACTIVE:-prod}"' >> /start.sh && \
+    echo 'echo "=== Long Filename Support Enabled ==="' >> /start.sh && \
+    echo 'echo "- glibc-based long filename support (4096 bytes)"' >> /start.sh && \
     echo 'echo "- NIO deep access enabled"' >> /start.sh && \
     echo 'echo "- Memory mapping disabled for paths"' >> /start.sh && \
     echo 'echo "- UTF-8 encoding support enabled"' >> /start.sh && \
@@ -89,9 +90,9 @@ RUN echo '#!/bin/bash' > /start.sh && \
     chmod +x /start.sh
 
 # Set environment variables for UTF-8 support
-ENV LANG=zh_CN.UTF-8
-ENV LANGUAGE=zh_CN:zh:en_US:en
-ENV LC_ALL=zh_CN.UTF-8
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 EXPOSE 80 8080
 
