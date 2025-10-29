@@ -17,24 +17,8 @@ COPY frontend/ ./
 ENV NUXT_PUBLIC_APP_VERSION=$APP_VERSION
 RUN npm run generate
 
-# Stage 2: Build Backend (Spring Boot) - Use JDK image directly for faster builds
-FROM eclipse-temurin:21-jdk-alpine AS backend-builder
-ENV GRADLE_USER_HOME=/cache
-ENV WORKDIR=/usr/src/app
-WORKDIR $WORKDIR
-
-# Copy gradle wrapper and build file first to leverage cache
-COPY backend/gradlew backend/gradlew.bat backend/gradle/ ./
-COPY backend/build.gradle.kts ./
-
-# Copy source code and build in one step to optimize cache
-COPY backend/ ./
-RUN --mount=type=cache,target=$GRADLE_USER_HOME \
-    ./gradlew --no-daemon bootJar -x test --parallel && \
-    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
-
-# Stage 3: Runtime - Use minimal base image with glibc for long filename support
-FROM debian:bookworm-slim AS runner
+# Stage 2: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
+FROM azul/zulu-openjdk-debian:21-latest AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
@@ -43,9 +27,8 @@ WORKDIR $WORKDIR
 # Avoid interactive installation prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install essential packages including glibc libraries for long filename support
+# Install essential packages including nginx and utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-21-jre-headless \
     nginx \
     tzdata \
     curl \
@@ -58,14 +41,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
     echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
     # Create necessary directories with proper permissions
-    mkdir -p /var/log /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
-    chmod -R 755 /maindata /app/data /app/backend
+    mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
+    touch /var/log/nginx/access.log /var/log/nginx/error.log && \
+    chmod -R 755 /maindata /app/data /app/backend /var/log/nginx
 
 # Copy frontend build
 COPY --from=frontend-builder /app/frontend/.output/public /var/www/html
 
-# Copy backend jar
-COPY --from=backend-builder /openlisttostrm.jar ./openlisttostrm.jar
+# Copy backend jar from local build
+COPY backend/build/libs/openlisttostrm.jar ./openlisttostrm.jar
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
