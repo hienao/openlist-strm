@@ -39,7 +39,7 @@ RUN chmod +x ./gradlew && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
 # Stage 3: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
-FROM azul/zulu-openjdk-debian:21-latest AS runner
+FROM azul/zulu-openjdk-debian:21-jre-headless-latest AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
