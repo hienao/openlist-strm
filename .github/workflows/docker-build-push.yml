@@ -46,13 +46,6 @@ jobs:
         fi
         echo "✅ Docker Hub credentials are configured"
       
-    - name: Set up Docker Buildx with cache
-      uses: docker/setup-buildx-action@v3
-      with:
-        driver-opts: |
-          image=moby/buildkit:buildx-stable-1
-          network=host
-
     - name: Cache Docker layers
       uses: actions/cache@v4
       with:
@@ -253,12 +246,12 @@ jobs:
         sbom: true
 
   # Cache management for next build
-  - name: Move cache
-    if: always()
-    run: |
-      rm -rf /tmp/.buildx-cache
-      mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-        
+    - name: Move cache
+      if: always()
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
     - name: Image digest
       run: |
         if [ "${{ steps.build-and-push-release.outputs.digest }}" != "" ]; then
