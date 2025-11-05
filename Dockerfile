@@ -73,7 +73,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Install essential packages in separate step for better error handling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --fix-missing \
-    nginx \
+    nginx-light \
     tzdata \
     curl \
     libc-bin \
