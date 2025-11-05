@@ -70,18 +70,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install essential packages including OpenJDK 17 and nginx
+# Install only OpenJDK 17 and nginx for testing
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     openjdk-17-jre-headless \
     nginx \
-    curl \
-    tzdata \
-    ca-certificates \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Configure system and create directories
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
