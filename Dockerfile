@@ -70,10 +70,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install essential packages including OpenJDK 21 and nginx
+# Install essential packages including OpenJDK 17 and nginx
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    openjdk-21-jre-headless \
+    openjdk-17-jre-headless \
     nginx \
     curl \
     tzdata \
