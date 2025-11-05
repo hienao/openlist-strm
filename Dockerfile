@@ -70,13 +70,24 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install essential packages in separate step for better error handling
+# Install essential packages with nginx dependency fix
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --fix-missing \
-    nginx-light \
     tzdata \
     curl \
+    ca-certificates \
     libc-bin \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Fix broken packages and install nginx
+RUN apt-get update && \
+    dpkg --configure -a && \
+    apt-get install -y --fix-broken --fix-missing && \
+    rm -rf /var/lib/dpkg/info/nginx-common.postinst && \
+    dpkg --configure -a && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    nginx \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
