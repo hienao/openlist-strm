@@ -67,34 +67,25 @@ WORKDIR $WORKDIR
 # Avoid interactive installation prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy nginx configuration first (changes less frequently)
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy Caddy configuration
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# Install OpenJDK 17 first
+# Install OpenJDK 17 and Caddy
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     openjdk-17-jre-headless \
+    caddy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# Fix dpkg and install nginx separately
-RUN apt-get update && \
-    dpkg --configure -a && \
-    apt-get install -y --fix-broken && \
-    rm -rf /var/lib/dpkg/info/nginx-common.postinst && \
-    dpkg --configure -a && \
-    apt-get install -y --no-install-recommends nginx && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # Configure system and create directories
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     echo "fs.file-max = 65536" >> /etc/sysctl.conf && \
     echo "fs.inotify.max_user_watches = 524288" >> /etc/sysctl.conf && \
-    mkdir -p /var/log/nginx /run/nginx /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
-    touch /var/log/nginx/access.log /var/log/nginx/error.log && \
-    chmod -R 755 /maindata /app/data /app/backend /var/log/nginx && \
+    mkdir -p /var/log/caddy /var/www/html /maindata/{config,db,log} /app/data/{config/{db},log} /app/backend/strm && \
+    touch /var/log/caddy/access.log && \
+    chmod -R 755 /maindata /app/data /app/backend /var/log/caddy && \
     rm -rf /tmp/* /var/tmp/*
 
 # Copy application files
@@ -108,7 +99,7 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "Java Version:"' >> /start.sh && \
     echo 'java -version 2>&1 | head -1' >> /start.sh && \
     echo 'echo "=== Starting Services ==="' >> /start.sh && \
-    echo 'nginx -g "daemon on;"' >> /start.sh && \
+    echo 'caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &' >> /start.sh && \
     echo 'echo "=== Starting Spring Boot Application ==="' >> /start.sh && \
     echo 'echo "Log Path: ${LOG_PATH:-/maindata/log}"' >> /start.sh && \
     echo 'echo "Spring Profile: ${SPRING_PROFILES_ACTIVE:-prod}"' >> /start.sh && \

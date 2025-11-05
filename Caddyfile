@@ -1,0 +1,51 @@
+{
+    log {
+        output file /var/log/caddy/access.log
+        level INFO
+    }
+    admin off
+}
+
+:80 {
+    root * /var/www/html
+    file_server
+
+    # API 代理配置
+    reverse_proxy /api/* localhost:8080 {
+        header_up Host {http.reverse_proxy.upstream.hostport}
+        header_up X-Real-IP {http.request.remote_host}
+        header_up X-Forwarded-For {http.request.remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-Port {port}
+
+        # 超时配置
+        transport http {
+            dial_timeout 30s
+            read_timeout 30s
+            write_timeout 30s
+        }
+    }
+
+    # WebSocket 代理配置
+    reverse_proxy /ws/* localhost:8080 {
+        header_up Host {http.reverse_proxy.upstream.hostport}
+        header_up X-Real-IP {http.request.remote_host}
+        header_up X-Forwarded-For {http.request.remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-Port {port}
+
+        # WebSocket 长连接超时
+        transport http {
+            dial_timeout 30s
+            read_timeout 86400s  # 24小时
+            write_timeout 86400s  # 24小时
+        }
+    }
+
+    # 健康检查端点
+    handle /health {
+        respond "healthy" 200
+    }
+}
