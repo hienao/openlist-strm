@@ -133,17 +133,32 @@
                 <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base URL</label>
                 <p class="mt-1 text-sm text-gray-900 break-all font-mono">{{ config.baseUrl }}</p>
               </div>
-              
+
               <div class="grid grid-cols-2 gap-3">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Base Path</label>
                   <p class="mt-1 text-sm text-gray-900 font-mono">{{ config.basePath || '/' }}</p>
                 </div>
-                
+
                 <div class="bg-gray-50 rounded-lg p-3">
-                  <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ formatDate(config.createdAt) }}</p>
+                  <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">URL编码</label>
+                  <div class="mt-1 flex items-center">
+                    <span :class="config.enableUrlEncoding !== false ? 'text-green-600' : 'text-red-600'" class="text-sm font-medium">
+                      {{ config.enableUrlEncoding !== false ? '启用' : '禁用' }}
+                    </span>
+                    <svg v-if="config.enableUrlEncoding !== false" class="w-4 h-4 text-green-500 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-red-500 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                    </svg>
+                  </div>
                 </div>
+              </div>
+
+              <div v-if="config.strmBaseUrl" class="bg-blue-50 rounded-lg p-3">
+                <label class="text-xs font-medium text-blue-500 uppercase tracking-wider">STRM Base URL</label>
+                <p class="mt-1 text-sm text-blue-900 break-all font-mono">{{ config.strmBaseUrl }}</p>
               </div>
             </div>
             
@@ -258,7 +273,24 @@
                 用于STRM文件生成时替换原始URL的baseUrl，留空则不进行替换
               </p>
             </div>
-            
+
+            <div>
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input
+                  v-model="configForm.enableUrlEncoding"
+                  type="checkbox"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  :disabled="formLoading"
+                />
+                <div>
+                  <span class="text-sm font-semibold text-gray-700">启用URL编码</span>
+                  <p class="mt-1 text-xs text-gray-500">
+                    对STRM文件中的链接进行URL编码，确保中文和特殊字符正确显示（推荐启用）
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
               <div class="flex items-center">
                 <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +382,24 @@
                 用于STRM文件生成时替换原始URL的baseUrl，留空则不进行替换
               </p>
             </div>
-            
+
+            <div>
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input
+                  v-model="configForm.enableUrlEncoding"
+                  type="checkbox"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  :disabled="formLoading"
+                />
+                <div>
+                  <span class="text-sm font-semibold text-gray-700">启用URL编码</span>
+                  <p class="mt-1 text-xs text-gray-500">
+                    对STRM文件中的链接进行URL编码，确保中文和特殊字符正确显示（推荐启用）
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div v-if="formError" class="bg-red-50 border border-red-200 rounded-xl p-4">
               <div class="flex items-center">
                 <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,7 +464,8 @@ const currentConfig = ref(null)
 const configForm = ref({
   baseUrl: '',
   token: '',
-  strmBaseUrl: ''
+  strmBaseUrl: '',
+  enableUrlEncoding: true
 })
 const formLoading = ref(false)
 const formError = ref('')
@@ -543,7 +593,8 @@ const addConfig = async () => {
         token: configForm.value.token,
         username: validationResult.username,
         basePath: validationResult.basePath,
-        strmBaseUrl: configForm.value.strmBaseUrl
+        strmBaseUrl: configForm.value.strmBaseUrl,
+        enableUrlEncoding: configForm.value.enableUrlEncoding
       }
     })
     
@@ -568,7 +619,8 @@ const editConfig = (config) => {
   configForm.value = {
     baseUrl: config.baseUrl,
     token: config.token,
-    strmBaseUrl: config.strmBaseUrl || ''
+    strmBaseUrl: config.strmBaseUrl || '',
+    enableUrlEncoding: config.enableUrlEncoding !== false // 默认为true，除非明确设置为false
   }
   showEditModal.value = true
 }
@@ -590,7 +642,8 @@ const updateConfig = async () => {
         token: configForm.value.token,
         username: validationResult.username,
         basePath: validationResult.basePath,
-        strmBaseUrl: configForm.value.strmBaseUrl
+        strmBaseUrl: configForm.value.strmBaseUrl,
+        enableUrlEncoding: configForm.value.enableUrlEncoding
       }
     })
     
@@ -665,7 +718,8 @@ const closeAddModal = () => {
   configForm.value = {
     baseUrl: '',
     token: '',
-    strmBaseUrl: ''
+    strmBaseUrl: '',
+    enableUrlEncoding: true
   }
   formError.value = ''
   formLoading.value = false
@@ -678,7 +732,8 @@ const closeEditModal = () => {
   configForm.value = {
     baseUrl: '',
     token: '',
-    strmBaseUrl: ''
+    strmBaseUrl: '',
+    enableUrlEncoding: true
   }
   formError.value = ''
   formLoading.value = false

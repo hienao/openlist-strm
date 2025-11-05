@@ -74,7 +74,7 @@ public class StrmFileService {
       String processedUrl = processUrlWithBaseUrlReplacement(fileUrl, openlistConfig);
 
       // 写入STRM文件内容
-      writeStrmFile(strmFilePath, processedUrl);
+      writeStrmFile(strmFilePath, processedUrl, openlistConfig);
 
       log.info("生成STRM文件成功: {}", strmFilePath);
 
@@ -178,23 +178,48 @@ public class StrmFileService {
    *
    * @param strmFilePath STRM文件路径
    * @param fileUrl 文件URL
+   * @param openlistConfig OpenList配置（用于URL编码配置）
    */
-  private void writeStrmFile(Path strmFilePath, String fileUrl) {
+  private void writeStrmFile(Path strmFilePath, String fileUrl, OpenlistConfig openlistConfig) {
     try {
-      // 对URL进行编码处理，确保中文和特殊字符正确编码
-      String encodedUrl = encodeUrlForStrm(fileUrl);
+      // 根据配置决定是否进行URL编码
+      String finalUrl = fileUrl;
+      if (shouldEncodeUrl(openlistConfig)) {
+        finalUrl = encodeUrlForStrm(fileUrl);
+        log.info("URL编码处理: 原始={}, 编码后={}", fileUrl, finalUrl);
+      } else {
+        log.info("URL编码已禁用，使用原始URL: {}", fileUrl);
+      }
 
       // STRM文件内容就是文件的URL
       Files.writeString(
           strmFilePath,
-          encodedUrl,
+          finalUrl,
           StandardOpenOption.CREATE,
           StandardOpenOption.TRUNCATE_EXISTING);
-      log.debug("写入STRM文件: {} -> {}", strmFilePath, encodedUrl);
-      log.info("URL编码处理: 原始={}, 编码后={}", fileUrl, encodedUrl);
+      log.debug("写入STRM文件: {} -> {}", strmFilePath, finalUrl);
     } catch (IOException e) {
       throw new BusinessException("写入STRM文件失败: " + strmFilePath + ERROR_SUFFIX + e.getMessage(), e);
     }
+  }
+
+  /**
+   * 判断是否应该对URL进行编码
+   *
+   * @param openlistConfig OpenList配置
+   * @return 是否应该编码，默认启用编码
+   */
+  private boolean shouldEncodeUrl(OpenlistConfig openlistConfig) {
+    // 如果配置为空或未设置编码选项，默认启用编码（向后兼容）
+    if (openlistConfig == null || openlistConfig.getEnableUrlEncoding() == null) {
+      log.debug("URL编码配置为空，默认启用编码");
+      return true;
+    }
+
+    boolean shouldEncode = openlistConfig.getEnableUrlEncoding();
+    log.debug("URL编码配置: enableUrlEncoding={}, 编码状态={}",
+        openlistConfig.getEnableUrlEncoding(), shouldEncode ? "启用" : "禁用");
+    return shouldEncode;
   }
 
   /**
