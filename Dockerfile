@@ -42,7 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/tmp/*
 
 # Copy gradle files first to leverage layer cache
-COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties ./
+COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties backend/gradlew ./
 COPY backend/gradle/wrapper/ ./gradle/wrapper/
 
 # Download dependencies and cache them
