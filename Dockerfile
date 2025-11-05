@@ -57,8 +57,8 @@ RUN ./gradlew --no-daemon bootJar -x test --parallel && \
     rm -rf $WORKDIR/build && \
     rm -rf $HOME/.gradle/caches
 
-# Stage 3: Runtime - Use Azul Zulu OpenJDK with Debian for better compatibility
-FROM azul/zulu-openjdk-debian:21-jre-headless-latest AS runner
+# Stage 3: Runtime - Use Debian 12 for better package management
+FROM debian:12-slim AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
@@ -70,26 +70,24 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install essential packages with nginx dependency fix
+# Install Zulu JDK 21 and essential packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    tzdata \
+    apt-get install -y --no-install-recommends \
     curl \
+    wget \
+    gnupg \
     ca-certificates \
-    libc-bin \
+    && wget -qO - https://repos.azul.com/azul-repo-key.gpg | gpg --dearmor -o /usr/share/keyrings/azul.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/debian stable main" > /etc/apt/sources.list.d/zulu.list \
+    && apt-get update && \
+    apt-get install -y --no-install-recommends \
+    zulu21-jre-headless \
+    tzdata \
+    nginx-extras \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Fix broken packages and install nginx
-RUN apt-get update && \
-    dpkg --configure -a && \
-    apt-get install -y --fix-broken --fix-missing && \
-    rm -rf /var/lib/dpkg/info/nginx-common.postinst && \
-    dpkg --configure -a && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    nginx \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
 
 # Configure system and create directories
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
