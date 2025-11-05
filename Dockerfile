@@ -70,20 +70,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy nginx configuration first (changes less frequently)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install Zulu JDK 21 and essential packages
+# Install essential packages including OpenJDK 21 and nginx
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    openjdk-21-jre-headless \
+    nginx \
     curl \
-    wget \
-    gnupg \
-    ca-certificates \
-    && wget -qO - https://repos.azul.com/azul-repo-key.gpg | gpg --dearmor -o /usr/share/keyrings/azul.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/debian stable main" > /etc/apt/sources.list.d/zulu.list \
-    && apt-get update && \
-    apt-get install -y --no-install-recommends \
-    zulu21-jre-headless \
     tzdata \
-    nginx-extras \
+    ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
