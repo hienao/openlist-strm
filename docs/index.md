@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /docker-deploy
+      link: /quick-start
     - theme: alt
       text: GitHub 仓库
       link: https://github.com/hienao/openlist-strm

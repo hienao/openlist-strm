@@ -4,6 +4,33 @@
 
 ## 当前版本
 
+### v1.2.0 (2025-11-07) 大量代码重构，镜像名调整为openlist-strm，挂载目录调整，不支持直接升级
+
+#### ✨ 新功能
+- 🔗 **URL编码控制**: 新增STRM链接URL编码开关，支持灵活配置编码行为，完美处理中文和特殊字符路径
+- 🌐 **Base URL替换**: 支持STRM文件生成时的基础URL替换功能，适配内网外网不同访问场景
+- 🏗️ **Web服务器升级**: 从Nginx迁移到Caddy，提供更现代的Web服务器解决方案
+- 📦 **构建优化**: 优化Docker构建流程，支持Java 21运行时环境，提升性能和兼容性
+
+#### 🛠️ 技术改进
+- 🐳 **容器化优化**: 改进多阶段Docker构建，使用Ubuntu 22.04基础镜像
+- 🛠️ **路径标准化**: 统一容器内路径管理，增强跨平台兼容性
+- 🔧 **依赖更新**: 升级核心依赖版本，提升系统稳定性和安全性
+- 📝 **文档完善**: 更新技术文档和部署指南
+
+#### 🐛 问题修复
+- 修复OpenList配置中URL编码选项无法保存的问题
+- 解决特殊字符和中文路径的处理问题
+- 优化容器内存占用和启动性能
+
+#### ⚠️ 重要说明
+- **架构变更**: 大量代码重构，不支持直接从旧版本升级
+- **镜像名称**: 调整为 `openlist-strm`
+- **挂载目录**: 重新设计目录结构，采用标准化路径
+- **迁移要求**: 需要手动迁移数据，详见迁移指南
+
+---
+
 ### v1.1.1 (2025-09-27)
 
 #### 🛠️ 功能优化
@@ -203,16 +230,100 @@ docker run -d \
 ### 配置迁移
 某些版本升级可能需要配置迁移：
 
+#### v1.2.0 重大升级迁移指南
+
+⚠️ **重要提示**: v1.2.0 是重大架构更新，**不支持直接升级**，需要手动迁移数据。
+
+**迁移步骤**:
+
+1. **停止旧版本容器**
+```bash
+docker-compose down
+```
+
+2. **备份现有数据**
+```bash
+# 创建备份目录
+mkdir -p ./backup/v1-backup
+
+# 备份数据库文件
+cp -r ./data/config/db ./backup/v1-backup/
+
+# 备份配置文件
+cp -r ./data/config/*.json ./backup/v1-backup/
+
+# 备份日志文件
+cp -r ./data/log ./backup/v1-backup/
+
+# 备份STRM文件
+cp -r ./strm ./backup/v1-backup/
+```
+
+3. **清理旧容器和镜像**
+```bash
+docker-compose down --rmi all --volumes --remove-orphans
+```
+
+4. **创建新的目录结构**
+```bash
+# 创建标准化的数据目录
+mkdir -p ./data/config ./data/db ./logs ./strm
+```
+
+5. **迁移数据到新结构**
+```bash
+# 迁移数据库文件 (从 /app/data/config/db 到 /maindata/db)
+cp ./backup/v1-backup/db/* ./data/db/
+
+# 迁移配置文件 (从 /app/data/config 到 /maindata/config)
+cp ./backup/v1-backup/*.json ./data/config/
+
+# 迁移日志文件 (从 /app/data/log 到 /maindata/log)
+cp ./backup/v1-backup/log/* ./logs/
+
+# STRM文件路径不变
+# ./strm → /app/backend/strm (保持一致)
+```
+
+6. **更新环境配置**
+```bash
+# 复制新的环境配置模板
+cp .env.docker.example .env
+
+# 根据需要编辑配置
+# 默认配置已经适配新的目录结构
+```
+
+7. **启动新版本**
+```bash
+# 使用新的镜像名称构建并启动
+docker-compose build
+docker-compose up -d
+```
+
+8. **验证迁移**
+- 访问 `http://localhost:3111` 确认应用正常
+- 检查任务配置是否完整迁移
+- 测试一个任务执行
+- 查看日志确认无错误
+
+**主要变更**:
+- ✅ 镜像名: `hienao6/openlist-strm:latest`
+- ✅ 数据库路径: `/maindata/db` (之前: `/app/data/config/db`)
+- ✅ 配置路径: `/maindata/config` (之前: `/app/data/config`)
+- ✅ 日志路径: `/maindata/log` (之前: `/app/data/log`)
+- ✅ STRM路径: `/app/backend/strm` (保持不变)
+
+**迁移注意事项**:
+- 🔄 **手动迁移**: 必须手动复制数据文件
+- 📁 **路径变更**: 容器内路径结构完全重新设计
+- 🔧 **配置更新**: 使用新的环境变量配置方式
+- ✅ **数据兼容**: 数据库格式和配置文件格式保持兼容
+
 #### v1.0.x → v1.1.x
 - ✅ 无需手动迁移，配置自动兼容
 - 🎨 建议查看新的系统设置选项
 - 🔒 建议检查数据上报设置
-
-#### 路径标准化更新
-如果从旧版本升级到支持路径标准化的版本：
-- ✅ 现有配置自动迁移
-- 📁 建议确认新的目录结构
-- 🔧 可根据需要调整 Docker 卷映射
 
 ---
 

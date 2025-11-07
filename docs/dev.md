@@ -6,7 +6,7 @@
 
 ### 技术栈
 - **前端**: Nuxt.js 3 + Vue 3 + TypeScript + Tailwind CSS
-- **后端**: Spring Boot 3 + Kotlin + MyBatis + SQLite
+- **后端**: Spring Boot 3 + Java + MyBatis + SQLite
 - **数据库**: SQLite + Flyway 数据库迁移
 - **构建工具**: Gradle (后端) + npm (前端)
 - **容器化**: Docker + Docker Compose
@@ -22,7 +22,7 @@ openlist-strm/
 │   ├── utils/              # 工具函数
 │   └── types/              # TypeScript 类型定义
 ├── backend/                 # Spring Boot 后端应用
-│   └── src/main/kotlin/com/hienao/openlist2strm/
+│   └── src/main/java/com/hienao/openlist2strm/
 │       ├── controller/      # REST API 控制器
 │       ├── service/         # 业务逻辑层
 │       ├── mapper/          # MyBatis 数据访问层
@@ -165,7 +165,7 @@ export const useTaskApi = () => {
 
 #### 项目结构
 ```
-backend/src/main/kotlin/com/hienao/openlist2strm/
+backend/src/main/java/com/hienao/openlist2strm/
 ├── controller/          # REST 控制器
 ├── service/             # 业务逻辑层
 ├── mapper/              # MyBatis 映射器
@@ -180,7 +180,7 @@ backend/src/main/kotlin/com/hienao/openlist2strm/
 #### 开发规范
 
 **代码风格：**
-- 使用 Kotlin 编程语言
+- 使用 Java 编程语言
 - 遵循 Spring Boot 最佳实践
 - 使用分层架构（Controller → Service → Mapper）
 
@@ -198,49 +198,57 @@ backend/src/main/kotlin/com/hienao/openlist2strm/
 #### 示例代码
 
 **Controller 层：**
-```kotlin
+```java
 @RestController
 @RequestMapping("/api/task-config")
 @Validated
-class TaskConfigController(
-    private val taskConfigService: TaskConfigService
-) {
+public class TaskConfigController {
+    private final TaskConfigService taskConfigService;
+
+    public TaskConfigController(TaskConfigService taskConfigService) {
+        this.taskConfigService = taskConfigService;
+    }
 
     @GetMapping
-    fun getTasks(): ApiResponse<List<TaskConfigDto>> {
-        return ApiResponse.success(taskConfigService.getAllTasks())
+    public ApiResponse<List<TaskConfigDto>> getTasks() {
+        return ApiResponse.success(taskConfigService.getAllTasks());
     }
 
     @PostMapping
-    fun createTask(
-        @Valid @RequestBody taskDto: TaskConfigDto
-    ): ApiResponse<TaskConfigDto> {
-        return ApiResponse.success(taskConfigService.createTask(taskDto))
+    public ApiResponse<TaskConfigDto> createTask(
+            @Valid @RequestBody TaskConfigDto taskDto
+    ) {
+        return ApiResponse.success(taskConfigService.createTask(taskDto));
     }
 }
 ```
 
 **Service 层：**
-```kotlin
+```java
 @Service
 @Transactional
-class TaskConfigService(
-    private val taskConfigMapper: TaskConfigMapper,
-    private val openlistConfigMapper: OpenlistConfigMapper
-) {
+public class TaskConfigService {
+    private final TaskConfigMapper taskConfigMapper;
+    private final OpenlistConfigMapper openlistConfigMapper;
 
-    fun createTask(taskDto: TaskConfigDto): TaskConfigDto {
+    public TaskConfigService(TaskConfigMapper taskConfigMapper,
+                            OpenlistConfigMapper openlistConfigMapper) {
+        this.taskConfigMapper = taskConfigMapper;
+        this.openlistConfigMapper = openlistConfigMapper;
+    }
+
+    public TaskConfigDto createTask(TaskConfigDto taskDto) {
         // 业务逻辑验证
-        validateTaskConfig(taskDto)
+        validateTaskConfig(taskDto);
 
         // 数据转换
-        val entity = taskDto.toEntity()
+        TaskConfigEntity entity = taskDto.toEntity();
 
         // 保存到数据库
-        taskConfigMapper.insert(entity)
+        taskConfigMapper.insert(entity);
 
         // 返回 DTO
-        return entity.toDto()
+        return entity.toDto();
     }
 }
 ```
@@ -272,19 +280,19 @@ CREATE TABLE task_execution_log (
 应用启动时会自动执行未运行的迁移文件。
 
 #### MyBatis 映射
-```kotlin
+```java
 @Mapper
-interface TaskConfigMapper {
+public interface TaskConfigMapper {
     @Select("SELECT * FROM task_config WHERE deleted = false ORDER BY created_at DESC")
-    fun findAllActive(): List<TaskConfigEntity>
+    List<TaskConfigEntity> findAllActive();
 
-    @Insert("INSERT INTO task_config (name, openlist_config_id, openlist_path, ...)
-            VALUES (#{name}, #{openlistConfigId}, #{openlistPath}, ...)")
-    fun insert(task: TaskConfigEntity)
+    @Insert("INSERT INTO task_config (name, openlist_config_id, openlist_path, ...) " +
+            "VALUES (#{name}, #{openlistConfigId}, #{openlistPath}, ...)")
+    void insert(TaskConfigEntity task);
 
-    @Update("UPDATE task_config SET status = #{status}, updated_at = CURRENT_TIMESTAMP
-            WHERE id = #{id}")
-    fun updateStatus(@Param("id") id: Long, @Param("status") status: String)
+    @Update("UPDATE task_config SET status = #{status}, updated_at = CURRENT_TIMESTAMP " +
+            "WHERE id = #{id}")
+    void updateStatus(@Param("id") Long id, @Param("status") String status);
 }
 ```
 
@@ -335,7 +343,7 @@ cd backend
 
 **后端：**
 - 使用 Spotless 进行代码格式化
-- 使用 ktlint 进行 Kotlin 代码检查
+- 使用 Checkstyle 进行 Java 代码检查
 
 ### 运行代码检查
 ```bash
@@ -429,7 +437,8 @@ git push origin feature/your-feature-name
 
 **后端：**
 - IntelliJ IDEA
-- Android Studio（Kotlin 支持）
+- Eclipse
+- VS Code（Java 扩展包）
 
 ### 必需扩展
 - **VS Code**: Vue - Official, TypeScript, ESLint, Prettier
