@@ -60,7 +60,7 @@ docker run -d \
 
 ## 第二步：访问应用
 
-打开浏览器，访问：**http://localhost:3111**
+打开浏览器，访问：`http://localhost:3111`
 
 ## 第三步：注册账户
 

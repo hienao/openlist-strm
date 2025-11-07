@@ -93,9 +93,9 @@ npm run dev
 ```
 
 ### 访问应用
-- **前端开发服务器**: http://localhost:3000
-- **后端 API**: http://localhost:8080
-- **API 文档**: http://localhost:8080/swagger-ui.html
+- **前端开发服务器**: `http://localhost:3000`
+- **后端 API**: `http://localhost:8080`
+- **API 文档**: `http://localhost:8080/swagger-ui.html`
 
 ## 开发指南
 

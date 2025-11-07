@@ -82,7 +82,7 @@ dev-docker.bat backup            # 备份数据
    ```
 
 3. **访问应用**
-   - 打开浏览器访问: http://localhost:3111
+   - 打开浏览器访问: `http://localhost:3111`
    - 应用启动后会自动进行健康检查
 
 ### 日常开发

@@ -2,7 +2,7 @@
 
 **一个用于将 [OpenList](https://github.com/OpenListTeam/OpenList) 文件列表转换为 STRM 流媒体文件的全栈应用**
 
-[![License](https://img.shields.io/github/license/hienao/openlist-strm?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/hienao/openlist-strm?style=flat-square)](https://github.com/hienao/openlist-strm/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/hienao/openlist-strm?style=flat-square&color=yellow)](https://github.com/hienao/openlist-strm/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/hienao/openlist-strm?style=flat-square&color=blue)](https://github.com/hienao/openlist-strm/network/members)
 [![GitHub contributors](https://img.shields.io/github/contributors/hienao/openlist-strm?style=flat-square&color=orange)](https://github.com/hienao/openlist-strm/graphs/contributors)
@@ -118,7 +118,7 @@ docker-compose up -d
 - 自动创建统一的数据存储目录结构
 - 支持跨平台路径兼容性
 
-访问应用：http://localhost:3111
+访问应用：`http://localhost:3111`
 
 **目录说明：**
 - `./data/config` → `/maindata/config` - 存储应用配置文件和 SQLite 数据库
@@ -196,7 +196,7 @@ A: 允许在生成 STRM 文件时将原始 OpenList 的 Base URL 替换为指定
 
 ### 📖 开发指南
 - [CLAUDE.md](CLAUDE.md) - Claude Code 开发助手配置
-- [llmdoc/index.md](llmdoc/index.md) - 项目文档系统索引
+- [llmdoc/index.md](https://github.com/hienao/openlist-strm/blob/main/llmdoc/index.md) - 项目文档系统索引
 
 ### ⚡ 开发环境
 
@@ -205,7 +205,7 @@ A: 允许在生成 STRM 文件时将原始 OpenList 的 Base URL 替换为指定
 **本地开发流程**:
 1. 克隆项目并配置环境变量
 2. 使用 `docker-compose up -d` 启动服务
-3. 访问 http://localhost:3111 进行开发和测试
+3. 访问 `http://localhost:3111` 进行开发和测试
 
 **开发说明**:
 - 前端端口：容器内 3000，通过 Caddy 代理到 80
@@ -332,7 +332,7 @@ A: 允许在生成 STRM 文件时将原始 OpenList 的 Base URL 替换为指定
 
 ## 许可证
 
-本项目采用 [GNU General Public License v3.0](LICENSE) 许可证。
+本项目采用 [GNU General Public License v3.0](https://github.com/hienao/openlist-strm/blob/main/LICENSE) 许可证。
 
 ### 许可证摘要
 
