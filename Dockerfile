@@ -23,23 +23,10 @@ RUN npm run generate && \
     rm -rf /app/frontend/.nuxt && \
     rm -rf /app/frontend/node_modules/.cache
 
-# Stage 2: Build Backend (Spring Boot) - Cross-platform compatible
-FROM eclipse-temurin:21-jdk AS backend-builder
+# Stage 2: Build Backend (Spring Boot) - Use Gradle official image
+FROM gradle:9.2.0-jdk21-noble AS backend-builder
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
-
-# Install build dependencies and Gradle with proper cleanup
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    unzip \
-    wget \
-    && wget -O /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip \
-    && unzip /tmp/gradle.zip -d /opt \
-    && rm /tmp/gradle.zip \
-    && ln -s /opt/gradle-8.5/bin/gradle /usr/bin/gradle \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
 
 # Copy gradle files first to leverage layer cache
 COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties backend/gradlew ./
