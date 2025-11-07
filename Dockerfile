@@ -5,7 +5,7 @@
 ARG APP_VERSION=dev
 
 # Stage 1: Build Frontend (Nuxt) - Use Ubuntu for better QEMU compatibility
-FROM node:20-noble AS frontend-builder
+FROM node:20 AS frontend-builder
 ARG APP_VERSION
 WORKDIR /app/frontend
 
