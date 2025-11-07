@@ -44,4 +44,7 @@ public class OpenlistConfigDto {
 
   /** STRM文件生成时的baseUrl替换，可为空，为空时则不进行替换 */
   @Size(max = 500, message = "STRM Base URL长度不能超过500个字符") private String strmBaseUrl;
+
+  /** 是否启用URL编码：true-启用（默认），false-禁用 */
+  private Boolean enableUrlEncoding;
 }
