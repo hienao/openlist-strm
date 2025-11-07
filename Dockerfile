@@ -52,13 +52,13 @@ RUN chmod +x ./gradlew && \
 
 # Copy source code and build
 COPY backend/src ./src
-RUN ./gradlew --no-daemon bootJar -x test --parallel && \
+RUN ./gradlew --no-daemon -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 -Dtrust_all_cert=true bootJar -x test --parallel && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar && \
     rm -rf $WORKDIR/build && \
     rm -rf $HOME/.gradle/caches
 
-# Stage 3: Runtime - Use Debian 12 for better package management
-FROM debian:12-slim AS runner
+# Stage 3: Runtime - Use Ubuntu for better package management
+FROM ubuntu:22.04 AS runner
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 ENV WORKDIR=/app
@@ -67,15 +67,31 @@ WORKDIR $WORKDIR
 # Avoid interactive installation prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy Caddy configuration
-COPY Caddyfile /etc/caddy/Caddyfile
-
-# Install OpenJDK 17 and Caddy
+# Install OpenJDK 21 to match build environment
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    openjdk-17-jre-headless \
-    caddy \
+    openjdk-21-jre-headless \
     && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Caddy configuration first, then install Caddy
+COPY Caddyfile /etc/caddy/Caddyfile.custom
+
+# Install Caddy with automatic configuration selection
+RUN apt-get update && \
+    DEBCONF_NOWARNINGS=yes DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+    curl \
+    gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
+    && apt-get update && \
+    echo 'caddy caddy/caddyfile_autoinstall boolean true' | debconf-set-selections && \
+    DEBCONF_NOWARNINGS=yes DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+    caddy \
+    && cp /etc/caddy/Caddyfile.custom /etc/caddy/Caddyfile && \
+    apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure system and create directories
