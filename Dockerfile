@@ -28,20 +28,33 @@ FROM gradle:9.2.0-jdk21-noble AS backend-builder
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
 
-# Copy gradle files first to leverage layer cache
-COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties backend/gradlew ./
-COPY backend/gradle/wrapper/ ./gradle/wrapper/
+# Copy gradle configuration files
+COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties ./
 
-# Download dependencies and cache them - this layer changes rarely
-RUN chmod +x ./gradlew && \
-    sed -i 's|\r$||g' ./gradlew && \
-    ./gradlew --no-daemon dependencies --configuration compileClasspath && \
-    ./gradlew --no-daemon compileJava
+# Download dependencies first to leverage Docker layer cache
+RUN echo "=== Downloading dependencies ===" && \
+    gradle --refresh-dependencies dependencies --configuration compileClasspath
 
-# Copy source code and build - this layer changes frequently
+# Copy source code
 COPY backend/src ./src
-RUN ./gradlew --no-daemon -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 -Dtrust_all_cert=true bootJar -x test && \
-    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
+
+# Build application with system Gradle (avoids wrapper SSL issues in QEMU)
+RUN echo "=== Building application ===" && \
+    for i in 1 2 3; do \
+        timeout 300 gradle \
+            --no-daemon \
+            -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 \
+            -Dtrust_all_cert=true \
+            -Dorg.gradle.internal.http.connectionTimeout=60000 \
+            -Dorg.gradle.internal.http.socketTimeout=60000 \
+            bootJar -x test && \
+        break || \
+        echo "Build attempt $i failed, cleaning and retrying..." && \
+        gradle clean && sleep 15; \
+    done && \
+    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar && \
+    echo "✅ JAR file created successfully" && \
+    ls -la /openlisttostrm.jar
 
 # Stage 3: Runtime - Use Ubuntu for better package management
 FROM ubuntu:22.04 AS runner
