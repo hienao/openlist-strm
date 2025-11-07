@@ -11,7 +11,7 @@ WORKDIR /app/frontend
 
 # Install dependencies first to leverage Docker layer cache
 COPY frontend/package*.json ./
-RUN npm ci --omit=dev && \
+RUN npm ci --prefer-offline --no-audit --no-fund --omit=dev && \
     npm cache clean --force && \
     rm -rf /tmp/* && \
     rm -rf /root/.npm
@@ -29,15 +29,16 @@ ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
 
 # Copy gradle files first to leverage layer cache
-COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties backend/gradlew ./
+COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties ./
 COPY backend/gradle/wrapper/ ./gradle/wrapper/
 
-# Download dependencies and cache them
+# Download dependencies and cache them - this layer changes rarely
 RUN chmod +x ./gradlew && \
     sed -i 's|\r$||g' ./gradlew && \
-    ./gradlew --no-daemon dependencies --configuration compileClasspath
+    ./gradlew --no-daemon dependencies --configuration compileClasspath && \
+    ./gradlew --no-daemon compileJava
 
-# Copy source code and build
+# Copy source code and build - this layer changes frequently
 COPY backend/src ./src
 RUN ./gradlew --no-daemon -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 -Dtrust_all_cert=true bootJar -x test && \
     mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar

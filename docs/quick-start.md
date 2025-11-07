@@ -14,42 +14,25 @@
 
 ### 使用 Docker Compose（推荐）
 
-1. **克隆项目**
-```bash
-git clone https://github.com/hienao/openlist-strm.git
-cd openlist-strm
+创建 `docker-compose.yml`：
+```yaml
+services:
+  app:
+    image: hienao6/openlist-strm:latest
+    container_name: openlist-strm
+    ports:
+      - "3111:80"
+    volumes:
+      - ./data/config:/maindata/config    # 配置文件和数据库存储
+      - ./data/db:/maindata/db            # 数据库文件存储
+      - ./logs:/maindata/log              # 日志文件存储
+      - ./strm:/app/backend/strm          # STRM 文件输出目录
+    restart: always
 ```
 
-2. **创建环境配置文件**
+然后运行：
 ```bash
-cp .env.docker.example .env
-```
-
-3. **启动应用**
-```bash
-# 创建必要目录
-mkdir -p ./data/config ./data/db ./logs ./strm
-
-# 启动服务（自动构建镜像）
 docker-compose up -d
-```
-
-### 手动构建并运行
-
-```bash
-# 构建镜像
-docker build -t openlist-strm:latest .
-
-# 运行容器
-docker run -d \
-  --name openlist-strm \
-  -p 3111:80 \
-  -v ./data/config:/maindata/config \
-  -v ./data/db:/maindata/db \
-  -v ./logs:/maindata/log \
-  -v ./strm:/app/backend/strm \
-  --restart always \
-  openlist-strm:latest
 ```
 
 ## 第二步：访问应用

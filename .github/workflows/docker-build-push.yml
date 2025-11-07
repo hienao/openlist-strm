@@ -61,14 +61,14 @@ jobs:
     - name: Build frontend assets
       run: |
         cd frontend
-        npm ci
+        npm ci --prefer-offline --no-audit --no-fund
         npm run generate
 
     - name: Build backend JAR
       run: |
         cd backend
         chmod +x gradlew
-        ./gradlew bootJar -x test
+        ./gradlew --no-daemon bootJar -x test
 
     - name: Verify build artifacts
       run: |
