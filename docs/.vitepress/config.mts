@@ -5,6 +5,7 @@ export default defineConfig({
   lang: 'zh_CN',
   title: "OpenList-Strm",
   description: "便捷的为你的OpenList影音文件生成Strm文件",
+  ignoreDeadLinks: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
