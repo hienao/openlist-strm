@@ -234,7 +234,7 @@ docker run -d \
 3. **参与开发**: 欢迎提交 Pull Request
 
 ### 获取帮助
-- 📖 **文档**: 查看完整的 [项目文档](../index.md)
+- 📖 **文档**: 查看完整的 [项目文档](../README.md)
 - 💬 **社区**: 在 GitHub Discussions 中交流
 - 🐛 **问题**: 通过 GitHub Issues 报告问题
 - 📧 **联系**: 通过项目主页的联系方式

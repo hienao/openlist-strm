@@ -441,7 +441,7 @@ git push origin feature/your-feature-name
 ## 社区参与
 
 ### 获取帮助
-- 📖 查看 [项目文档](../index.md)
+- 📖 查看 [项目文档](../README.md)
 - 💬 在 [GitHub Discussions](https://github.com/hienao/openlist-strm/discussions) 中讨论
 - 🐛 在 [GitHub Issues](https://github.com/hienao/openlist-strm/issues) 中报告问题
 

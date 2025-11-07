@@ -5,7 +5,14 @@ export default defineConfig({
   lang: 'zh_CN',
   title: "OpenList-Strm",
   description: "便捷的为你的OpenList影音文件生成Strm文件",
-  ignoreDeadLinks: true,
+  ignoreDeadLinks: [
+    // 忽略本地开发链接
+    /http:\/\/localhost/,
+    // 忽略根目录的特定文件（在docs目录中无法访问）
+    /^\/log$/,
+    /^\/LICENSE$/,
+    /^\/llmdoc\/index/
+  ],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
