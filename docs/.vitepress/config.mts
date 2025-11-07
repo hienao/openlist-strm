@@ -17,8 +17,9 @@ export default defineConfig({
           { text: '添加任务', link: '/add-task' },
           { text: '系统设置', link: '/system-config' }
         ] },
-      { text: '高级配置', items: [
-          { text: '环境变量配置', link: '/environment-config' },
+      { text: '特殊配置项说明', items: [
+          { text: 'STRM Base URL 配置', link: '/strm-base-url-config' },
+          { text: 'AI 识别配置', link: '/ai-recognition-config' },
           { text: 'URL编码配置', link: '/url-encoding-config' }
         ] },
       { text: '更新历史', link: '/update-log' },
@@ -34,8 +35,9 @@ export default defineConfig({
           { text: '添加任务', link: '/add-task' },
           { text: '系统设置', link: '/system-config' }
         ] },
-      { text: '高级配置', items: [
-          { text: '环境变量配置', link: '/environment-config' },
+      { text: '特殊配置项说明', items: [
+          { text: 'STRM Base URL 配置', link: '/strm-base-url-config' },
+          { text: 'AI 识别配置', link: '/ai-recognition-config' },
           { text: 'URL编码配置', link: '/url-encoding-config' }
         ] },
       { text: '更新历史', link: '/update-log' },
