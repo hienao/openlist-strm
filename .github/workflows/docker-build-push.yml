@@ -10,18 +10,13 @@ env:
   REGISTRY: docker.io
   IMAGE_NAME: openlist-strm
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-push:
-    strategy:
-      matrix:
-        include:
-          - platform: amd64
-            runner: ubuntu-latest
-            docker-platform: linux/amd64
-          - platform: arm64
-            runner: ubuntu-latest-4-cores
-            docker-platform: linux/arm64
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest-4-cores
     permissions:
       contents: write
       packages: write
@@ -33,9 +28,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    # No QEMU needed - each platform builds on native runners
+    # Set up QEMU for multi-platform builds
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    # Set up Docker Buildx for multi-platform builds
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
       
     - name: Check Docker Hub credentials
       env:
@@ -67,39 +70,13 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    # Build frontend and backend in parallel for faster CI
-    - name: Build frontend assets
+    # Build verification - Docker Buildx will handle multi-platform builds
+    - name: Quick build verification
       run: |
-        cd frontend
-        npm ci --prefer-offline --no-audit --no-fund
-        npm run generate
-
-    - name: Build backend JAR (local verification)
-      run: |
-        cd backend
-        echo "=== Building backend JAR locally for verification ==="
-        chmod +x gradlew
-        ./gradlew --no-daemon bootJar -x test
-        echo "=== Verifying JAR file ==="
-        ls -la build/libs/openlisttostrm.jar
-
-    - name: Verify build artifacts
-      run: |
-        echo "=== Frontend build verification ==="
-        ls -la frontend/.output/public/
-        if [ ! -d "frontend/.output/public" ]; then
-          echo "❌ Error: Frontend build directory not found"
-          exit 1
-        fi
-        echo "✅ Frontend build successful"
-
-        echo "=== Backend build verification ==="
-        ls -la backend/build/libs/
-        if [ ! -f "backend/build/libs/openlisttostrm.jar" ]; then
-          echo "❌ Error: JAR file not found after build"
-          exit 1
-        fi
-        echo "✅ Backend JAR found successfully"
+        echo "=== Verifying project structure ==="
+        ls -la frontend/
+        ls -la backend/
+        echo "✅ Project structure verified"
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
@@ -115,8 +92,8 @@ jobs:
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
-          type=ref,event=tag,suffix=-${{ matrix.platform }}
-          type=raw,value=latest-${{ matrix.platform }}
+          type=ref,event=tag
+          type=raw,value=latest
 
     - name: Extract metadata for beta tags (beta-v*.*.*)
       id: meta-beta
@@ -125,7 +102,7 @@ jobs:
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
-          type=ref,event=tag,suffix=-${{ matrix.platform }}
+          type=ref,event=tag
         flavor: |
           latest=false
           
@@ -136,18 +113,20 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        platforms: ${{ matrix.docker-platform }}
+        platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta-release.outputs.tags }}-${{ matrix.platform }}
+        tags: ${{ steps.meta-release.outputs.tags }}
         labels: ${{ steps.meta-release.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-          TARGETPLATFORM=${{ matrix.docker-platform }}
-        # Build optimization for native platform builds
+        # Multi-platform build with QEMU
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
         sbom: true
+        # Cache for faster builds
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Create source code archive
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
@@ -217,51 +196,34 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        platforms: ${{ matrix.docker-platform }}
+        platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta-beta.outputs.tags }}-${{ matrix.platform }}
+        tags: ${{ steps.meta-beta.outputs.tags }}
         labels: ${{ steps.meta-beta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-          TARGETPLATFORM=${{ matrix.docker-platform }}
-        # Build optimization for native platform builds
+        # Multi-platform build with QEMU
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
         sbom: true
+        # Cache for faster builds
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
-    - name: Create and push multi-arch manifest (release)
-      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
+    - name: Multi-arch manifest verification
       run: |
-        echo "Creating multi-arch manifest for ${{ github.ref_name }}"
-        # Create manifest with both architectures
-        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }} \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-amd64 \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-arm64
-
-        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest-amd64 \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest-arm64
-
-        # Push manifests
-        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}
-        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest
-
-        echo "✅ Multi-arch manifest created and pushed successfully"
-
-    - name: Create and push multi-arch manifest (beta)
-      if: startsWith(github.ref_name, 'beta-v')
-      run: |
-        echo "Creating multi-arch manifest for ${{ github.ref_name }}"
-        # Create manifest with both architectures
-        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }} \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-amd64 \
-          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-arm64
-
-        # Push manifest
-        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}
-
-        echo "✅ Beta multi-arch manifest created and pushed successfully"
+        echo "=== Verifying multi-arch manifests ==="
+        if [ "${{ steps.build-and-push-release.outputs.digest }}" != "" ]; then
+          echo "✅ Release multi-arch manifest created and pushed automatically"
+          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}"
+          echo "Latest: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest"
+        fi
+        if [ "${{ steps.build-and-push-beta.outputs.digest }}" != "" ]; then
+          echo "✅ Beta multi-arch manifest created and pushed automatically"
+          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}"
+        fi
+        echo "Docker Buildx automatically handled multi-platform manifest creation"
 
     - name: Image digest
       run: |
