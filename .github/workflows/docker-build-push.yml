@@ -46,36 +46,16 @@ jobs:
         fi
         echo "✅ Docker Hub credentials are configured"
       
-    - name: Cache Docker layers
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
-    - name: Set up Node.js and cache dependencies
+    - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
 
-    - name: Set up JDK 21 and cache Gradle
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
-
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
 
     # Build frontend and backend in parallel for faster CI
     - name: Build frontend assets
@@ -88,7 +68,7 @@ jobs:
       run: |
         cd backend
         chmod +x gradlew
-        ./gradlew bootJar -x test --parallel
+        ./gradlew bootJar -x test
 
     - name: Verify build artifacts
       run: |
@@ -149,12 +129,6 @@ jobs:
         labels: ${{ steps.meta-release.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-        cache-from: |
-          type=gha
-          type=local,src=/tmp/.buildx-cache
-        cache-to: |
-          type=gha,mode=max
-          type=local,dest=/tmp/.buildx-cache-new,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
@@ -234,23 +208,10 @@ jobs:
         labels: ${{ steps.meta-beta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-        cache-from: |
-          type=gha
-          type=local,src=/tmp/.buildx-cache
-        cache-to: |
-          type=gha,mode=max
-          type=local,dest=/tmp/.buildx-cache-new,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
         sbom: true
-
-  # Cache management for next build
-    - name: Move cache
-      if: always()
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Image digest
       run: |

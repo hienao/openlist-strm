@@ -52,10 +52,8 @@ RUN chmod +x ./gradlew && \
 
 # Copy source code and build
 COPY backend/src ./src
-RUN ./gradlew --no-daemon -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 -Dtrust_all_cert=true bootJar -x test --parallel && \
-    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar && \
-    rm -rf $WORKDIR/build && \
-    rm -rf $HOME/.gradle/caches
+RUN ./gradlew --no-daemon -Dhttps.protocols=TLSv1.1,TLSv1.2,TLSv1.3 -Dtrust_all_cert=true bootJar -x test && \
+    mv $WORKDIR/build/libs/openlisttostrm.jar /openlisttostrm.jar
 
 # Stage 3: Runtime - Use Ubuntu for better package management
 FROM ubuntu:22.04 AS runner
