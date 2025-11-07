@@ -12,7 +12,16 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - platform: amd64
+            runner: ubuntu-latest
+            docker-platform: linux/amd64
+          - platform: arm64
+            runner: ubuntu-latest-4-cores
+            docker-platform: linux/arm64
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
       packages: write
@@ -24,20 +33,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up QEMU for multi-platform builds
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/amd64,linux/arm64
-        # Use static QEMU for better compatibility
-        image: tonistiigi/binfmt:latest
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      with:
-        driver-opts: |
-          image=moby/buildkit:buildx-stable-1
-          # Better QEMU support
-          network=host
+    # No QEMU needed - each platform builds on native runners
+    - name: Set up Docker Build
+      run: echo "Building ${{ matrix.platform }} on native runner"
       
     - name: Check Docker Hub credentials
       env:
@@ -117,8 +115,8 @@ jobs:
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
-          type=ref,event=tag
-          type=raw,value=latest
+          type=ref,event=tag,suffix=-${{ matrix.platform }}
+          type=raw,value=latest-${{ matrix.platform }}
 
     - name: Extract metadata for beta tags (beta-v*.*.*)
       id: meta-beta
@@ -127,7 +125,7 @@ jobs:
       with:
         images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
         tags: |
-          type=ref,event=tag
+          type=ref,event=tag,suffix=-${{ matrix.platform }}
         flavor: |
           latest=false
           
@@ -138,22 +136,20 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ matrix.docker-platform }}
         push: true
-        tags: ${{ steps.meta-release.outputs.tags }}
+        tags: ${{ steps.meta-release.outputs.tags }}-${{ matrix.platform }}
         labels: ${{ steps.meta-release.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-        # Build optimization for cross-platform builds
+          TARGETPLATFORM=${{ matrix.docker-platform }}
+        # Build optimization for native platform builds
         cache-from: type=gha
         cache-to: type=gha,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
         sbom: true
-        # Better QEMU and cross-platform support
-        load: false
-        no-cache: false
 
     - name: Create source code archive
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
@@ -223,22 +219,53 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ matrix.docker-platform }}
         push: true
-        tags: ${{ steps.meta-beta.outputs.tags }}
+        tags: ${{ steps.meta-beta.outputs.tags }}-${{ matrix.platform }}
         labels: ${{ steps.meta-beta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-        # Build optimization for cross-platform builds
+          TARGETPLATFORM=${{ matrix.docker-platform }}
+        # Build optimization for native platform builds
         cache-from: type=gha
         cache-to: type=gha,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
         sbom: true
-        # Better QEMU and cross-platform support
-        load: false
-        no-cache: false
+
+    - name: Create and push multi-arch manifest (release)
+      if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
+      run: |
+        echo "Creating multi-arch manifest for ${{ github.ref_name }}"
+        # Create manifest with both architectures
+        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }} \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-amd64 \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-arm64
+
+        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest-amd64 \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest-arm64
+
+        # Push manifests
+        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}
+        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest
+
+        echo "✅ Multi-arch manifest created and pushed successfully"
+
+    - name: Create and push multi-arch manifest (beta)
+      if: startsWith(github.ref_name, 'beta-v')
+      run: |
+        echo "Creating multi-arch manifest for ${{ github.ref_name }}"
+        # Create manifest with both architectures
+        docker manifest create docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }} \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-amd64 \
+          docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}-arm64
+
+        # Push manifest
+        docker manifest push docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}
+
+        echo "✅ Beta multi-arch manifest created and pushed successfully"
 
     - name: Image digest
       run: |
