@@ -4,8 +4,8 @@
 # Build argument for version
 ARG APP_VERSION=dev
 
-# Stage 1: Build Frontend (Nuxt) - Use Alpine for smaller build image
-FROM node:20-alpine AS frontend-builder
+# Stage 1: Build Frontend (Nuxt) - Use Ubuntu for better QEMU compatibility
+FROM node:20-noble AS frontend-builder
 ARG APP_VERSION
 WORKDIR /app/frontend
 

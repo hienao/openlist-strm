@@ -28,12 +28,16 @@ jobs:
       uses: docker/setup-qemu-action@v3
       with:
         platforms: linux/amd64,linux/arm64
+        # Use static QEMU for better compatibility
+        image: tonistiigi/binfmt:latest
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
         driver-opts: |
           image=moby/buildkit:buildx-stable-1
+          # Better QEMU support
+          network=host
       
     - name: Check Docker Hub credentials
       env:
@@ -147,6 +151,9 @@ jobs:
         provenance: true
         # SBOM generation for security
         sbom: true
+        # Better QEMU and cross-platform support
+        load: false
+        no-cache: false
 
     - name: Create source code archive
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
@@ -229,6 +236,9 @@ jobs:
         provenance: true
         # SBOM generation for security
         sbom: true
+        # Better QEMU and cross-platform support
+        load: false
+        no-cache: false
 
     - name: Image digest
       run: |
