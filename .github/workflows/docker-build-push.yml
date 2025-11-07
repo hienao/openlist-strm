@@ -34,8 +34,8 @@ jobs:
       uses: actions/checkout@v4
       
     # No QEMU needed - each platform builds on native runners
-    - name: Set up Docker Build
-      run: echo "Building ${{ matrix.platform }} on native runner"
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
       
     - name: Check Docker Hub credentials
       env:
@@ -144,8 +144,6 @@ jobs:
           APP_VERSION=${{ github.ref_name }}
           TARGETPLATFORM=${{ matrix.docker-platform }}
         # Build optimization for native platform builds
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
@@ -227,8 +225,6 @@ jobs:
           APP_VERSION=${{ github.ref_name }}
           TARGETPLATFORM=${{ matrix.docker-platform }}
         # Build optimization for native platform builds
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
         # Enable provenance for security
         provenance: true
         # SBOM generation for security
