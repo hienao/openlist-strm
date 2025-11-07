@@ -24,7 +24,7 @@ RUN npm run generate && \
     rm -rf /app/frontend/node_modules/.cache
 
 # Stage 2: Build Backend (Spring Boot) - Use Gradle official image
-FROM gradle:9.2.0-jdk21-noble AS backend-builder
+FROM gradle:8.12.1-jdk21-noble AS backend-builder
 ENV WORKDIR=/usr/src/app
 WORKDIR $WORKDIR
 

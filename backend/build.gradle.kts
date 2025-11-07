@@ -84,7 +84,7 @@ jacoco {
 }
 
 pmd {
-    sourceSets.set(listOfNotNull(java.sourceSets.findByName("main")))
+    sourceSets = listOf(java.sourceSets.findByName("main"))
     isConsoleOutput = true
     toolVersion = "7.9.0"
     rulesMinimumPriority.set(5)
