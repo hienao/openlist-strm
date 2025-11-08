@@ -180,7 +180,9 @@ jobs:
         if [ -z "$CHANGELOG" ] || [ "$CHANGELOG" = "- No changes" ]; then
           echo "Using default changelog"
           CHANGELOG="## 📝 Changes
+
 This release includes various improvements and bug fixes.
+
 For detailed changes, please check the commit history between tags."
         else
           echo "Using generated changelog"
