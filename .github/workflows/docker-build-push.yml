@@ -131,7 +131,7 @@ jobs:
     - name: Create source code archive
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       run: |
-        # 创建源码压缩包，排除不必要的文件
+        # Create source code archive, excluding unnecessary files
         zip -r "ostrm-${{ github.ref_name }}-source.zip" . \
           -x "*.git*" \
           -x "node_modules/*" \
@@ -140,7 +140,7 @@ jobs:
           -x ".DS_Store" \
           -x "Thumbs.db"
 
-        # 显示压缩包信息
+        # Display archive information
         ls -lh "ostrm-${{ github.ref_name }}-source.zip"
 
     - name: Build Changelog
@@ -173,15 +173,21 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # 检查changelog是否为空，如果为空则使用默认内容
+        # Check if changelog is empty, use default content if empty
         CHANGELOG="${{ steps.github_release.outputs.changelog }}"
+        echo "Processing changelog: $CHANGELOG"
+
         if [ -z "$CHANGELOG" ] || [ "$CHANGELOG" = "- No changes" ]; then
+          echo "Using default changelog"
           CHANGELOG="## 📝 Changes
-
-        This release includes various improvements and bug fixes.
-
-        For detailed changes, please check the commit history between tags."
+This release includes various improvements and bug fixes.
+For detailed changes, please check the commit history between tags."
+        else
+          echo "Using generated changelog"
         fi
+
+        echo "Final changelog:"
+        echo "$CHANGELOG"
 
         gh release create "${{ github.ref_name }}" \
           --title "Release ${{ github.ref_name }}" \
