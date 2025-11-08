@@ -318,7 +318,7 @@ onMounted(() => {
 
 // 页面标题
 useHead({
-  title: '修改密码 - OpenList2Strm'
+  title: '修改密码 - Ostrm'
 })
 </script>
 

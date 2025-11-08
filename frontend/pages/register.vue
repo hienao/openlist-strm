@@ -6,7 +6,7 @@
           创建新账户
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600">
-          注册 OpenList2Strm 账户
+          注册 Ostrm 账户
         </p>
       </div>
       
@@ -203,7 +203,7 @@ const handleRegister = async () => {
 
 // 页面标题
 useHead({
-  title: '用户注册 - OpenList2Strm'
+  title: '用户注册 - Ostrm'
 })
 </script>
 

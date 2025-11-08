@@ -7,7 +7,7 @@ REM 提供完整的开发环境管理和调试功能
 title OpenList to Stream Docker 开发环境
 
 REM 配置变量
-set PROJECT_NAME=openlist-strm
+set PROJECT_NAME=ostrm
 set CONTAINER_NAME=app
 set DEFAULT_PORT=3111
 

@@ -12,7 +12,7 @@ hero:
       link: /quick-start
     - theme: alt
       text: GitHub 仓库
-      link: https://github.com/hienao/openlist-strm
+      link: https://github.com/hienao/ostrm
 
 features:
   - title: 🎬 STRM 文件生成

@@ -134,8 +134,8 @@ public class DataReportService {
   private Map<String, String> getContainerImage() {
     Map<String, String> result = new HashMap<>();
 
-    // image 固定为 openlist-strm
-    result.put("image", "openlist-strm");
+    // image 固定为 ostrm
+    result.put("image", "ostrm");
 
     // 获取版本号，优先从环境变量APP_VERSION获取，与前端NUXT_PUBLIC_APP_VERSION保持一致
     String version = System.getenv("APP_VERSION");

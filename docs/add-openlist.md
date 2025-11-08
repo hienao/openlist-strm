@@ -192,7 +192,7 @@ OpenList 配置包含了连接到您的 OpenList 服务器所需的所有信息�
 ### 联系支持
 如果问题仍未解决，可以：
 1. 查看 [常见问题](./faq.md)
-2. 在 [GitHub Issues](https://github.com/hienao/openlist-strm/issues) 提交问题
+2. 在 [GitHub Issues](https://github.com/hienao/ostrm/issues) 提交问题
 3. 提供详细的错误信息和配置内容
 
 ---

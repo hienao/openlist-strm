@@ -1,6 +1,6 @@
 <!--
-  OpenList STRM - Stream Management System
-  Copyright (C) 2024 OpenList STRM Project
+  Ostrm - Stream Management System
+  Copyright (C) 2024 Ostrm Project
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
   <div class="min-h-screen">
     <!-- 导航栏 -->
     <AppHeader
-      title="OpenList2Strm"
+      title="Ostrm"
       :user-info="userInfo"
       @logout="logout"
       @change-password="changePassword"

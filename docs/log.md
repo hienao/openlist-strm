@@ -18,10 +18,10 @@
 ### Docker 容器查看
 ```bash
 # 查看容器日志
-docker logs -f openlist-strm
+docker logs -f ostrm
 
 # 进入容器查看日志文件
-docker exec -it openlist-strm tail -f /maindata/log/backend.log
+docker exec -it ostrm tail -f /maindata/log/backend.log
 ```
 
 ### 本地文件查看

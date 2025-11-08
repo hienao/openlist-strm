@@ -1,6 +1,6 @@
 /*
- * OpenList STRM - Stream Management System
- * Copyright (C) 2024 OpenList STRM Project
+ * Ostrm - Stream Management System
+ * Copyright (C) 2024 Ostrm Project
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,11 +78,11 @@ export default defineNuxtConfig({
   // 应用配置
   app: {
     head: {
-      title: 'OpenList2Strm',
+      title: 'Ostrm',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'OpenList2Strm - 用户管理系统' }
+        { name: 'description', content: 'Ostrm - 用户管理系统' }
       ]
     }
   }

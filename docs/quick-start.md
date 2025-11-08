@@ -18,8 +18,8 @@
 ```yaml
 services:
   app:
-    image: hienao6/openlist-strm:latest
-    container_name: openlist-strm
+    image: hienao6/ostrm:latest
+    container_name: ostrm
     ports:
       - "3111:80"
     volumes:
@@ -131,8 +131,8 @@ docker-compose up -d
 
 1. 查看 [常见问题](./faq.md)
 2. 检查 [执行日志](./log.md)
-3. 在 [GitHub Issues](https://github.com/hienao/openlist-strm/issues) 提交问题
-4. 查看项目 [Wiki](https://github.com/hienao/openlist-strm/wiki)
+3. 在 [GitHub Issues](https://github.com/hienao/ostrm/issues) 提交问题
+4. 查看项目 [Wiki](https://github.com/hienao/ostrm/wiki)
 
 ---
 

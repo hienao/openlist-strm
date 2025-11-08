@@ -51,7 +51,7 @@ jwt:
 github:
   repo:
     owner: ${GITHUB_REPO_OWNER:hienao}
-    name: ${GITHUB_REPO_NAME:openlist-strm}
+    name: ${GITHUB_REPO_NAME:ostrm}
   api:
     timeout: ${GITHUB_API_TIMEOUT:30}
     retry-count: ${GITHUB_API_RETRY_COUNT:3}

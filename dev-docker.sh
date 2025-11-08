@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OpenList to Stream 高级Docker开发脚本
+# Ostrm 高级Docker开发脚本
 # 提供完整的开发环境管理和调试功能
 
 set -e
@@ -15,7 +15,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # 配置变量
-PROJECT_NAME="openlist-strm"
+PROJECT_NAME="ostrm"
 CONTAINER_NAME="app"
 DEFAULT_PORT="3111"
 DOCKER_COMPOSE_FILE="docker-compose.yml"
