@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: openlist-strm
+  IMAGE_NAME: ostrm
 
 permissions:
   contents: read
@@ -90,7 +90,7 @@ jobs:
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
-        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/ostrm
         tags: |
           type=ref,event=tag
           type=raw,value=latest
@@ -100,7 +100,7 @@ jobs:
       if: startsWith(github.ref_name, 'beta-v')
       uses: docker/metadata-action@v5
       with:
-        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm
+        images: docker.io/${{ vars.DOCKERHUB_USERNAME }}/ostrm
         tags: |
           type=ref,event=tag
         flavor: |
@@ -132,7 +132,7 @@ jobs:
       if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'beta-v')
       run: |
         # 创建源码压缩包，排除不必要的文件
-        zip -r "openlist-strm-${{ github.ref_name }}-source.zip" . \
+        zip -r "ostrm-${{ github.ref_name }}-source.zip" . \
           -x "*.git*" \
           -x "node_modules/*" \
           -x "target/*" \
@@ -141,7 +141,7 @@ jobs:
           -x "Thumbs.db"
 
         # 显示压缩包信息
-        ls -lh "openlist-strm-${{ github.ref_name }}-source.zip"
+        ls -lh "ostrm-${{ github.ref_name }}-source.zip"
 
     - name: Build Changelog
       id: github_release
@@ -187,7 +187,7 @@ jobs:
           --title "Release ${{ github.ref_name }}" \
           --notes "$CHANGELOG" \
           --latest \
-          "openlist-strm-${{ github.ref_name }}-source.zip"
+          "ostrm-${{ github.ref_name }}-source.zip"
 
     - name: Build and push Docker image (beta)
       id: build-and-push-beta
@@ -216,12 +216,12 @@ jobs:
         echo "=== Verifying multi-arch manifests ==="
         if [ "${{ steps.build-and-push-release.outputs.digest }}" != "" ]; then
           echo "✅ Release multi-arch manifest created and pushed automatically"
-          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}"
-          echo "Latest: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:latest"
+          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/ostrm:${{ github.ref_name }}"
+          echo "Latest: docker.io/${{ vars.DOCKERHUB_USERNAME }}/ostrm:latest"
         fi
         if [ "${{ steps.build-and-push-beta.outputs.digest }}" != "" ]; then
           echo "✅ Beta multi-arch manifest created and pushed automatically"
-          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/openlist-strm:${{ github.ref_name }}"
+          echo "Image: docker.io/${{ vars.DOCKERHUB_USERNAME }}/ostrm:${{ github.ref_name }}"
         fi
         echo "Docker Buildx automatically handled multi-platform manifest creation"
 

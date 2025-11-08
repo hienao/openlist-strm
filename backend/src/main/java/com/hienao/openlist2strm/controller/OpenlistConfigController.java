@@ -35,7 +35,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * openlist配置管理控制器
+ * 配置管理控制器
  *
  * @author hienao
  * @since 2024-01-01
@@ -44,7 +44,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/openlist-config")
 @RequiredArgsConstructor
-@Tag(name = "Openlist配置管理", description = "openlist配置的增删改查接口")
+@Tag(name = "OpenList配置管理", description = "OpenList配置的增删改查接口")
 public class OpenlistConfigController {
 
   private static final String CONFIG_ID_PARAM = "配置ID";
@@ -53,7 +53,7 @@ public class OpenlistConfigController {
 
   /** 查询所有配置 */
   @GetMapping
-  @Operation(summary = "查询所有配置", description = "获取所有openlist配置列表")
+  @Operation(summary = "查询所有配置", description = "获取所有OpenList配置列表")
   public ResponseEntity<ApiResponse<List<OpenlistConfigDto>>> getAllConfigs() {
     List<OpenlistConfig> configs = openlistConfigService.getAllConfigs();
     List<OpenlistConfigDto> configDtos =
@@ -63,7 +63,7 @@ public class OpenlistConfigController {
 
   /** 查询启用的配置 */
   @GetMapping("/active")
-  @Operation(summary = "查询启用的配置", description = "获取所有启用状态的openlist配置")
+  @Operation(summary = "查询启用的配置", description = "获取所有启用状态的OpenList配置")
   public ResponseEntity<ApiResponse<List<OpenlistConfigDto>>> getActiveConfigs() {
     List<OpenlistConfig> configs = openlistConfigService.getActiveConfigs();
     List<OpenlistConfigDto> configDtos =
@@ -73,7 +73,7 @@ public class OpenlistConfigController {
 
   /** 根据ID查询配置 */
   @GetMapping("/{id}")
-  @Operation(summary = "根据ID查询配置", description = "根据配置ID获取openlist配置详情")
+  @Operation(summary = "根据ID查询配置", description = "根据配置ID获取OpenList配置详情")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> getConfigById(
       @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     OpenlistConfig config = openlistConfigService.getById(id);
@@ -85,7 +85,7 @@ public class OpenlistConfigController {
 
   /** 根据用户名查询配置 */
   @GetMapping("/username/{username}")
-  @Operation(summary = "根据用户名查询配置", description = "根据用户名获取openlist配置")
+  @Operation(summary = "根据用户名查询配置", description = "根据用户名获取OpenList配置")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> getConfigByUsername(
       @Parameter(description = "用户名", required = true) @PathVariable String username) {
     OpenlistConfig config = openlistConfigService.getByUsername(username);
@@ -97,7 +97,7 @@ public class OpenlistConfigController {
 
   /** 创建配置 */
   @PostMapping
-  @Operation(summary = "创建配置", description = "创建新的openlist配置")
+  @Operation(summary = "创建配置", description = "创建新的OpenList配置")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> createConfig(
       @Parameter(description = "配置信息", required = true) @Valid @RequestBody
           OpenlistConfigDto configDto) {
@@ -108,7 +108,7 @@ public class OpenlistConfigController {
 
   /** 更新配置 */
   @PutMapping("/{id}")
-  @Operation(summary = "更新配置", description = "更新指定ID的openlist配置")
+  @Operation(summary = "更新配置", description = "更新指定ID的配置")
   public ResponseEntity<ApiResponse<OpenlistConfigDto>> updateConfig(
       @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id,
       @Parameter(description = "配置信息", required = true) @Valid @RequestBody
@@ -121,7 +121,7 @@ public class OpenlistConfigController {
 
   /** 删除配置 */
   @DeleteMapping("/{id}")
-  @Operation(summary = "删除配置", description = "删除指定ID的openlist配置")
+  @Operation(summary = "删除配置", description = "删除指定ID的配置")
   public ResponseEntity<ApiResponse<Void>> deleteConfig(
       @Parameter(description = CONFIG_ID_PARAM, required = true) @PathVariable Long id) {
     openlistConfigService.deleteConfig(id);

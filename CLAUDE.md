@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OpenList to Stream is a modern full-stack application that converts OpenList file lists into STRM streaming media files. The project features containerized architecture with multi-platform deployment, complete user authentication, task scheduling, and media scraping capabilities.
+Ostrm is a modern full-stack application that converts file lists into STRM streaming media files (formerly OpenList to Stream project). The project features containerized architecture with multi-platform deployment, complete user authentication, task scheduling, and media scraping capabilities.
 
 - **Frontend**: Nuxt.js 3.13.0 + Vue 3.4.0 + Tailwind CSS 3.4.15
 - **Backend**: Spring Boot 3.3.9 + Gradle 8.12.1 + Java 21
@@ -301,11 +301,11 @@ http://localhost:3111
 **Pulling Images**:
 ```bash
 # Pull specific architecture image
-docker pull --platform linux/amd64 hienao6/openlist-strm:latest
-docker pull --platform linux/arm64 hienao6/openlist-strm:latest
+docker pull --platform linux/amd64 hienao6/ostrm:latest
+docker pull --platform linux/arm64 hienao6/ostrm:latest
 
 # Pull multi-arch image (Docker selects appropriate platform)
-docker pull hienao6/openlist-strm:latest
+docker pull hienao6/ostrm:latest
 ```
 
 For custom path configurations, use environment variables:

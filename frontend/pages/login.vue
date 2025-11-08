@@ -1,6 +1,6 @@
 <!--
-  OpenList STRM - Stream Management System
-  Copyright (C) 2024 OpenList STRM Project
+  Ostrm - Stream Management System
+  Copyright (C) 2024 Ostrm Project
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
             </svg>
           </div>
           <h2 class="text-3xl font-bold gradient-text mb-2">欢迎回来</h2>
-          <p class="text-gray-600">登录到您的 OpenList2Strm 账户</p>
+          <p class="text-gray-600">登录到您的 Ostrm 账户</p>
         </div>
 
         <!-- 登录表单 -->
@@ -511,7 +511,7 @@ const clearForms = () => {
 
 // 页面标题
 useHead({
-  title: '用户登录 - OpenList2Strm'
+  title: '用户登录 - Ostrm'
 })
 </script>
 

@@ -59,10 +59,10 @@
 
 ```bash
 # 拉取最新镜像
-docker pull hienao6/openlist-strm:latest
+docker pull hienao6/ostrm:latest
 
 # 运行容器
-docker run -d -p 80:80 -p 8080:8080 hienao6/openlist-strm:latest
+docker run -d -p 80:80 -p 8080:8080 hienao6/ostrm:latest
 ```
 
 ## 故障排除
@@ -70,7 +70,7 @@ docker run -d -p 80:80 -p 8080:8080 hienao6/openlist-strm:latest
 1. **构建失败**：检查 Dockerfile 语法和依赖项
 2. **推送失败**：验证 Docker Hub 凭据是否正确配置
 3. **权限错误**：确保访问令牌具有足够的权限
-4. **标签格式错误** (`invalid tag "docker.io/***/openlist-strm:main"`)：
+4. **标签格式错误** (`invalid tag "docker.io/***/ostrm:main"`)：
    - 原因：`DOCKERHUB_USERNAME` variable 未配置
    - 解决：按照上述步骤 2 配置 GitHub Variables 和 Secrets
 

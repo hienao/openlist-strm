@@ -1,6 +1,6 @@
 <!--
-  OpenList STRM - Stream Management System
-  Copyright (C) 2024 OpenList STRM Project
+  Ostrm - Stream Management System
+  Copyright (C) 2024 Ostrm Project
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
                 <h1 class="text-xl font-bold gradient-text">{{ title }}</h1>
                 <!-- GitHub 链接 -->
                 <a
-                  href="https://github.com/hienao/openlist-strm"
+                  href="https://github.com/hienao/ostrm"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="hidden sm:flex items-center space-x-1 text-xs text-gray-500 hover:text-blue-600 transition-colors"
@@ -178,14 +178,14 @@
               </div>
               <div>
                 <p class="font-medium text-gray-900">{{ displayUserInfo?.username || '用户' }}</p>
-                <p class="text-sm text-gray-500">OpenList2Strm</p>
+                <p class="text-sm text-gray-500">Ostrm</p>
               </div>
             </div>
           </div>
 
           <!-- GitHub 链接 - 移动端 -->
           <a
-            href="https://github.com/hienao/openlist-strm"
+            href="https://github.com/hienao/ostrm"
             target="_blank"
             rel="noopener noreferrer"
             class="sm:hidden flex items-center px-4 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-white/50 transition-all duration-200"
@@ -267,7 +267,7 @@ const showMobileMenu = ref(false)
 const props = defineProps({
   title: {
     type: String,
-    default: 'OpenList2Strm'
+    default: 'Ostrm'
   },
   showBackButton: {
     type: Boolean,

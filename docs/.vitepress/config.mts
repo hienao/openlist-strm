@@ -46,7 +46,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/hienao/openlist-strm' }
+      { icon: 'github', link: 'https://github.com/hienao/ostrm' }
     ]
   }
 })

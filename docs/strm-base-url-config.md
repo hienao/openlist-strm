@@ -1,6 +1,6 @@
 # STRM Base URL 配置
 
-STRM Base URL 是 OpenList to Stream 项目中的一个重要配置项，用于在生成 STRM 文件时替换原始的 OpenList 服务地址。
+STRM Base URL 是 Ostrm 项目中的一个重要配置项，用于在生成 STRM 文件时替换原始的服务地址。
 
 ## 功能概述
 
@@ -14,7 +14,7 @@ STRM Base URL 配置允许您指定一个替代的 URL，用于替换 STRM 文�
 ## 配置说明
 
 ### 配置位置
-STRM Base URL 配置位于 **OpenList 配置页面** 中，是一个可选的配置项。
+STRM Base URL 配置位于 **配置页面** 中，是一个可选的配置项。
 
 ### 字段说明
 - **字段名称**：STRM Base URL（可选）
@@ -116,7 +116,7 @@ STRM Base URL: http://media.example.com:8080
 
 ## 配置步骤
 
-### 1. 访问 OpenList 配置页面
+### 1. 访问 配置页面
 1. 登录系统
 2. 点击 **"OpenList 配置"** 或 **"管理"**
 3. 选择要编辑的配置，或创建新配置

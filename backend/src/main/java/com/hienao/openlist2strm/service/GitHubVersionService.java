@@ -36,7 +36,7 @@ public class GitHubVersionService {
   @Value("${github.repo.owner:hienao}")
   private String repoOwner;
 
-  @Value("${github.repo.name:openlist-strm}")
+  @Value("${github.repo.name:ostrm}")
   private String repoName;
 
   @Value("${github.api.timeout:30}")

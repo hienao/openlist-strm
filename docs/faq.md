@@ -69,7 +69,7 @@ docker-compose up -d
 
 1. **检查容器日志**
 ```bash
-docker logs openlist-strm
+docker logs ostrm
 ```
 
 2. **验证数据完整性**
@@ -109,8 +109,8 @@ V2.0.0版本进行了以下重大改进：
    - 包含容器启动日志
 
 2. **寻求帮助**
-   - 🐛 提交 [GitHub Issue](https://github.com/hienao/openlist-strm/issues)
-   - 💬 在 [GitHub Discussions](https://github.com/hienao/openlist-strm/discussions) 中讨论
+   - 🐛 提交 [GitHub Issue](https://github.com/hienao/ostrm/issues)
+   - 💬 在 [GitHub Discussions](https://github.com/hienao/ostrm/discussions) 中讨论
 
 3. **参考文档**
    - 📖 [更新日志](./update-log.md) - 完整的版本历史和迁移指南

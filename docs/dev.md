@@ -14,7 +14,7 @@
 
 ### 项目结构
 ```
-openlist-strm/
+ostrm/
 ├── frontend/                 # Nuxt.js 前端应用
 │   ├── components/          # Vue 组件
 │   ├── pages/              # 页面文件
@@ -48,8 +48,8 @@ openlist-strm/
 
 ### 克隆项目
 ```bash
-git clone https://github.com/hienao/openlist-strm.git
-cd openlist-strm
+git clone https://github.com/hienao/ostrm.git
+cd ostrm
 ```
 
 ### 环境配置
@@ -537,9 +537,9 @@ git push origin feature/your-feature-name
 ## 社区参与
 
 ### 获取帮助
-- 📖 查看 [项目文档](https://github.com/hienao/openlist-strm/blob/main/README.md)
-- 💬 在 [GitHub Discussions](https://github.com/hienao/openlist-strm/discussions) 中讨论
-- 🐛 在 [GitHub Issues](https://github.com/hienao/openlist-strm/issues) 中报告问题
+- 📖 查看 [项目文档](https://github.com/hienao/ostrm/blob/main/README.md)
+- 💬 在 [GitHub Discussions](https://github.com/hienao/ostrm/discussions) 中讨论
+- 🐛 在 [GitHub Issues](https://github.com/hienao/ostrm/issues) 中报告问题
 
 ### 贡献方式
 - 🐛 报告 Bug
@@ -549,7 +549,7 @@ git push origin feature/your-feature-name
 - 🌍 协助翻译
 
 ### 行为准则
-请阅读并遵守项目的 [行为准则](https://github.com/hienao/openlist-strm/blob/main/CODE_OF_CONDUCT)。
+请阅读并遵守项目的 [行为准则](https://github.com/hienao/ostrm/blob/main/CODE_OF_CONDUCT)。
 
 ---
 
